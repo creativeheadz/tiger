@@ -1,18 +1,21 @@
 #!/usr/bin/make -f
 # debian/rules file for Tiger using debhelper
 # GNU copyright 1997 to 1999 by Joey Hess.
-# (c) 2001-2013 Javier Fernández-Sanguino <jfs@debian.org>
+# (c) 2001-2018 Javier Fernández-Sanguino <jfs@debian.org>
 
-# We depend on baashisms
+# We depend on bashisms
 SHELL=/bin/bash
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
 # This is the debhelper compatibility version to use.
-# export DH_COMPAT=5
+# export DH_COMPAT=11
 
-build: build-stamp
+build: build-arch build-indep
+
+build-arch: build-stamp
+build-indep: build-stamp
 build-stamp:
 	dh_testdir
 	autoconf
