@@ -22,6 +22,11 @@
 # (home directory accesibility, shell configuration files, dormant accounts
 # and .hushlogin files)
 #
+# 04/02/2018 jfs  Include suggestion provided by Arran Schlosberg to use
+#                 HEAD when checking for dormant accounts. This prevents
+#                 wasting CPU when looking into very large home directories
+#                 as we just want to find one file that has been modified
+#                 and not all possible files (Savannah patch 7856)
 # 04/02/2018 jfs  Escape properly content in eval (Savannah bug #43336)
 # 08/12/2011 jfs  Sort the user files before joining them (Debian bug #624258)
 # 10/11/2006 jfs  Redirect find errors in $HOME to null (Debian bug #386163)
@@ -134,7 +139,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds AWK CAT CHECK_CRON FIND GEN_PASSWD_SETS GREP JOIN SORT MV LS TR WC RM || exit 1
+  haveallcmds AWK CAT CHECK_CRON FIND GEN_PASSWD_SETS GREP JOIN SORT MV LS TR HEAD WC RM || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
   haveallvars HOSTNAME TESTEXEC || exit 1
   
@@ -145,7 +150,7 @@ done
 echo
 echo "# Performing check of user accounts..."
 
-haveallcmds AWK CAT CHECK_CRON FIND GEN_PASSWD_SETS GREP JOIN SORT MV LS TR WC RM || exit 1
+haveallcmds AWK CAT CHECK_CRON FIND GEN_PASSWD_SETS GREP JOIN SORT MV LS TR HEAD WC RM || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 haveallvars HOSTNAME TESTEXEC || exit 1
 
@@ -284,7 +289,7 @@ check_users()
      [ "$home" != / -a -n "$home" -a "$Tiger_Dormant_Limit" != 0 ] && {
        notadmin=`eval "case \"$user\" in $Tiger_Admin_Accounts) ;; *) echo $user;; esac"`
        [ -n "$notadmin" ] &&  \
-       [ `$FIND "$home/" -mtime -$Tiger_Dormant_Limit 2>/dev/null | $WC -l` -eq 0 ] && 
+       [ `$FIND "$home/" -mtime -$Tiger_Dormant_Limit 2>/dev/null | $HEAD -n 1 | $WC -l` -eq 0 ] && 
            message WARN acc021w "" "Login ID $user appears to be a dormant account."
      }
 
