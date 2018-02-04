@@ -343,11 +343,6 @@ and \fBcheck_signatures\fR scripts).  You should consider installing
 any of these three programs (\fBTripwire\fR, \fBAide\fR or \fBIntegrit\fR)
 and use read-only locations (such as CD-ROM) to store the hashes of the system.
 .TP
-.B deb_checkadvisories
-This module checks against a list of stored Debian Security
-Advisories in order to see if the system has any package installed
-whose version might be subject to any security vulnerability (Debian-specific).
-.TP
 .B deb_checkmd5sums
 Compares the MD5 sums of binary files against those provided after installation.
 Changes in these files might be an indication of a compromised system
