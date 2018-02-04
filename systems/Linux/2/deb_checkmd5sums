@@ -49,6 +49,7 @@
 #      is printed when files don't match and avoid printing
 #      errors related to conffiles (Debian Bug #211329)
 # 04/02/2018 - jfs - Do not call prelink with '-c' when using it
+#      (Savannah bug #52087)
 #
 # TODO:
 # - Consider using a single file instead of calling MD5sum
