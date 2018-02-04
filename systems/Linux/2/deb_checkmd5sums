@@ -48,7 +48,7 @@
 #      Also added some minor changes so the package in question
 #      is printed when files don't match and avoid printing
 #      errors related to conffiles (Debian Bug #211329)
-#      
+# 04/02/2018 - jfs - Do not call prelink with '-c' when using it
 #
 # TODO:
 # - Consider using a single file instead of calling MD5sum
@@ -112,6 +112,9 @@ haveallcmds MD5SUM CAT CUT SED GREP BASENAME || exit 1
 PRELINK=/usr/sbin/prelink
 if [ -x "$PRELINK" ] ; then
     MD5SUM="$PRELINK -y --md5"
+    MD5SUM_CALL="$MD5SUM"
+else
+    MD5SUM_CALL="$MD5SUM -c"
 fi
 
 # From the localepurge binary:
@@ -138,7 +141,7 @@ do
 # Also don't check purged locales
         $SED -e "$SED_REMOVE_LOCALES_PURGED" |
 	$SED -e "s/^\(.*\)  \(.*\)/\1  \/\2/" |
-	$MD5SUM -c 2>&1 | $SED -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/; s/^.*md5sum: can't open \(.*\)/ERR \1/" | {
+	$MD5SUM_CALL -c 2>&1 | $SED -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/; s/^.*md5sum: can't open \(.*\)/ERR \1/" | {
 		while read file err
 		do
 			package=`$BASENAME "$md5file" ".md5sums"`
