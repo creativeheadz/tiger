@@ -329,6 +329,14 @@ localfs()
   fi
 
   # Check filesystems that are known to the current kernel
+  # First check /proc/filesystems which should list the filesystems known to the current kernel
+  if [ "$LOCAL" -eq 2 ] && [ -r /proc/filesystems ] ; then
+    if  cat /proc/filesystems  | awk '{if ($2 == "") print $1; else print $2}' | grep -q "$1" ; then
+        LOCAL=0
+    fi
+  fi
+
+  # If this still fails then check the directories in /lib/modules/<current_running_kernel>/
   if [ "$LOCAL" -eq 2 ] ; then
     KERNEL=`uname -r`
     if [ -e "/lib/modules/$KERNEL/kernel/fs/$1" ]; then
