@@ -15,6 +15,11 @@
 #
 # mkfilelst - 08/12/2003 - jfs
 #
+# 04/06/2018 - jfs - Fix bug in mkfilelst script which causes false positive alerts
+#           as the read tries to read the sticky bit twice. Patch provided by
+#           pyllyukko  (Savannah bug 33969)
+#
+#
 # Takes a list of files from standard input and generates a list
 # of owner group suid sgid ur uw ux gr gw gx or ow ox lvl ownmid grpmid prmmid
 # Creates a configuration file for any given operating system and
@@ -139,7 +144,7 @@ do
 	if [ $glob -lt 2 ] ; then
 	   [ -f "$file" -o -d "$file" ] && \
 	   getpermit $file |
-           while read _file owner group ur uw ux gr gw gx or ow ox stk suid sgid stk
+           while read _file owner group ur uw ux gr gw gx or ow ox suid sgid stk
 	  do
 	    echo "$file $owner $group $suid $sgid $ur $uw $ux $gr $gw $gx $or $ow $ox $lvl $ownmid $grpmid $prmmid"
 	  done
