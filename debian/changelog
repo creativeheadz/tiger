@@ -2,7 +2,7 @@ tiger (1:3.2.3-15) unstable; urgency=medium
 
   * Acknowledge previous NMU (thank you Francois Marier)
     (Closes: 830714, 830716, 848621)
-  * debian/compat: Update to compatibility verison 11
+  * debian/compat: Update to compatibility version 11
   * Include content provided in GIT repository upstream including:
      - script/check_accounts: Fix error when eval'ing code
      - script/check_passwd: Add a check of the sudoers files using visudo
@@ -12,10 +12,10 @@ tiger (1:3.2.3-15) unstable; urgency=medium
         cront-apt or painintheapt 
      - systems/Linux/2/deb_checkmd5sums: Do not call prelink with -c
      - systems/Linux/2/gen_mounts: Update with a large number of filesystems
-       currently supported in the Kernel. Additionally, to prevent false positives,
-       try to determine if the filesystem is within the list of supported
-       filesystems in the kernel by using two different mechanisms. This
-       should reduce the number of configuration warnings in the future
+       currently supported in the Kernel. Additionally, to prevent false
+       positives, try to determine if the filesystem is within the list of
+       supported filesystems in the kernel by using two different mechanisms.
+       This should reduce the number of configuration warnings in the future
        (and the need to update this script whenever a new, esoteric,
        filesystem is used)
      - util/genmsgidx: Do not assume the tempfile binary exists, check first.
