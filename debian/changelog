@@ -1,3 +1,34 @@
+tiger (1:3.2.3-15) unstable; urgency=medium
+
+  * Acknowledge previous NMU (thank you Francois Marier)
+    (Closes: 830714, 830716, 848621)
+  * debian/compat: Update to compatibility verison 11
+  * Include content provided in GIT repository upstream including:
+     - script/check_accounts: Fix error when eval'ing code
+     - script/check_passwd: Add a check of the sudoers files using visudo
+     - systems/Linux/2/check: Disable deb_checkadvisories as the Debian website
+        content does not provide information to generate up to date listing
+        of advisories. This feature can be best implemented using apticron,
+        cront-apt or painintheapt 
+     - systems/Linux/2/deb_checkmd5sums: Do not call prelink with -c
+     - systems/Linux/2/gen_mounts: Update with a large number of filesystems
+       currently supported in the Kernel. Additionally, to prevent false positives,
+       try to determine if the filesystem is within the list of supported
+       filesystems in the kernel by using two different mechanisms. This
+       should reduce the number of configuration warnings in the future
+       (and the need to update this script whenever a new, esoteric,
+       filesystem is used)
+     - util/genmsgidx: Do not assume the tempfile binary exists, check first.
+     - tigerrc, system/Linux/2/check: Make it possible to disable or enable
+       the Debian specific checks using the patch provided by Nicholas Bamber
+       (Closes: 512085)
+     - ./systems/Linux/2/check_listeningprocs: Handle all addresses in the
+       127.0.0.0/8 range as loopback addresses
+     - scripts/check_signatures: Fix interpretation of md5sum output which
+        was broken in the script 
+
+ -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Sun, 04 Feb 2018 20:44:04 +0100
+
 tiger (1:3.2.3-14.3) unstable; urgency=medium
 
   * Non-maintainer upload.
