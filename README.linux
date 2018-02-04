@@ -27,7 +27,7 @@ NEW:
  systems/Linux/2/deb_checkmd5sums  - Checks for md5sums of installed files
 	using the database installed in /var/lib/dpkg/info/ (Debian specific)
  systems/Linux/2/deb_checkadvisories  - Checks for installed packages vs.
-	Debian advisories in order to determine if an upgrade is needed.
+	Debian advisories in order to determine if an upgrade is needed. [DEPRECATED]
  debian/ - directory including all package related files  for the Debian 
  	GNU/Linux distribution
 

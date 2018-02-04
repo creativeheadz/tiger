@@ -33,6 +33,10 @@
 # Linux/2/check - 08/28/2003 - jfs
 #       Removed Debian specific checks from header since they are
 #       already called for below
+# Linux/2/check - 04/02/2018 - jfs
+#       Removed deb_checkadvisories as, since 2005, the website does 
+#       not include sufficient information to check the package version
+#       and generate a proper 'debian_advisories' file
 #-----------------------------------------------------------------------------
 # TODO:
 #
@@ -150,7 +154,6 @@ if [ "$LXDISTRIBUTION" = "debian" ]; then
 
 # No tigerrc variables defined for these, but they are only 
 # Debian specific
-$SYSTEMDIR/deb_checkadvisories 
 $SYSTEMDIR/deb_checkmd5sums 
 $SYSTEMDIR/deb_nopackfiles 
 # End of Debian-specific checks
