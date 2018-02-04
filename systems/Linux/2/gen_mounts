@@ -69,7 +69,16 @@
 # Linux/2/gen_mounts - 22/11/2015 - Fix typo in sshfs definition (Debian bug 7680867)
 #                                 - Added aufs (Debian bug 781171)
 #                                 - Added fuse.s3fs (Debian bug 799753)
+# Linux/2/gen_mounts - 05/12/2015 - Added tracefs (Debian bug 791352)
+# Linux/2/gen_mounts - 10/06/2016 - Added fuse.lxcfs (Debian bug 829643)
+# Linux/2/gen_mounts - 18/12/2016 - Added efivarfs (Debian bug 848377) and cgroup2 (Debian bug 843452)
 # Linux/2/gen_mounts - 22/09/2017 - vmblock has been renamed to fuse.vmware-vmblock. (Savannah bug 52087)
+# Linux/2/gen_mounts - 04/06/2018 - Added filesystems after reviewing the ones supported in Linux kernel
+#                                   documentation including: 9p, befs, bfs, ceph, ocfs2_dlmfs, exofs, f2fs, 
+#                                   nilfs2, ocfs2, pvfs2, ubifs, hfsplus, qnx6, pohmel, squashfs, efivars, omfs
+#                                   Added links to kernel documentation text files, for further reference.
+#                                   Added code to check the filesystems valid in the current kernel, this
+#                                   should prevent future false positivies when new filesystems are added to the kernel
 #------------------------------------------------------------------------------------------------------------------
 #
 
@@ -115,89 +124,152 @@ localfs()
 {
 # Determine which filesystem is local, for filesystems valid for Linux
 # read the mount(5), fstab(5) or Documentation/filesystems in the Linux
-# kernel
+# kernel or check the values in /proc/filesystems
   LOCAL=2
   # Valid local filesystems
-  [ "$1" = "ext" ] && LOCAL=0
-  [ "$1" = "ext2" ] && LOCAL=0
-  [ "$1" = "ext3" ] && LOCAL=0
-  [ "$1" = "ext4" ] && LOCAL=0
+  [ "$1" = "ext" ] && LOCAL=0         # First extended filesystem
+  [ "$1" = "ext2" ] && LOCAL=0        # Second extended filesystem, see https://www.kernel.org/doc/Documentation/filesystems/ext2.txt
+  [ "$1" = "ext3" ] && LOCAL=0        # Third extended filesystem, see https://www.kernel.org/doc/Documentation/filesystems/ext3.txt
+  [ "$1" = "ext4" ] && LOCAL=0        # Fourth extended filesystem https://www.kernel.org/doc/Documentation/filesystems/ext4.txt
   [ "$1" = "auto" ] && LOCAL=0
   [ "$1" = "vzfs" ] && LOCAL=0        # VPS virtual partition
   [ "$1" = "simfs" ] && LOCAL=0       # OpenVZ virtual partition
   [ "$1" = "reiserfs" ] && LOCAL=0
   [ "$1" = "reiser4" ] && LOCAL=0
-  [ "$1" = "xfs" ] && LOCAL=0
-  [ "$1" = "jfs" ] && LOCAL=0
+  [ "$1" = "xfs" ] && LOCAL=0                   # Silicon Grafics filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/xfs.txt
+  [ "$1" = "jfs" ] && LOCAL=0                   # IBM's Journalling Filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/jfs.txt
   [ "$1" = "minix" ] && LOCAL=0
   [ "$1" = "xiafs" ] && LOCAL=0
-  [ "$1" = "sysv" ] && LOCAL=0
-  [ "$1" = "ufs" ] && LOCAL=0
+  [ "$1" = "sysv" ] && LOCAL=0                  # Implementation of Xenix, System V and Coherent FS, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/sysv-fs.txt
+  [ "$1" = "ufs" ] && LOCAL=0                   # Filesystem used in FreeBSD, NetBSD, OpenBSD, Nexstep, OpenStep and Solaris, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/ufs.txt
   [ "$1" = "aufs" ] && LOCAL=0                    # Aufs (Docker) - advanced multi layered unification filesystem version
   [ "$1" = "coherent" ] && LOCAL=0
-  [ "$1" = "xenix" ] && LOCAL=0
-  [ "$1" = "hpfs" ] && LOCAL=0
-  [ "$1" = "btrfs" ] && LOCAL=0
+  [ "$1" = "hpfs" ] && LOCAL=0                  # Read/write hpfs, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/hpfs.txt
+  [ "$1" = "btrfs" ] && LOCAL=0                 # Copy on write filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/btrfs.txt
   [ "$1" = "rootfs" ] && LOCAL=0                # Provides an empty root directory for the bootstrap phase
+  [ "$1" = "exofs" ] && LOCAL=0                 # Exofs, see:
+                                                # https://www.kernel.org/doc/Documentation/filesystems/exofs.txt
+  [ "$1" = "f2fs" ] && LOCAL=0                  # Flash friendly file system, see:
+                                                # https://www.kernel.org/doc/Documentation/filesystems/f2fs.txt
+  [ "$1" = "nilfs2" ] && LOCAL=0                # log-structured file system, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/nilfs2.txt
+  [ "$1" = "ocfs2" ] && LOCAL=0                 # Virtual filesystem for Oracle Virtual Machine Clusters, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/ocfs2.txt
+  [ "$1" = "pvfs2" ] && LOCAL=0                 # Parallel storage filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/orangefs.txt
+
+  # Special filesystems which are also valid locally
   [ "$1" = "shm" ] && LOCAL=0                   # IPC-shared memory regions
-  [ "$1" = "tmpfs" ] && LOCAL=0                 # Temporary files (kept in RAM unless swapped)
+  [ "$1" = "tmpfs" ] && LOCAL=0                 # Temporary files (kept in RAM unless swapped), see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/tmpfs.txt
   # Exception: udev uses a tmpfs and it has many symlinks that point nowhere, it should be skipped
   [ "$1" = "tmpfs" ] && [ "$2" = "udev" ] && LOCAL=1 
   [ "$1" = "auto" ] && LOCAL=0
   [ "$1" = "selinuxfs" ] && LOCAL=0
-  [ "$1" = "fusectl" ] && LOCAL=0
+  [ "$1" = "fusectl" ] && LOCAL=0               # Userspce filesystem, see:
+                                                # https://www.kernel.org/doc/Documentation/filesystems/fuse.txt
   [ "$1" = "fuseblk" ] && LOCAL=0               # Used in Ubuntu 'hardy'
   [ "$1" = "fuse.truecrypt" ] && LOCAL=0        # Encrypted filesystem, used in Ubuntu 'hardy'
   [ "$1" = "fuse.encfs" ] && LOCAL=0            # Encrypted filesystem
   [ "$1" = "fuse.gvfs-fuse-daemon" ] && LOCAL=1 # Used in Ubuntu 'hardy'
   [ "$1" = "fuse.gvfsd-fuse" ] && LOCAL=1       # Used in Ubuntu 13.10 (Saucy Salamander) replaces fuse.gvfs-fuse-daemon
   [ "$1" = "fuse.ltspfs" ] && LOCAL=0 		# Used by LTSP 5.x
-  [ "$1" = "ecryptfs" ] && LOCAL=0              # Encrypted filesystem used by ecryptfs-utils
+  [ "$1" = "fuse.lxcfs" ] && LOCAL=0
+  [ "$1" = "ecryptfs" ] && LOCAL=0              # Encrypted filesystem used by ecryptfs-utils, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/ecryptfs.txt
   [ "$1" = "xenfs" ] && LOCAL=0                 # Virtual fs for Xen
   [ "$1" = "cgroup" ] && LOCAL=0                # General access point to Kernel Control Groups
+  [ "$1" = "cgroup2" ] && LOCAL=0               # General access point to Kernel Control Groups - see
+                                                # https://www.kernel.org/doc/Documentation/cgroup-v2.txt
   [ "$1" = "fuse.s3fs" ] && LOCAL=1 		# Amazon S3 buckets mounted through fuse
+
+  [ "$1" = "ubifs" ] && LOCAL=1 		# Flash filesystem for MTP devices, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/ubifs.txt
+
+
   # Filesystems of other OS
+  [ "$1" = "xenix" ] && LOCAL=0
   [ "$1" = "msdos" ] && LOCAL=1
   [ "$1" = "umsdos" ] && LOCAL=1
-  [ "$1" = "vfat" ] && LOCAL=1
-  [ "$1" = "ntfs" ] && LOCAL=1
-  [ "$1" = "hfs" ] && LOCAL=1
+  [ "$1" = "vfat" ] && LOCAL=1                  # Windows filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/vfat.txt
+  [ "$1" = "ntfs" ] && LOCAL=1                  # Windows NT filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/ntfs.txt
+  [ "$1" = "hfs" ] && LOCAL=1                   # Macintosh Hierarchical File System, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/hfs.txt
+  [ "$1" = "hfsplus" ] && LOCAL=1               # Macintosh Hierarchical File System used in MacOS 8.1 see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/hfsplus.txt
   [ "$1" = "qnx4" ] && LOCAL=1
-  [ "$1" = "udf" ] && LOCAL=1
+  [ "$1" = "qnx6" ] && LOCAL=1                  # Filesystem for QNX 6.4.1 and later versions, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/qnx6.txt
+  [ "$1" = "udf" ] && LOCAL=1                   # See https://www.kernel.org/doc/Documentation/filesystems/udf.txt
+  [ "$1" = "befs" ] && LOCAL=1                  # Filesystem for BeOS, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/befs.txt
+  [ "$1" = "bfs" ] && LOCAL=1                   # Filesystem for SCO Uniware, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/bfs.txt
+  [ "$1" = "9p" ] && LOCAL=1                    # Plan 9 filesystem see 
+                                                # https://www.kernel.org/doc/Documentation/filesystems/9p.txt
   # Remotely mounted fs
-  [ "$1" = "nfs" ] && LOCAL=1
+  [ "$1" = "nfs" ] && LOCAL=1                   # Network Filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/nfs/
   [ "$1" = "nfs4" ] && LOCAL=1
   [ "$1" = "nfsd" ] && LOCAL=1
-  [ "$1" = "ncpfs" ] && LOCAL=1
-  [ "$1" = "smbfs" ] && LOCAL=1
-  [ "$1" = "fuse.sshfs" ] && LOCAL=1     # Remote SSH mounted filesystem through fuse
-  [ "$1" = "cifs" ] && LOCAL=1
-  [ "$1" = "coda" ] && LOCAL=1
+  [ "$1" = "ncpfs" ] && LOCAL=1                 # Netware Control Procolo, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/ncpfs.txt
+  [ "$1" = "fuse.sshfs" ] && LOCAL=1            # Remote SSH mounted filesystem through fuse
+  [ "$1" = "smbfs" ] && LOCAL=1                 # Samba File system
+  [ "$1" = "cifs" ] && LOCAL=1                  # SMB3 and Common Internet File System (CIFS), see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/cifs/cifs.txt
+  [ "$1" = "coda" ] && LOCAL=1      # Coda filesystem, see https://www.kernel.org/doc/Documentation/filesystems/coda.txt
   [ "$1" = "AFS" ] && LOCAL=1       # Andrew Filesystem
   [ "$1" = "afs" ] && LOCAL=1       # Andrew Filesystem
   [ "$1" = "rpc_pipefs" ] && LOCAL=1
   [ "$1" = "gfs" ] && LOCAL=1       # Red Hat's Global Filesystem
                                     # http://sources.redhat.com/cluster/wiki/
-  [ "$1" = "gfs2" ] && LOCAL=1      # Red Hat's Global Filesystem
+  [ "$1" = "gfs2" ] && LOCAL=1      # Red Hat's Global Filesystem, see:
+                                    # https://www.kernel.org/doc/Documentation/filesystems/gfs2.txt
   # Note: gfs is considered non-local even though remoutely mounted in a SAN as this filesystem could
   # be used exclusively, if your system uses gfs or gfs2 and you want to scan the filesystem
   # set it at Tiger_FSScan_Local
-  [ "$1" = "proc" ] && LOCAL=1                  # General access point to kernel data structures
+
+  [ "$1" = "ceph" ] && LOCAL=1      # Distributed network filesystem, see
+                                    # https://www.kernel.org/doc/Documentation/filesystems/ceph.txt
+  [ "$1" = "pohmel" ] && LOCAL=1    # Pohmel filesystem, see
+                                    # https://www.kernel.org/doc/Documentation/filesystems/pohmelfs/info.txt
+
+
+  # Special filesystems
+  [ "$1" = "proc" ] && LOCAL=1                  # General access point to kernel data structures, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/proc.txt
   [ "$1" = "bind" ] && LOCAL=1                  # Used to remount directories, define as virtual
                                                 # as otherwise files would be checked twice
-  [ "$1" = "devpts" ] && LOCAL=1                # Pseudoterminal support (Open Group's Unix98 standard)
+  [ "$1" = "devpts" ] && LOCAL=1                # Pseudoterminal support (Open Group's Unix98 standard), see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/devpts.txt
   [ "$1" = "usbfs" ] && LOCAL=1                 # USB devices
   [ "$1" = "usbdevfs" ] && LOCAL=1
   [ "$1" = "devfs" ] && LOCAL=1
   [ "$1" = "devtmpfs" ] && LOCAL=1
-  [ "$1" = "sysfs" ] && LOCAL=1                 # General access point to system data
+  [ "$1" = "sysfs" ] && LOCAL=1                 # General access point to system data, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/sysfs.txt
   [ "$1" = "securityfs" ] && LOCAL=1            # Used by Ubuntu, see http://lwn.net/Articles/153366/ 
   [ "$1" = "none" ] && LOCAL=1
-  [ "$1" = "autofs" ] && LOCAL=1
+  [ "$1" = "autofs" ] && LOCAL=1                # Filesystem for on-demand mounting, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/autofs4.txt
   [ "$1" = "binfmt_misc" ] && LOCAL=1           # Miscellaneous executable formats
-  [ "$1" = "cramfs" ] && LOCAL=1
-  [ "$1" = "ramfs" ] && LOCAL=1
-  [ "$1" = "romfs" ] && LOCAL=1
+  [ "$1" = "cramfs" ] && LOCAL=1                # Simple filesystem for ROM, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/cramfs.txt
+  [ "$1" = "ramfs" ] && LOCAL=1                 # Simple RAM filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/ramfs-rootfs-initramfs.txt
+  [ "$1" = "squashfs" ] && LOCAL=1              # Compressed read only filesystem
+                                                # https://www.kernel.org/doc/Documentation/filesystems/squashfs.txt
+  [ "$1" = "romfs" ] && LOCAL=1                 # Simple read only filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/romfs.txt
   [ "$1" = "mqueue" ] && LOCAL=1                # POSIX message queues
   [ "$1" = "sockfs" ] && LOCAL=1                # Sockets
   [ "$1" = "bdev" ] && LOCAL=1                  # Block devices
@@ -212,15 +284,32 @@ localfs()
   [ "$1" = "vmblock" ] && LOCAL=1               # Vmware filesystem
   [ "$1" = "debugfs" ] && LOCAL=1               # Debugging filesystem see 
                                                 # http://lwn.net/Articles/115405/
+                                                # https://www.kernel.org/doc/Documentation/filesystems/debugfs.txt
+  [ "$1" = "tracefs" ] && LOCAL=1               # Debugging filesystem see
+                                                # https://lwn.net/Articles/630526/ and https://www.usenix.org/legacy/publications/library/proceedings/fast04/tech/full_papers/aranya/aranya_html/index.html
+  [ "$1" = "efivarfs" ] && LOCAL=1              # Linux  EFI variables filesystem see 
+                                                # https://www.kernel.org/doc/Documentation/filesystems/efivarfs.txt
   [ "$1" = "configfs" ] && LOCAL=1
   [ "$1" = "davfs" ] && LOCAL=1
   [ "$1" = "pstore" ] && LOCAL=1                # Platform dependen persisten storage
+  [ "$1" = "ocfs2_dlmfs" ] && LOCAL=1           # Virtual filesystem for Oracle Virtual Machine Clusters, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/dlmfs.txt
+                                                # https://blogs.oracle.com/wim/dlmfs
+  [ "$1" = "spufs" ] && LOCAL=1                 # Filesystem to access Synergistic  Processor Units (SPUs) in PowerPC, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/spufs.txt
+
   # Other filesystems we don't support
-  [ "$1" = "adfs" ] && LOCAL=1
-  [ "$1" = "affs" ] && LOCAL=1
-  [ "$1" = "afs" ] && LOCAL=1
+  [ "$1" = "adfs" ] && LOCAL=1                  # ADFS filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/adfs.txt
+  [ "$1" = "affs" ] && LOCAL=1                  # AFFS filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/affs.txt
+  [ "$1" = "afs" ] && LOCAL=1                   # AFS filesystem, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/afs.txt
   [ "$1" = "efs" ] && LOCAL=1
-  [ "$1" = "iso9660" ] && LOCAL=1
+  [ "$1" = "iso9660" ] && LOCAL=1               # ISO Filesystem, see 
+                                                # https://www.kernel.org/doc/Documentation/filesystems/isofs.txt
+  [ "$1" = "omfs" ] && LOCAL=1                  # SonicBlue filesytem for MP3 devices, see
+                                                # https://www.kernel.org/doc/Documentation/filesystems/omfs.txt
   [ "$1" = "capifs" ] && LOCAL=1
   # Some special filesystems
   [ "$1" = "unknown" ] && [ "$2" = "/dev" ] && LOCAL=1
@@ -236,6 +325,14 @@ localfs()
     # List of known filesystems the admin considers to be not local to the system
     if echo $1 | $EGREP -q $Tiger_FSScan_NonLocal; then
         LOCAL=1
+    fi
+  fi
+
+  # Check filesystems that are known to the current kernel
+  if [ "$LOCAL" -eq 2 ] ; then
+    KERNEL=`uname -r`
+    if [ -e "/lib/modules/$KERNEL/kernel/fs/$1" ]; then
+        LOCAL=0
     fi
   fi
 
