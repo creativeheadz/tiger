@@ -57,6 +57,8 @@
 #                errors if empty (Debian bug #342181)
 # 01/09/2013 jfs Added /usr/sbin/nologin to list of valid nologin shells
 #               (Debian bug #734775, #717218)
+# 04/02/2018 jfs Added a check of the sudoers files through the use of 
+#                visudo (Savannah bug 36488)
 #
 #-----------------------------------------------------------------------------
 # TODO:
@@ -321,6 +323,14 @@ done < $WORKDIR/pass.list.$$
     message WARN pass006w "" "Integrity of password files questionable ($PWCK)."
   fi
 }
+
+# Verify the sudo file format.
+if [ -n "`which visudo`" ] && [ -r /etc/sudoers ] ; then
+    if ! `visudo -cq` ; then
+        message FAIL pass021f "" "Integrity of sudoers files questionable (run 'visudo -c')."
+    fi
+fi
+        
 
 # Check the password constraints.
 [ -r "$LOGINDEF" ] && [ -z "$PAMLOGINDEF" -o ! -f "$PAMLOGINDEF" ] && \

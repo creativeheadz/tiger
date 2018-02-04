@@ -75,3 +75,8 @@ The listed login ID is not configured to use shadow passwords.  This
 indicates the specified login ID has its cypher text publicly available
 and is subject to brute force password cracking, even though shadow
 passwords are implimented on the system.
+%pass021f
+The sudoers files (/etc/sudoers and/or the contents of the /etc/sudoers.d/
+directory) have syntax issues as found by 'visudo -c'.  This
+can lead to the sudo program not working properly and scripts or
+users not able to use it to elevate privileges if not correct.
