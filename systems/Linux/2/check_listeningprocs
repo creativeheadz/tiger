@@ -31,6 +31,8 @@
 # 10/16/2002 - jfs - Changed the case statement into an eval in order
 #   to properly work for more than two processes or users
 #   (i.e. with "process1|process2")
+# 04/02/2018 - jfs - Detect if address is in the range 127.0.0.0/8 to 
+#    declared it as a loopback address (Savannah bug #24159)
 #         
 #
 # TODO:
@@ -77,7 +79,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds CUT GREP || exit 1
+  haveallcmds CUT GREP EGREP || exit 1
 # Just netstat is needed to run this program, lsof is an addon
   haveallcmds LSOF || haveallcmds NETSTAT || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
@@ -91,7 +93,7 @@ done
 echo
 echo "# Checking listening processes "
 
-haveallcmds GREP CUT AWK SORT UNIQ || exit 1
+haveallcmds GREP EGREP CUT AWK SORT UNIQ || exit 1
 haveallcmds LSOF || haveallcmds NETSTAT || exit 1
 
 okprocessusers=${Tiger_Listening_ValidUsers-"root"}
@@ -160,6 +162,11 @@ do
 # Should address = 127.0.0.1 be considered harmful?
 # TODO: This could be an option
 	[ "$address" = "127.0.0.1" ] && address="loopback"
+        # Note: Linux loopback is 127.0.0.0/8
+        if echo "$address" | $EGREP -q "^127\." ; then
+	    address="loopback"
+        fi
+
 	[ "$address" = "0.0.0.0" -o "$address" = "*" ] && address="every"
 	isokprocess="no"
 	isokuser="no"
