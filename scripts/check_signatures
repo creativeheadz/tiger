@@ -17,9 +17,13 @@
 #
 # check_signatures - 06/14/93
 #
-# 08/14/2003 jfs Added OUTPUTMETHOD and SNEFRU to dependancies
-# 04/28/93 dls  Added '-L' option to 'ls' so that we get the permissions
+# 04/28/93 dls   - Added '-L' option to 'ls' so that we get the permissions
 #               from the file instead of the symbolic link.
+# 08/14/2003 jfs - Added OUTPUTMETHOD and SNEFRU to dependancies
+# 02/04/2018 jfs - md5sum binary in linux adds a '-' after the md5sum when
+#               the input is STDIN, which breaks the comparison checks. 
+#               Use AWK to extract the md5sum from the output, with patch
+#               provided by pyllyukko (Savannah bug 34028)
 #
 #-----------------------------------------------------------------------------
 #
@@ -91,7 +95,7 @@ do
 	  *[!0-9a-f]*) {
 	    std_signature="$p1"
 	    comment="$p2 $p3 $p4 $p5 $p6 $p7 $p8 $comment"
-	    [ -n "$MD5" ] && loc_signature="`$MD5 < $file`"
+	    [ -n "$MD5" ] && loc_signature="`$MD5 < $file | $AWK '{print $1}'`"
 	  }
 	  ;;
 	  *) {
