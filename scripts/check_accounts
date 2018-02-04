@@ -22,6 +22,7 @@
 # (home directory accesibility, shell configuration files, dormant accounts
 # and .hushlogin files)
 #
+# 04/02/2018 jfs  Escape properly content in eval (Savannah bug #43336)
 # 08/12/2011 jfs  Sort the user files before joining them (Debian bug #624258)
 # 10/11/2006 jfs  Redirect find errors in $HOME to null (Debian bug #386163)
 # 20/04/2006 jfs  Fix the pipe check in forward files (Debian bug #329610)
@@ -303,7 +304,7 @@ check_users()
        eval "
          case \"$shell\" in
            $shcase)
-             [ ! -r "${home}/.${shell##*/}rc" ] && {
+             [ ! -r \"${home}/.${shell##*/}rc\" ] && {
                message WARN acc019w \"\" \"Login ID $user may be missing a shell initialization file ${home}/.${shell##*/}rc.\"
              }
              ;;
