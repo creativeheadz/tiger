@@ -34,13 +34,16 @@
 #       Removed Debian specific checks from header since they are
 #       already called for below
 # Linux/2/check - 04/02/2018 - jfs
+#       Make it possible to enable/disable the Debian specific checks
+#       based on patch provided by Nicholas Bamber (Debian bug 512085)
+# Linux/2/check - 04/02/2018 - jfs
 #       Removed deb_checkadvisories as, since 2005, the website does 
 #       not include sufficient information to check the package version
 #       and generate a proper 'debian_advisories' file
 #-----------------------------------------------------------------------------
 # TODO:
 #
-# - Checks should also be done based on Debian distribution
+# - Nothing yet :)
 #
 #-----------------------------------------------------------------------------
 #
@@ -152,10 +155,13 @@ if [ "$LXDISTRIBUTION" = "debian" ]; then
   $SYSTEMDIR/check_patches
 }
 
-# No tigerrc variables defined for these, but they are only 
-# Debian specific
-$SYSTEMDIR/deb_checkmd5sums 
-$SYSTEMDIR/deb_nopackfiles 
+# Debian specific checks
+[ "$Tiger_Deb_CheckMD5Sums" != 'N' ]&&  {
+  $SYSTEMDIR/deb_checkmd5sums
+}
+[ "$Tiger_Deb_NoPackFiles" != 'N' ]&&  {
+  $SYSTEMDIR/deb_nopackfiles
+}
 # End of Debian-specific checks
 
 fi 

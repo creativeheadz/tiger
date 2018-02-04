@@ -73,6 +73,11 @@ Tiger_Check_OS=Y                # Fast
 Tiger_Check_NETWORKCONFIG=Y     # Fast
 # - HPUX specific
 Tiger_Check_TRUSTED=Y
+# End of HPUX specific checks
+# - Debian specific checks:
+Tiger_Deb_CheckMD5Sums=Y       
+Tiger_Deb_NoPackFiles=Y
+# End of Debian-specific checks
 # 
 # Should reports with no info be sent on cron?
 #
@@ -390,3 +395,4 @@ Tiger_DPKG_Optimize=Y
 # NFS filesystems you might want to add '-n' here too. '-q' makes the 
 # chkrootkit process work in 'quiet' mode.
 Tiger_CHKROOTKIT_ARGS="-q"
+#
