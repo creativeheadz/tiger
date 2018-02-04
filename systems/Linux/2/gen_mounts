@@ -69,6 +69,7 @@
 # Linux/2/gen_mounts - 22/11/2015 - Fix typo in sshfs definition (Debian bug 7680867)
 #                                 - Added aufs (Debian bug 781171)
 #                                 - Added fuse.s3fs (Debian bug 799753)
+# Linux/2/gen_mounts - 22/09/2017 - vmblock has been renamed to fuse.vmware-vmblock.
 #------------------------------------------------------------------------------------------------------------------
 #
 
@@ -207,6 +208,7 @@ localfs()
   [ "$1" = "subfs" ] && LOCAL=1 
   [ "$1" = "futexfs" ] && LOCAL=1               # futex (Fast Userspace Locking) mechanism
   [ "$1" = "fuse" ] && LOCAL=1
+  [ "$1" = "fuse.vmware-vmblock" ] && LOCAL=1   # Vmware filesystem
   [ "$1" = "vmblock" ] && LOCAL=1               # Vmware filesystem
   [ "$1" = "debugfs" ] && LOCAL=1               # Debugging filesystem see 
                                                 # http://lwn.net/Articles/115405/
