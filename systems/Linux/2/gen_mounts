@@ -73,12 +73,14 @@
 # Linux/2/gen_mounts - 10/06/2016 - Added fuse.lxcfs (Debian bug 829643)
 # Linux/2/gen_mounts - 18/12/2016 - Added efivarfs (Debian bug 848377) and cgroup2 (Debian bug 843452)
 # Linux/2/gen_mounts - 22/09/2017 - vmblock has been renamed to fuse.vmware-vmblock. (Savannah bug 52087)
-# Linux/2/gen_mounts - 04/06/2018 - Added filesystems after reviewing the ones supported in Linux kernel
+# Linux/2/gen_mounts - 06/02/2018 - Added filesystems after reviewing the ones supported in Linux kernel
 #                                   documentation including: 9p, befs, bfs, ceph, ocfs2_dlmfs, exofs, f2fs, 
 #                                   nilfs2, ocfs2, pvfs2, ubifs, hfsplus, qnx6, pohmel, squashfs, efivars, omfs
 #                                   Added links to kernel documentation text files, for further reference.
 #                                   Added code to check the filesystems valid in the current kernel, this
 #                                   should prevent future false positivies when new filesystems are added to the kernel
+# Linux/2/gen_mounts - 07/02/2018 - Added fuse.clamfs (Ubuntu bug 1204527) and fuse.javafs (Ubuntu bug 1305057) 
+#                                   filesystems
 #------------------------------------------------------------------------------------------------------------------
 #
 
@@ -181,6 +183,9 @@ localfs()
   [ "$1" = "fuse.gvfsd-fuse" ] && LOCAL=1       # Used in Ubuntu 13.10 (Saucy Salamander) replaces fuse.gvfs-fuse-daemon
   [ "$1" = "fuse.ltspfs" ] && LOCAL=0 		# Used by LTSP 5.x
   [ "$1" = "fuse.lxcfs" ] && LOCAL=0
+  [ "$1" = "fuse.clamfs" ] && LOCAL=0           # ClamFS anti-virus protected file system
+  [ "$1" = "fuse.javafs" ] && LOCAL=0           # Java FS, used by Wuala secure online storage, see:
+                                                # https://github.com/puniverse/javafs
   [ "$1" = "ecryptfs" ] && LOCAL=0              # Encrypted filesystem used by ecryptfs-utils, see
                                                 # https://www.kernel.org/doc/Documentation/filesystems/ecryptfs.txt
   [ "$1" = "xenfs" ] && LOCAL=0                 # Virtual fs for Xen
@@ -291,7 +296,7 @@ localfs()
                                                 # https://www.kernel.org/doc/Documentation/filesystems/efivarfs.txt
   [ "$1" = "configfs" ] && LOCAL=1
   [ "$1" = "davfs" ] && LOCAL=1
-  [ "$1" = "pstore" ] && LOCAL=1                # Platform dependen persisten storage
+  [ "$1" = "pstore" ] && LOCAL=1                # Platform dependen persistent storage
   [ "$1" = "ocfs2_dlmfs" ] && LOCAL=1           # Virtual filesystem for Oracle Virtual Machine Clusters, see
                                                 # https://www.kernel.org/doc/Documentation/filesystems/dlmfs.txt
                                                 # https://blogs.oracle.com/wim/dlmfs
