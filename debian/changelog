@@ -1,3 +1,11 @@
+tiger (1:3.2.3-16) UNRELEASED; urgency=medium
+
+  * Include content from GIT upstream:
+     - systems/Linux/2/gen_mounts: Added fuse.clamfs and fuse.javafs
+       filesystems (LP: #1204527, #1305057)
+
+ -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Wed, 07 Feb 2018 00:20:35 +0100
+
 tiger (1:3.2.3-15) unstable; urgency=medium
 
   * Acknowledge previous NMU (thank you Francois Marier)
