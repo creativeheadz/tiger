@@ -13,7 +13,7 @@ case "$1" in
 		do
 			[ -d "$dir" ] &&  {
 			 	find "$dir" -type d -o -exec rm -f {} \;
-				find "$dir" -type d -depth -exec rmdir {} \;
+				find "$dir" -type d -exec rmdir {} \;
 			}
 		done
 # Do we have any tigerXX files under /var/log/? if so we should remove
