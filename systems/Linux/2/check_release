@@ -26,11 +26,15 @@
 #            added a note regarding Progeny support...
 # 03/21/2005 jfs       Use EGREP instead of grep -E
 # 04/25/2007 jfs       Update Debian version, current is 5.0
+# 02/06/2018 jfs       Update Debian version, current stable is 9.3
+#                      and list of old Debian versions
+#                      Add support to check for RHEL and Ubuntu releases
+#                      Ubuntu is no longer considered a Debian "unstable" version
+#                      (Ubuntu bug 248845)
 #
 #-----------------------------------------------------------------------------
 # TODO:
 # - Support more distributions (SuSE, Mandrake...)
-# - Add support to RedHat Enterprise distributions?
 #
 #-----------------------------------------------------------------------------
 #
@@ -67,7 +71,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds CUT EGREP RM  || exit 1
+  haveallcmds CUT EGREP AWK TR  || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
   
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -77,19 +81,20 @@ done
 
 echo
 echo "# Checking OS release..."
-haveallcmds CUT EGREP RM  || exit 1
+haveallcmds CUT EGREP AWK TR  || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
-# This code only works for old redhat releases, it does not cover Red Hat Enterprise or CentOS
-if [ -e /etc/redhat-release ]
-then
-        REDHAT_VERSION=`$CUT -f5 -d' ' /etc/redhat-release`
-        $EGREP "[A-Za-z]" $REDHAT_VERSION 1> /dev/null
+check_redhat_release () {
+# This code only works for *old* Red Hat releases, it does not cover Red Hat Enterprise or CentOS
+        [ ! -r /etc/redhat_release ] || return 
+
+        OS_VERSION=`$CUT -f5 -d' ' /etc/redhat-release`
+        $EGREP "[A-Za-z]" $OS_VERSION 1> /dev/null
 	if [ $? -eq 1 ]
 	then
-		MAJOR=`echo $REDHAT_VERSION | $CUT -d. -f1`
-		MINOR=`echo $REDHAT_VERSION | $CUT -d. -f2`
-		# Note: RedHat 9 EOL is April 30th, 2004.
+		MAJOR=`echo $OS_VERSION | $CUT -d. -f1`
+		MINOR=`echo $OS_VERSION | $CUT -d. -f2`
+		# Note: Red Hat 9 EOL was on April 30th, 2004.
 		# Also notice that Progeny does provide official support
 		# for 7.2, 7.3, 8.0 and 9.0 starting January 1, 2004
 		# (but only for x86) see http://transition.progeny.com/
@@ -97,25 +102,28 @@ then
                 # Note: There is no RedHat 10, used only for comparison
 		if [ $MAJOR -lt 10 ]
 		then
-			message FAIL osv001f "" "Out of date Redhat Linux version $REDHAT_VERSION"
+			message FAIL osv001f "" "Out of date Red Hat Linux version $OS_VERSION"
 
 #		elif [ $MAJOR -eq X -a $MINOR -lt X ]
 #	        then
-#	       	         message FAIL osv001f "" "Out of date Redhat Linux version $REDHAT_VERSION"
+#	       	         message FAIL osv001f "" "Out of date Red Hat Linux version $OS_VERSION"
 #       		         return
        		 fi
 	else
-                 message WARN osv004w "" "Unreleased RedHat Linux version \`$REDHAT_VERSION'"
+                 message WARN osv004w "" "Unreleased Red Hat Linux version \`$OS_VERSION'"
 	fi
+}
 	
-# Debian seems to put either a number or a codename in their
-# version file so we have to check for both.
-elif [ -e /etc/debian_version ]
-then
-	# these are the codenames for the older debian releases
+check_debian_release () {
+        [ ! -r /etc/debian/version ] || return 
+
+        # Debian sets either a number or a codename in their
+        # version file so we have to check for both.
+        OS_VERSION=`$CUT -f1 -d' ' /etc/debian_version`
+
+	# These are the codenames for the older debian releases
 	# if we see any of them we know we fail right away
-        DEBIAN_VERSION=`$CUT -f1 -d' ' /etc/debian_version`
-        $EGREP "hamm|bo|rex|buzz" /etc/debian_version 2> /dev/null
+        $EGREP "jessie|wheezy|squeeze|lenny|etch|sarge|woody|potato|slink|hamm|bo|rex|buzz" /etc/debian_version 2> /dev/null
         if [ $? -eq 0 ]
         then
                 message FAIL osv002f "" "Out of date Debian GNU/Linux version"
@@ -123,21 +131,92 @@ then
             $CUT -f1 -d' ' /etc/debian_version | $EGREP "[A-Za-z]" 1> /dev/null
             if [ $? -eq 1 ]
             then
-                MAJOR=`echo $DEBIAN_VERSION | $CUT -d \. -f 1`
-                MINOR=`echo $DEBIAN_VERSION | $CUT -d \. -f 2`
-                if [ "$MAJOR" -lt 5 ]
+                MAJOR=`echo $OS_VERSION | $CUT -d \. -f 1`
+                MINOR=`echo $OS_VERSION | $CUT -d \. -f 2`
+                if [ "$MAJOR" -lt 9 ]
                 then
-                        message FAIL osv002f "" "Out of date Debian GNU/Linux version \`$DEBIAN_VERSION'"
-                elif [ "$MAJOR" -eq 5 -a "$MINOR" -lt 0 ]
+                        message FAIL osv002f "" "Out of date Debian GNU/Linux version \`$OS_VERSION'"
+                elif [ "$MAJOR" -eq 9 -a "$MINOR" -lt 3 ]
                 then
-                        message FAIL osv002f "" "Out of date Debian GNU/Linux version \`$DEBIAN_VERSION'"
+                        message FAIL osv002f "" "Out of date Debian GNU/Linux version \`$OS_VERSION'"
                 fi
             else
-                        message WARN osv004w "" "Unreleased Debian GNU/Linux version \`$DEBIAN_VERSION'"
+                        message WARN osv004w "" "Unreleased Debian GNU/Linux version \`$OS_VERSION'"
 	     fi
 	    
         fi
-else
-        message WARN osv003w "" "This check only works for Redhat and Debian"
-fi
+}
+
+check_rhel_version () {
+# Red Hat Enterprise Linux provides different ways to check:
+#/etc/redhat-release
+#/etc/system-release-cpe
+#lsb-release
+     OS_VERSION=`lsb_release -r | $AWK -F : '{print $2}' | $TR -d '[:blank:]'`
+     [ -z "$OS_VERSION" ] && return # Do not continue if we cannot retrieve the version
+
+     MAJOR=`echo $OS_VERSION | $CUT -d \. -f 1`
+     MINOR=`echo $OS_VERSION | $CUT -d \. -f 2`
+
+     # Information derived from https://en.wikipedia.org/wiki/Red_Hat_Enterprise_Linux
+     # and https://access.redhat.com/support/policy/updates/errata
+     # Out of date RHEL versions <= 4, < 5.11, < 6.7, < 7.3
+     if [ "$MAJOR" -lt 4 ] || [ "$MAJOR" -eq  4 ] ; then
+         message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
+     fi
+     if [ "$MAJOR" -eq 5 ] && [ "$MAJOR" -lt 11 ] ; then
+         message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
+     fi
+     if [ "$MAJOR" -eq 6 ] && [ "$MAJOR" -lt 7 ] ; then
+         message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
+     fi
+     if [ "$MAJOR" -eq 7 ] && [ "$MAJOR" -lt 3 ] ; then
+         message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
+     fi
+
+}
+
+check_ubuntu_release () {
+     OS_VERSION=`lsb_release -r | $AWK -F : '{print $2}' | $TR -d '[:blank:]'`
+     [ -z "$OS_VERSION" ] && return # Do not continue if we cannot retrieve the version
+
+     MAJOR=`echo $OS_VERSION | $CUT -d \. -f 1`
+     MINOR=`echo $OS_VERSION | $CUT -d \. -f 2`
+
+     # Information derived from https://wiki.ubuntu.com/Releases
+     # Out of date Ubuntu versions <= 13, <= 14.10, <= 15.10, <= 17.4
+     if [ "$MAJOR" -lt 13 ] || [ "$MAJOR" -eq  13 ] ; then
+         message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
+     fi
+     if [ "$MAJOR" -eq 14 ] && [ "$MAJOR" -lt 11 ] ; then
+         message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
+     fi
+     if [ "$MAJOR" -eq 15 ] && [ "$MAJOR" -lt 11 ] ; then
+         message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
+     fi
+     if [ "$MAJOR" -eq 17 ] && [ "$MAJOR" -lt 5 ] ; then
+         message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
+     fi
+
+
+}
+
+# If lsb_release is available try to use it    
+DISTRIBUTOR=`lsb_release -i  | $AWK -F : '{print $2}' | $TR -d '[:blank:]'`
  
+if [ -e /etc/redhat-release ]; then
+    check_redhat_release
+elif [ -e /etc/debian_version ] ; then
+    if [ -z "$DISTRIBUTOR" ] || [ "$DISTRIBUTOR" = "Debian" ] ; then
+        check_debian_release
+    fi
+    if [ "$DISTRIBUTOR" = "Ubuntu" ] ; then
+        check_ubuntu_release
+    fi
+elif [ "$DISTRIBUTOR" = "RedHatEnterpriseServer" ] ; then
+    check_rhel_version
+
+fi
+
+# Do not warn as there are many distributions out there
+#        message WARN osv003w "" "This check only works for Red Hat and Debian"
