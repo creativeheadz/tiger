@@ -106,7 +106,7 @@ haveallof variables BASEDIR || exit 1
 #    exit 1
 #}
 
-LC_COLLATE=C.UTF-8 $LS $BASEDIR/doc/*.txt |
+LC_ALL=C.UTF-8 LC_COLLATE=C.UTF-8 $LS $BASEDIR/doc/*.txt |
 while read infile 
 do
   file=`$BASENAME $infile`
