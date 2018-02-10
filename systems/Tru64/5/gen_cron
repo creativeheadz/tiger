@@ -17,6 +17,8 @@
 #     Please see the file `COPYING' for the complete copyright notice.
 #
 # Tru64/5/gen_cron - 06/14/93
+# Tru64/5/gen_cron  - 02/10/2018 - jfs - Exit if the directory does not exist
+#                   or is not readable
 #
 #-----------------------------------------------------------------------------
 # TODO: Fix the check_crontabs and gen_cron files to perform the checks
@@ -31,6 +33,16 @@ TigerInstallDir="/opt/tiger"
 
 outfile=$1
 > $outfile
+
+if [ ! -d "$CRONSPOOL" ] ; then
+    echo "--ERROR-- Cron spool directory $CRONSPOOL does not exist."
+    exit 1
+fi
+if [ ! -r "$CRONSPOOL" ] ; then
+    echo "--ERROR-- Cannot read contents of spool directory $CRONSPOOL."
+    exit 1
+fi
+
 
 (
   cd $CRONSPOOL

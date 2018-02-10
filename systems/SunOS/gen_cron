@@ -18,6 +18,8 @@
 # SunOS/gen_cron - 06/14/93
 #
 # SunOS/gen_cron - 08/12/2002 - jfs - Fixed so that it works standalone
+# SunOS/gen_cron  - 02/10/2018 - jfs - Exit if the directory does not exist
+#                   or is not readable
 #
 #-----------------------------------------------------------------------------
 #
@@ -33,9 +35,19 @@ outfile=$1
 #	exit 1
 #fi
 
+
 [ -n "$outfile" ] && > $outfile
 
 [ ! -n "$GETUSERHOME" ] && GETUSERHOME=echo
+
+if [ ! -d "$CRONSPOOL" ] ; then
+    echo "--ERROR-- Cron spool directory $CRONSPOOL does not exist."
+    exit 1
+fi
+if [ ! -r "$CRONSPOOL" ] ; then
+    echo "--ERROR-- Cannot read contents of spool directory $CRONSPOOL."
+    exit 1
+fi
 
 (
   cd $CRONSPOOL
