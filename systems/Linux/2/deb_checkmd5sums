@@ -48,8 +48,15 @@
 #      Also added some minor changes so the package in question
 #      is printed when files don't match and avoid printing
 #      errors related to conffiles (Debian Bug #211329)
-# 04/02/2018 - jfs - Do not call prelink with '-c' when using it
+# 02/04/2018 - jfs - Do not call prelink with '-c' when using it
 #      (Savannah bug #52087)
+# 02/10/2018 - jfs - Excude additional directories in /usr/share
+#       which contain many files but do not pose a huge security
+#       risk if changed: /usr/share/help, /usr/share/icons,
+#       /usr/share/fonts, /usr/share/locale, /usr/share/games
+#       /usr/share/i18n
+#       Since we do not check locale anymore, remove the code that
+#       used the infomation from locale puge
 #
 # TODO:
 # - Consider using a single file instead of calling MD5sum
@@ -95,7 +102,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds MD5SUM CAT CUT SED GREP BASENAME || exit 1
+  haveallcmds MD5SUM CAT CUT SED GREP EGREP BASENAME || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
   haveallvars TESTLINK HOSTNAME
   
@@ -107,7 +114,7 @@ done
 echo
 echo "# Checking md5sums of installed files"
 
-haveallcmds MD5SUM CAT CUT SED GREP BASENAME || exit 1
+haveallcmds MD5SUM CAT CUT SED GREP EGREP BASENAME || exit 1
 
 # Prelink
 PRELINK=/usr/sbin/prelink
@@ -118,35 +125,37 @@ else
     MD5SUM_CALL="$MD5SUM -c"
 fi
 
-# From the localepurge binary:
-LOCALEDIR=/usr/share/locale
-MANDIR=/usr/share/man
-LOCALEPURGE=/etc/locale.nopurge
-if [ -f "$LOCALEPURGE" ]
-then
-  LOCALENOPURGED=`for l in $($GREP ^[a-z] $LOCALEPURGE); do echo -n "$l\|"; done; echo -n "[^a-z].*"`
-  SED_REMOVE_LOCALES_PURGED="/  usr\/share\/locale\/\($LOCALENOPURGED\)\//p;/  usr\/share\/locale\//d;/  usr\/share\/man\/\($LOCALENOPURGED\|man[1-9]\)\//p;/  usr\/share\/man\//d"
-fi
 DIVERSIONS="/var/lib/dpkg/diversions"
 
 if [ -d /var/lib/dpkg/info ] 
 then
-for md5file in /var/lib/dpkg/info/*.md5sums
-do
-[ -f $md5file ] && [ ! -L $md5file  ] && {
-# Note: We  do not check things in  /usr/share/doc
-# to speed things up
-	$GREP -v " usr/share/doc/" "$md5file" |
+ls /var/lib/dpkg/info/*.md5sums | 
+while read md5file; do
+    [ -f $md5file ] && [ ! -L $md5file  ] && {
+# Note: We  do not check things in some /usr/share/ directories to speed things up
+# TODO
+# - This could be user defined, as some systems might have more files in 
+#   /usr/share/ depending on installed applications
+# - Alternatively we could let the use configure so only binary directories
+#   are reviewed (i.e. /bin, /usr/bin, /sbin, /usr/sbin..) or those in PATH
+#   but this would still leave some areas that could potentially load
+#   malicious code (e.g. interpreter scripts in /usr/share/perl, /usr/share/go...
+#
+# The list of excluded directories below can be reviewed to obtain the number of
+# files per directory by using the following:
+# { ls -d /usr/share/* |while read dir; do [ -d "$dir" ] && { echo -n "$dir:" ; find "$dir" -type f  | wc -l  ; } ; done ; } | awk -F : '{print $2" "$1;}' | sort -n |less
+#
+	$CAT "$md5file" |
+	$EGREP -v " usr/share/{doc|help|man|icons|pixmaps|i18n|locale|mime|games}/" |
 	$GREP -v " dev/" |
 	$GREP -v " lib/udev/devices/" |
-# Also don't check purged locales
-        $SED -e "$SED_REMOVE_LOCALES_PURGED" |
 	$SED -e "s/^\(.*\)  \(.*\)/\1  \/\2/" |
 	$MD5SUM_CALL -c 2>&1 | $SED -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/; s/^.*md5sum: can't open \(.*\)/ERR \1/" | {
 		while read file err
 		do
 			package=`$BASENAME "$md5file" ".md5sums"`
                         file=`echo $file | sed -e "s/:$//"`
+                        echo "DEBUG: Checking file $file of $package ($err)" >&2
 			case $err in
 			DIFF|FAILED)
 				# don't check diverted now
@@ -168,7 +177,7 @@ do
 			esac
 		done 
 	}
-}
+    }
 done
 # check diversions
 
