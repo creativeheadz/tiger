@@ -9,7 +9,7 @@ tiger (1:3.2.4rc1-1) unstable; urgency=low
     (Closes: #888041)
   * util/convert2html, util/genmsgidx: make the build reproducible with patch
     provided by  Alexis Bienvenüe (Closes: #828226)
-  * Include content from GIT upstream (3.2.4rc1 relase):
+  * Include content from GIT upstream (3.2.4rc1 release):
      - systems/Linux/2/gen_mounts: Added fuse.clamfs and fuse.javafs
        filesystems (LP: #1204527, #1305057)
      - systems/Linux/2/check_release:
@@ -20,8 +20,8 @@ tiger (1:3.2.4rc1-1) unstable; urgency=low
      - scripts/check_accounts: Optimise as per suggestion by Arran Schlosberg
      - scripts/check_crontabs: Clean up gen_cron file content before it is used
        (Closes: #839635)
-     - systems/Linux/2/check_lilo: Only complain if grub is world readable when it has a
-        password configured (LP: #248843). 
+     - systems/Linux/2/check_lilo: Only complain if grub is world readable
+        when it has a password configured (LP: #248843). 
         Look for grub in the proper location (as used in Grub 2)
      - systems/Linux/2/check_release:  Update Debian version, current stable is
        9.3 and list of old Debian versions. Add support to check for RHEL and
