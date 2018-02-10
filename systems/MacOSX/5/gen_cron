@@ -16,14 +16,15 @@
 #     Please see the file `COPYING' for the complete copyright notice.
 #
 # MacOSX/5/gen_cron - 06/14/93
+# MacOSX/5/gen_cron  - 02/10/2018 - jfs - Do not add files unless readable
 #
 #-----------------------------------------------------------------------------
 #
 
 cronfiles=
-[ -f /private/etc/crontab ] &&
+[ -f /private/etc/crontab ] && [ -r /private/etc/crontab ] &&
   cronfiles="$cronfiles /private/etc/crontab"
-[ -f /private/etc/crontab.local ] &&
+[ -f /private/etc/crontab.local ] && [ -r /private/etc/crontab.local ] &&
   cronfiles="$cronfiles /private/etc/crontab.local"
 
 [ -n "$cronfiles" ] && {
