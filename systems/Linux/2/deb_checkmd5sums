@@ -146,7 +146,7 @@ while read md5file; do
 # { ls -d /usr/share/* |while read dir; do [ -d "$dir" ] && { echo -n "$dir:" ; find "$dir" -type f  | wc -l  ; } ; done ; } | awk -F : '{print $2" "$1;}' | sort -n |less
 #
 	$CAT "$md5file" |
-	$EGREP -v " usr/share/{doc|help|man|icons|pixmaps|i18n|locale|mime|games}/" |
+	$EGREP -v "usr/share/[doc|help|man|icons|pixmaps|i18n|locale|mime|games]/" |
 	$GREP -v " dev/" |
 	$GREP -v " lib/udev/devices/" |
 	$SED -e "s/^\(.*\)  \(.*\)/\1  \/\2/" |
