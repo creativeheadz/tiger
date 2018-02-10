@@ -19,7 +19,7 @@ build-indep: build-stamp
 build-stamp:
 	dh_testdir
 	autoconf
-	./configure --with-tigerhome=/usr/lib/tiger --with-tigerwork=/var/lib/tiger/work --with-tigerlog=/var/log/tiger --with-tigerbin=/usr/sbin --with-tigerconfig=/etc/tiger --prefix=/usr --mandir=/usr/share/man
+	dh_auto_configure --with-tigerhome=/usr/lib/tiger --with-tigerwork=/var/lib/tiger/work --with-tigerlog=/var/log/tiger --with-tigerbin=/usr/sbin --with-tigerconfig=/etc/tiger --prefix=/usr --mandir=/usr/share/man
 	$(MAKE) all
 	touch build-stamp
 
