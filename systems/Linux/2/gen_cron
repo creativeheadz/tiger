@@ -28,8 +28,9 @@
 # 03/27/2002 - jfs 
 #    changed to add CRONSPOOLTAB and included ARSC change to not confuse
 #    empty directories 
-# 02/04/2018 - jfs - Remove unnecessary calls
-#
+# 02/10/2018 - jfs - Remove unnecessary calls. 
+#                   Check if CRONSPOOL is readable or not and warn if this is
+#                   the case (happens when running as unpriviledged user)
 #
 #-----------------------------------------------------------------------------
 #
@@ -44,6 +45,14 @@
 outfile=$1
 [ -z "$outfile" ] && { echo "Bad usage: $0 outfile"; exit 1;  }
 > $outfile
+
+if [ ! -d "$CRONSPOOL" ] ; then
+    echo "--ERROR-- Cron spool directory $CRONSPOOL does not exist."
+fi
+if [ ! -r "$CRONSPOOL" ] ; then
+    echo "--ERROR-- Cannot read contents of spool directory $CRONSPOOL."
+fi
+
 
 # First check the System's cron files (all in /etc)
 # these are output with just the cron owner and the file 
@@ -66,36 +75,36 @@ done
 # Then check the cron's spool (both of the system's and the user's)
 # TODO (fix): same as above
 if [ -d $CRONSPOOL ] && [ -r $CRONSPOOL ]; then 
-$FIND "$CRONSPOOL" -type f -printf "%p %u %f\n" |
-while read  file owner name
-do
-  [ "$owner" != "root" ] && {
-    echo "--WARN-- CRON file \`$file' is owned by $owner."
-  }
-  case $name in
-    *[!a-zA-Z0-9]*)
-      echo "--WARN-- Unusual cron file \`$file' found."
-      ;;
-    *)
-      $GETUSERHOME "$file" >/dev/null 2>/dev/null
+    $FIND "$CRONSPOOL" -type f -printf "%p %u %f\n" |
+    while read  file owner name
+    do
+        [ "$owner" != "root" ] && {
+            echo "--WARN-- CRON file \`$file' is owned by $owner."
+        }
+        case $name in
+            *[!a-zA-Z0-9]*)
+            echo "--WARN-- Unusual cron file \`$file' found."
+            ;;
+        *)
+            $GETUSERHOME "$file" >/dev/null 2>/dev/null
 
-      if [ $? = 0 ]; then
+          if [ $? = 0 ]; then
         # Parse the crontab file:
         # - Replace '@' commands (Debian-specific), since we don't care on
         #   times we just replace them with '0 0 0 0 0'
         # - Remove variable definitions
-	$SED -e 's/#.*$//' -e '/^$/d' $CRONSPOOL/$name |
-        $SED -e 's/^@[A-Za-z]*/0 0 0 0 0/' |
-        $SED -e '/^[A-Za-z]*.*=/d' |
-	while read a b c d e command
-	do
-          [ -n "$command" ] && echo "$name $command"
-	done >> $outfile
-      else
-	echo "--WARN-- Found cron file for unknown user $file."
-      fi
-      ;;
-    esac
-done
+	    $SED -e 's/#.*$//' -e '/^$/d' $CRONSPOOL/$name |
+            $SED -e 's/^@[A-Za-z]*/0 0 0 0 0/' |
+            $SED -e '/^[A-Za-z]*.*=/d' |
+            while read a b c d e command
+            do
+                [ -n "$command" ] && echo "$name $command"
+                done >> $outfile
+            else
+                echo "--WARN-- Found cron file for unknown user $file."
+            fi
+            ;;
+       esac
+   done
 fi
 
