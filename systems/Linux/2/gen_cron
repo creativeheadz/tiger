@@ -28,16 +28,15 @@
 # 03/27/2002 - jfs 
 #    changed to add CRONSPOOLTAB and included ARSC change to not confuse
 #    empty directories 
+# 02/04/2018 - jfs - Remove unnecessary calls
 #
 #
 #-----------------------------------------------------------------------------
 #
-# Just in case... (jfs)
+# Defin commands we need, just in case
 [ -z "$FIND" ] && FIND=`which find` 
 [ -z "$LS" ] && LS=`which ls` 
-[ -z "$GREP" ] && GREP=`which grep` 
 [ -z "$SED" ] && SED=`which sed` 
-[ -z "$BASENAME" ] && BASENAME=`which basename` 
 [ -z "$CRONSPOOL" ] && CRONSPOOL="/var/spool/cron/crontabs"
 
 [ ! -n "$GETUSERHOME" ] && GETUSERHOME=echo
