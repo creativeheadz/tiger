@@ -155,7 +155,7 @@ while read md5file; do
 		do
 			package=`$BASENAME "$md5file" ".md5sums"`
                         file=`echo $file | sed -e "s/:$//"`
-                        echo "DEBUG: Checking file $file of $package ($err)" >&2
+#                        echo "DEBUG: Checking file $file of $package ($err)" >&2
 			case $err in
 			DIFF|FAILED)
 				# don't check diverted now
