@@ -16,6 +16,8 @@
 #     Please see the file `COPYING' for the complete copyright notice.
 #
 # sub/check_names - 06/14/93
+# sub/check_names - jfs - Do not pass untruste input to commands as potential 
+#                   options
 #
 #-----------------------------------------------------------------------------
 # This script is not runnable directly.
@@ -46,18 +48,18 @@ echo "# Checking unusual file names..."
 
 haveallcmds LS BASENAME || exit 1
 
-[ -s $file ] && {
-  $SORT $file |
+[ -s "$file" ] && {
+  $SORT -- "$file" |
   while read pathname
   do
-    file="`$BASENAME \"$pathname\"`"
+    file="`$BASENAME -- \"$pathname\"`"
     case "$file" in
       .FSP*)
 	message WARN fsys009w "" "FSP server control file found:"
-	$LS $LSGROUP -ld "$pathname";;
+	$LS $LSGROUP -ld -- "$pathname";;
       *)
 	message ALERT fsys005a "" "Unusual filename \`$file' found:"
-	$LS $LSGROUP -ld "$pathname";;
+	$LS $LSGROUP -ld -- "$pathname";;
     esac
   done
   echo
