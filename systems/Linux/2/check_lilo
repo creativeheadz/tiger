@@ -31,6 +31,9 @@
 # 03/21/2005 jfs   Only run if running on the x86 architecture
 #                  (Debian bug #288737)
 # 06/22/2007 jfs   Run if on amd64 (Debian bug #412669)
+# 02/10/2018 jfs   Only complain if grub is world readable when it has a
+#                  password configured (Ubuntu bug 248843)
+#                  Look for grub in the proper location (as used in Grub 2)
 #
 #-----------------------------------------------------------------------------
 #
@@ -116,14 +119,19 @@ then
 
 fi
 
-if [ -r /etc/grub.conf ] ; then
-   # SuSE uses /etc/grub.conf.
+if [ -r  /boot/grub/grub.cfg ] ; then
+    # Grub2 configuration file is  /boot/grub/grub.cfg
+    # Note: This configuration file can import additional files
+    # but these are not reviewed by the script
+   file=/boot/grub/grub.cfg
+elif [ -r /etc/grub.conf ] ; then
+   # Old SuSE versions use /etc/grub.conf.
    file=/etc/grub.conf
 elif [ -r  /boot/grub/menu.lst ] ; then
-   # Debian uses /boot/grub/menu.lst
+   #  Old Debian version use /boot/grub/menu.lst
    file=/boot/grub/menu.lst
 else
-   # for other Linux systems
+   # try this for other Linux systems
    file=/boot/grub/grub.conf
 fi 
 
@@ -131,24 +139,25 @@ if [ -r "$file" ]
 then
 
 	found="Y"
-	getpermit $file |
-	   while read filename rowner rgroup rur ruw rux rgr rgw rgx ror row rox rsuid rsgid rstk
-	do
-
-	if [ $rgr -eq 1 -o $rgw -eq 1 -o $rgx -eq 1 ]
-	then
-                message WARN boot02 "" "The configuration file $file has group permissions.  Should be 0600"
-	fi
-	if [ $ror -eq 1 -o $row -eq 1 -o $rox -eq 1 ]
-	then
-                message FAIL boot02 "" "The configuration file $file has world permissions.  Should be 0600"
-        fi
-
-	done
 	# GRUB password checks
-        if [ -z "`$GREP ^password $file`" ] ; then
-                message WARN boot06 "" "The Grub bootloader does not have a password configured."
-	fi 
+        if [ -z "`$EGREP '^[[:blank:]]*password' $file`" ] ; then
+                message WARN boot06 "" "The Grub bootloader configuation file ($file) does not have a password configured."
+	else 
+
+        # If GRUB *does* have a password then we check its permissions. Otherwise, we 
+        # do not complain on permissions
+            getpermit $file |
+            while read filename rowner rgroup rur ruw rux rgr rgw rgx ror row rox rsuid rsgid rstk
+            do
+
+            if [ $rgr -eq 1 -o $rgw -eq 1 -o $rgx -eq 1 ]; then
+                message WARN boot02 "" "The Grub bootloader configuration file $file has group permissions. Should be 0600 o 0400."
+            fi
+            if [ $ror -eq 1 -o $row -eq 1 -o $rox -eq 1 ]; then
+                message FAIL boot02 "" "The Grub bootloader configuration file $file has world readable permissions. Should be 0600 o 0400."
+            fi
+	    done
+        fi
 fi
 
 [ "$found" != 'Y' ] && {
