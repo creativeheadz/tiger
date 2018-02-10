@@ -79,7 +79,7 @@ Tiger_Deb_CheckMD5Sums=Y
 Tiger_Deb_NoPackFiles=Y
 # End of Debian-specific checks
 # - HPUX specific
-Tiger_Check_TRUSTED=Y
+Tiger_Check_TRUSTED=N
 # End of HPUX specific checks
 # 
 # Should reports with no info be sent on cron?
