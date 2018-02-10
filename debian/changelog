@@ -1,4 +1,4 @@
-tiger (1:3.2.4rc1-1) unstable; urgency=low
+tiger (1:3.2.4~rc1-1) unstable; urgency=low
 
   * debian/postrm: Remove depth in find when purging to avoid warnings
     (LP: #665453)
