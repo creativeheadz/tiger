@@ -20,6 +20,7 @@
 # default/config - 04/15/2003 - jfs - Fixed typos and added necessary programs
 # default/config - 09/19/2003 - jfs - Added UUID and USERNAME
 # default/config - 02/10/2018 - jfs - Added MD5SUM. Export MAILER
+# default/config - 08/19/2019 - jfs - Remove duplicate DIFF
 #
 #-----------------------------------------------------------------------------
 #
@@ -101,7 +102,6 @@ ID=`findcmd id`
 CUT=`findcmd cut`
 HEAD=`findcmd head`
 WC=`findcmd wc`
-DIFF=`findcmd diff`
 EXPAND=`findcmd expand`
 LSOF=`findcmd lsof`
 MAILER=`findcmd mail`
