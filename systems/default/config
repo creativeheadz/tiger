@@ -20,7 +20,8 @@
 # default/config - 04/15/2003 - jfs - Fixed typos and added necessary programs
 # default/config - 09/19/2003 - jfs - Added UUID and USERNAME
 # default/config - 02/10/2018 - jfs - Added MD5SUM. Export MAILER
-# default/config - 08/19/2019 - jfs - Remove duplicate DIFF
+# default/config - 08/19/2019 - jfs - Remove duplicate DIFF. 
+#                                     Fix typo in export call (Debian bug #928640)
 #
 #-----------------------------------------------------------------------------
 #
@@ -124,7 +125,7 @@ X=`$EGREP -s : /etc/passwd 2>&1 | $TAIL -1`
 export CAT LS LSGROUP LSLINK RM AWK GREP EGREP SGREP SED
 export SORT COMM TAIL MV TR JOIN GROUPSS FILECMD UNIQ BASENAME
 export CHMOD CHOWN LN PASTE ID CUT HEAD WC DIFF EXPAND LSOF
-expot  MAILE MD5SUM
+export MAILER MD5SUM
 #
 UNAME=`findcmd uname`
 HOSTNAME=`findcmd hostname`
