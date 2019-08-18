@@ -61,10 +61,11 @@
 #                                   (Debian bug 615052)
 # Linux/2/gen_mounts - 28/01/2011 - Added devtmpfs (Debian bug 653416)
 #                                   Added sshfs and cgroup (Debian bug 655276)
-# Linux/2/gen_mounts - 23/01/2014 - Added pstore  (Debian bug 733832)
+# Linux/2/gen_mounts - 23/01/2014 - Added pstore  (Debian bug 733832) (Ubuntu bug 1204531)
 #                                 - Fix typo: hugetlbf --> hugetlbfs 
 #                                    (Debian bug 729692, Savannah bug 40591)
 #                                 - Add fuse.gvfs-fuse-daemon (Savannah patch 7914) and change it to non-LOCAL
+#                                   (Also Ubuntu bug 1204531)
 # Linux/2/gen_mounts - 14/10/2014 - Fix typo: hugelbfs --> hugetlbfs  (Debian bug 740625)
 # Linux/2/gen_mounts - 22/11/2015 - Fix typo in sshfs definition (Debian bug 7680867)
 #                                 - Added aufs (Debian bug 781171)
