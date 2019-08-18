@@ -17,6 +17,10 @@
 #
 #  config (top level) - 06/14/93
 #
+# 08/19/2018 jfs  Allow the use of a 'default' directory in each OS 
+#                 which makes it possible to have a symlink pointing to
+#                 the most generic definition until a specific definition
+#                 is created (if required)
 # 08/04/2011 jfs  Fix setting of CONFIG_DIR when using the default
 # 10/06/2010 jfs  Do not complain if the working directory is a temporary
 #                 on (Debian bug #589089)
