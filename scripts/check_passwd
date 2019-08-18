@@ -59,6 +59,7 @@
 #               (Debian bug #734775, #717218)
 # 04/02/2018 jfs Added a check of the sudoers files through the use of 
 #                visudo (Savannah bug 36488)
+# 08/19/2018 npb Make pwck -r output part of report (Debian bug #512076)
 #
 #-----------------------------------------------------------------------------
 # TODO:
@@ -317,10 +318,11 @@ done < $WORKDIR/pass.list.$$
 
 # Verify the password file format.
 [ -n "$PWCK" ] && {
-  # TODO: Add the results to the report
   pwckerr=`$PWCK 2>&1`
   if [ -n "$pwckerr" ] ; then
     message WARN pass006w "" "Integrity of password files questionable ($PWCK)."
+    output=`echo $pwckerr | $SED -e 's/pwck: no changes//' | $SED -e 's/ user /|user /g' | $TR "|" "\n"`
+    message WARN pass006w "" "Output of $PWCK is '$output'"
   fi
 }
 
