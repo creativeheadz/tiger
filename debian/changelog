@@ -1,4 +1,4 @@
-tiger (1:3.2.4~rc1-2) UNRELEASED; urgency=medium
+tiger (1:3.2.4~rc1-2) unstable; urgency=medium
 
   * debian/config: Remove only files using xarg instead of -exec.
     Use rmdir to remove the main directory instead of using find.
