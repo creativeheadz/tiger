@@ -1,3 +1,27 @@
+tiger (1:3.2.4~rc1-2) UNRELEASED; urgency=medium
+
+  * debian/config: Remove only files using xarg instead of -exec.
+    Use rmdir to remove the main directory instead of using find.
+    (Closes: #931581, #931926)
+  * debian/rules: 
+       - Fix the code creating symlinks (Closes: #909620)
+       - Add symlink for 5 and default (Closes: #928641)
+  * config: Add the posibility of having a 'default' definition
+    and use that one instead of the generic one. This change and 
+    above symlinks should avoid any errors to users upgrading 
+    to linux-image or latest version of the kernel in the future
+    (Closes: #928641) (LP: #1836789)
+  * default/config: Fix typo in export call (Closes: #928640) (LP: #1830825)
+  * scripts/check_passwd: Include patch based on the one provided by Christoph
+    Anton Mitterer that includes the output of 'pwck -r' when the message is
+    reported. (Closes: #512076)
+  * scripts/check_accounts: Do not complain about dormant accounts for
+    accounts that are system accounts
+  * debian/control: Improve the explanation of the package and reference
+    other software for those users that are looking for alternatives.
+
+ -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Mon, 19 Aug 2019 00:12:13 +0200
+
 tiger (1:3.2.4~rc1-1) unstable; urgency=low
 
   * debian/postrm: Remove depth in find when purging to avoid warnings
@@ -134,10 +158,10 @@ tiger (1:3.2.3-12) unstable; urgency=medium
         /usr/bin (Closes: #732936, #735102)
       - Do not use dpkg-divert if not available
   * systems/Linux/2/gen_mounts
-      - Added pstore  (Closes: 733832)
+      - Added pstore  (Closes: 733832) (LP: #1204531)
       - Fix typo: hugetlbf --> hugetlbfs (Closes: 729692)
       - Add fuse.gvfs-fuse-daemon as a filesystem and consider gvfs
-        filesystems as non-LOCAL to be in the safe side.
+        filesystems as non-LOCAL to be in the safe side. (LP: #1204531)
   - systems/Linux/2/check_single: Do not assume existance of /etc/inittab"
   [ Debian specific changes ] 
   * debian/control: Bump standards, no changes required
@@ -598,7 +622,7 @@ tiger (1:3.2.1-36) unstable; urgency=low
   * scripts/check_ftpusers: Skip this check if there is no FTP daemon
     installed (Closes: #420486)
   * scripts/check_printcap:  Skip this test if CUPS is installed 
-    (Closes: #420487)
+    (Closes: #420487) (LP: #248852)
   * system/Linux/2/gen_mounts: Added fusectl to the local filesystems 
     (Closes: #409386)
   * Debconf translations:
