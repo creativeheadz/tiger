@@ -61,13 +61,13 @@ install: build
 	chmod 0700 debian/tiger/var/lib/tiger/work
 	chmod 0700 debian/tiger/var/log/tiger
 	# Create symbolic links for Linux versions 3, 4, 5, and default
-	[ ! -e debian/tiger/usr/lib/tiger/systems/Linux/3 ] && \
+	[ -e debian/tiger/usr/lib/tiger/systems/Linux/3 ] || \
 		ln -fs 2 debian/tiger/usr/lib/tiger/systems/Linux/3
-	[ ! -e debian/tiger/usr/lib/tiger/systems/Linux/4 ] && \
+	[ -e debian/tiger/usr/lib/tiger/systems/Linux/4 ] || \
 		ln -fs 2 debian/tiger/usr/lib/tiger/systems/Linux/4
-	[ ! -e debian/tiger/usr/lib/tiger/systems/Linux/5 ] && \
+	[ -e debian/tiger/usr/lib/tiger/systems/Linux/5 ] || \
 		ln -fs 2 debian/tiger/usr/lib/tiger/systems/Linux/5
-	[ ! -e debian/tiger/usr/lib/tiger/systems/Linux/default ] && \
+	[ -e debian/tiger/usr/lib/tiger/systems/Linux/default ] || \
 		ln -fs 2 debian/tiger/usr/lib/tiger/systems/Linux/default
 	# Remove unneeded Makefile files.
 	rm -f debian/tiger/usr/lib/tiger/doc/Makefile
