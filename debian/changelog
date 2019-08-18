@@ -6,7 +6,7 @@ tiger (1:3.2.4~rc1-2) unstable; urgency=medium
   * debian/rules: 
        - Fix the code creating symlinks (Closes: #909620)
        - Add symlink for 5 and default (Closes: #928641)
-  * config: Add the posibility of having a 'default' definition
+  * config: Add the possibility of having a 'default' definition
     and use that one instead of the generic one. This change and 
     above symlinks should avoid any errors to users upgrading 
     to linux-image or latest version of the kernel in the future
