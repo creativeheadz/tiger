@@ -23,7 +23,7 @@
 # and .hushlogin files)
 #
 # 08/19/2019 jfs  Only complain for dormant accounts when the account
-#                 is not a system (uid greater than Tiger_Admin_Accounts)
+#                 is not a system (uid greater than Tiger_Accounts_Trust)
 #                 as proposed by Richard Laager in Ubuntu Bug 248858
 # 04/02/2018 jfs  Include suggestion provided by Arran Schlosberg to use
 #                 HEAD when checking for dormant accounts. This prevents
