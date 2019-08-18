@@ -12,8 +12,8 @@ case "$1" in
 		for dir in /var/log/tiger/ /var/lib/tiger/work /var/lib/tiger/ /var/run/tiger/ 
 		do
 			[ -d "$dir" ] &&  {
-			 	find "$dir" -type d -o -exec rm -f {} \;
-				find "$dir" -type d -exec rmdir {} \;
+                                find "$dir" -type f | xargs rm -f 
+                                rmdir "$dir"
 			}
 		done
 # Do we have any tigerXX files under /var/log/? if so we should remove
