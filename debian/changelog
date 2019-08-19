@@ -15,6 +15,8 @@ tiger (1:3.2.4~rc1-2) unstable; urgency=medium
   * scripts/check_passwd: Include patch based on the one provided by Christoph
     Anton Mitterer that includes the output of 'pwck -r' when the message is
     reported. (Closes: #512076)
+  * scripts/check_group: Include the output of 'grpck -r' when the message  
+    is reported.
   * scripts/check_accounts: Do not complain about dormant accounts for
     accounts that are system accounts
   * debian/control: Improve the explanation of the package and reference
