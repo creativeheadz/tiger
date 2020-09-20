@@ -7,7 +7,7 @@
 # /proc/filesystems
 # /lib/modules/{kernel_name}/kernel/fs
 
-tempfile=`tempfile`
+tempfile=`mktemp`
  cat /proc/filesystems | while read type fs; do
     [ -z "$fs" ] && type=$fs
     echo $fs >>$tempfile
