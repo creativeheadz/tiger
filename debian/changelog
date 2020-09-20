@@ -5,6 +5,15 @@ tiger (1:3.2.4~rc1-3) UNRELEASED; urgency=medium
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Mon, 19 Aug 2019 08:00:27 +0200
 
+tiger (1:3.2.4~rc1-2.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Add missing dependency on lsb-release (closes: #962975).
+  * Use mktemp instead of tempfile (closes: #961642).
+  * Teach tiger about nsfs (closes: #968713).
+
+ -- Francois Marier <francois@debian.org>  Sun, 30 Aug 2020 16:58:11 -0700
+
 tiger (1:3.2.4~rc1-2) unstable; urgency=medium
 
   * debian/config: Remove only files using xarg instead of -exec.
