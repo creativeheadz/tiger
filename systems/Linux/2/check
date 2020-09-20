@@ -37,7 +37,7 @@
 #       Make it possible to enable/disable the Debian specific checks
 #       based on patch provided by Nicholas Bamber (Debian bug 512085)
 # Linux/2/check - 04/02/2018 - jfs
-#       Removed deb_checkadvisories as, since 2005, the website does 
+#       Removed deb_checkadvisories as, since 2010, the website does 
 #       not include sufficient information to check the package version
 #       and generate a proper 'debian_advisories' file
 # Linux/2/check - 09/20/2020 - jfs
