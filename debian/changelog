@@ -2,15 +2,16 @@ tiger (1:3.2.4~rc1-3) UNRELEASED; urgency=medium
 
   * config: Fix the logic in the use the default that was preventing
     it from using the directory.
+  * debian/postinst: Use mktemp instead of tempfile
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Mon, 19 Aug 2019 08:00:27 +0200
 
 tiger (1:3.2.4~rc1-2.1) unstable; urgency=medium
 
   * Non-maintainer upload.
-  * Add missing dependency on lsb-release (closes: #962975).
-  * Use mktemp instead of tempfile (closes: #961642).
-  * Teach tiger about nsfs (closes: #968713).
+  * Add missing dependency on lsb-release (Closes: #962975).
+  * Use mktemp instead of tempfile (Closes: #961642).
+  * Teach tiger about nsfs (Closes: #968713).
 
  -- Francois Marier <francois@debian.org>  Sun, 30 Aug 2020 16:58:11 -0700
 
