@@ -40,6 +40,9 @@
 #       Removed deb_checkadvisories as, since 2005, the website does 
 #       not include sufficient information to check the package version
 #       and generate a proper 'debian_advisories' file
+# Linux/2/check - 09/20/2020 - jfs
+#       Use check_bootloader instead of check_lilo as the script has been
+#       renamed
 #-----------------------------------------------------------------------------
 # TODO:
 #
@@ -111,7 +114,7 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
 
 [ "$Tiger_Check_BOOT" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking boot loader file permissions..."
-  $SYSTEMDIR/check_lilo 
+  $SYSTEMDIR/check_bootloader
 }
 
 [ "$Tiger_Check_INITTAB" != 'N' ] && {

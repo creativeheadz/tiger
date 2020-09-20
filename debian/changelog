@@ -1,8 +1,13 @@
 tiger (1:3.2.4~rc1-3) UNRELEASED; urgency=medium
 
+  * Acknowledge NMU (Closes: #969303)
   * config: Fix the logic in the use the default that was preventing
     it from using the directory.
   * debian/postinst: Use mktemp instead of tempfile
+  * man/tiger.8.in, systems/Linux/2/check, systems/Linux/2/check_bootloader:
+    Rename check_lilo to check_bootloader as the check not only looks
+    at the (deprecated) LILO bootloader but also at the Grub configuration
+    files (Closes: 512077)
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Mon, 19 Aug 2019 08:00:27 +0200
 

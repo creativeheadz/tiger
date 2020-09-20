@@ -271,8 +271,9 @@ ISSUENETFILE).
 Checks for the existence of log files (wtmp, btmp, lastlog and utmp).  It
 will also check for proper umask settings.
 .TP
-.B check_lilo
-Analyses configuration files for lilo and grub boot loaders (Linux-specific).
+.B check_bootloader
+Analyses configuration files for different bootloaders including lilo and grub
+(Linux-specific).
 .TP
 .B check_listeningprocs
 Checks for processes listening on TCP/IP sockets (servers) in the system as 
