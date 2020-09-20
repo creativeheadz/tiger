@@ -80,7 +80,7 @@ GNU/Linux you will find this (and other related) documentation at
 /usr/share/doc/tiger/
 .SH BUGS
 Currently \fBTigercron\fR has only one alert mechanism (mail) and signatures
-are not supported. Thus, alerts could be faked. Also, it is dependant
+are not supported. Thus, alerts could be faked. Also, it is dependent
 on \fBcron\fR and will not work if \fBcron\fR is not working.
 .SH AUTHOR
 This manpage was written by Javier Fernandez-Sanguino.
