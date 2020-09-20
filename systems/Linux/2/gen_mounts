@@ -279,6 +279,7 @@ localfs()
   [ "$1" = "mqueue" ] && LOCAL=1                # POSIX message queues
   [ "$1" = "sockfs" ] && LOCAL=1                # Sockets
   [ "$1" = "bdev" ] && LOCAL=1                  # Block devices
+  [ "$1" = "nsfs" ] && LOCAL=1                  # Namespace pseudo-filesystem
   [ "$1" = "pipefs" ] && LOCAL=1
   [ "$1" = "eventpollfs" ] && LOCAL=1           # Efficient event polling mechanism
   [ "$1" = "inotifyfs" ] && LOCAL=1 
