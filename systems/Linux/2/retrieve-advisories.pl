@@ -21,7 +21,8 @@
 $advisory=$1 if /pagetitle\>(.*?)\<\/define/ ;
 $date=$1 if /date\>(.*?)\<\/define/ ;
 
-if ( /\/([\w\-]+)\_([\.\d\-]+)\_(\w+)\.deb/ ) {
+# Look for package names
+if ( /\/([\w\-]+)\_([\.\w\-\+\~]+)\_(\w+)\.deb/ ) {
 	$package=$1;
 	$version=$2;
 	$arch=$3;
