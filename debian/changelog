@@ -52,7 +52,7 @@ tiger (1:3.2.4~rc1-2) unstable; urgency=medium
 tiger (1:3.2.4~rc1-1) unstable; urgency=low
 
   * debian/postrm: Remove depth in find when purging to avoid warnings
-    (LP: #665453)
+    (LP: #665453) (Closes: 944419)
   * debian/source/format: Explicitly define the source format. Set as 1.0
     since the package will not use quilt as Savannah upstream is directly
     packaged into Debian
