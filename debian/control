@@ -11,7 +11,7 @@ Vcs-Git: https://git.savannah.gnu.org/r/tiger.git
 
 Package: tiger
 Architecture: any
-Depends: net-tools, binutils, bsdmainutils, debconf | debconf-2.0, ucf, ${shlibs:Depends}, ${misc:Depends}
+Depends: net-tools, binutils, bsdmainutils, debconf | debconf-2.0, ucf, lsb-release, ${shlibs:Depends}, ${misc:Depends}
 Recommends: sendmail | mail-transport-agent, john, chkrootkit, tripwire | aide
 Suggests: lsof, lynis
 Description: security auditing and intrusion detection tools for Linux
