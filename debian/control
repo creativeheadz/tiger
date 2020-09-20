@@ -12,7 +12,7 @@ Vcs-Git: https://git.savannah.gnu.org/r/tiger.git
 Package: tiger
 Architecture: any
 Depends: net-tools, binutils, bsdutils (>= 3.0-0), debianutils (>= 1.8), debconf | debconf-2.0, ucf, lsb-release, ${shlibs:Depends}, ${misc:Depends}
-Recommends: sendmail | mail-transport-agent, john, chkrootkit, tripwire | aide
+Recommends: default-mta | mail-transport-agent, john, chkrootkit, tripwire | aide
 Suggests: lsof, lynis
 Description: security auditing and intrusion detection tools for Linux
  TIGER, or the 'tiger' scripts, is a set of tools (Bourne shell scripts and C

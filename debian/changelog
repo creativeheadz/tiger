@@ -8,9 +8,13 @@ tiger (1:3.2.4~rc1-3) UNRELEASED; urgency=medium
     Rename check_lilo to check_bootloader as the check not only looks
     at the (deprecated) LILO bootloader but also at the Grub configuration
     files (Closes: 512077)
-  * debian/control: Replace bsdmainutils dependency (it is now a transitional
-    package) to bsdutils (>= 3.0-0), debianutils (>= 1.8). Debianutils is
-    added for 'which' (Closes: #964517)
+  * debian/control:
+     - Replace bsdmainutils dependency (it is now a transitional package) to
+       bsdutils (>= 3.0-0), debianutils (>= 1.8). Debianutils is added for
+       'which' (Closes: #964517)
+     - Use default-mta instead of sendmail in the Recommends: line
+       (lintian fix:
+       mail-transport-agent-dependency-does-not-specify-default-mta)
   * debian/config, debian/postinst, debian/preinst: Use 'set -e' instead of 
     in the #! line (lintian fix:  maintainer-script-without-set-e)
 
