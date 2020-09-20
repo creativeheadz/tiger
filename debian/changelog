@@ -11,6 +11,9 @@ tiger (1:3.2.4~rc1-3) UNRELEASED; urgency=medium
   * debian/control: Replace bsdmainutils dependency (it is now a transitional
     package) to bsdutils (>= 3.0-0), debianutils (>= 1.8). Debianutils is
     added for 'which' (Closes: #964517)
+  * debian/config, debian/postinst, debian/preinst: Use 'set -e' instead of 
+    in the #! line (lintian fix:  maintainer-script-without-set-e)
+
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Mon, 19 Aug 2019 08:00:27 +0200
 
