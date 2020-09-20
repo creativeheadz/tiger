@@ -36,7 +36,7 @@ case "$1" in
         MAIL_RCPT="$RET"
 
         # Create temporary file for use in UCF
-        tempfile=`tempfile` || { echo "Cannot create temporary file, aborting" >&2; exit 1; }
+        tempfile=`mktemp` || { echo "Cannot create temporary file, aborting" >&2; exit 1; }
 
         # Determine if we are using a compressed configuration file or not
         CAT=cat
