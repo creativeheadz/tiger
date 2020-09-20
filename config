@@ -415,7 +415,7 @@ checkfile()
   #
 
   [ -n "$RCFILE" -a -r $RCFILE ] && {
-    tempfile=`tempfile -d $WORKDIR` || tempfile=$WORKDIR/rcfile.$$
+    tempfile=`mktemp -p $WORKDIR` || tempfile=$WORKDIR/rcfile.$$
     $GREP -v '^#' $RCFILE |
     $SED -e 's/^\(.*\)=/export \1; \1=/' > $tempfile
     . $tempfile
