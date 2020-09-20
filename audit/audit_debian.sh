@@ -81,6 +81,7 @@ set +o noclobber
 tar cf etc.tar $FILE_LIST_ETC 2> /dev/null
 tar cf var.tar /var/yp /var/nis/data /var/spool/cron 2> /dev/null
 
+
 # NOTE: If using automounter this will fail (should abort before)
 tar cf home.tar /.*bash* /.netrc /.rhosts /.log* /.*csh* /.Xa* \
  /.prof* /home/*/.*bash* /home/*/.netrc /home/*/.rhosts \
@@ -187,11 +188,11 @@ ipfwadm  -L -n -v > ipfwadm.out 2>&1
 # TCP/IP parameters
 # All the parameters (this might be risky...)
 for i in `find /proc/sys/net/ipv4 -type f`; do
-    [ "$i" != "/proc/sys/net/ipv4/route/flush" ] && {
-    echo -n "$i: " >> proc.out
-    cat $i >> proc.out 2>&1
-    echo "" >> proc.out 
-   }
+    if [ "$i" != "/proc/sys/net/ipv4/route/flush" ] ; then
+        echo -n "$i: " >> proc.out
+        cat $i >> proc.out 2>&1
+        echo "" >> proc.out 
+    fi 
 done
 # Safer:
 #for i icmp_echo_ignore_broadcasts icmp_echo_ignore_all tcp_syncookies \
