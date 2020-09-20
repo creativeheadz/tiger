@@ -79,8 +79,8 @@ TESTEXEC=-x
 # Setup a tempfile
 [ -n "$TMPDIR" ] && TMPDIR=/tmp/
 tempfile=""
-if [ -n "`which tempfile`" ] ; then
-    tempfile=`tempfile`
+if [ -n "`which mktemp`" ] ; then
+    tempfile=`mktemp`
 fi
 [ -z "$tempfile" ] && tempfile=$TMPDIR/te.$$
 [ ! -e $tempfile ] && >$tempfile
