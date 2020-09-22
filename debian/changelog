@@ -31,7 +31,7 @@ tiger (1:3.2.4~rc1-3) unstable; urgency=medium
   * debian/control, debian/compat: Update debelper compatibility level. 
     [lintian fix: package-uses-old-debhelper-compat-version]
 
- -- Javier Fernández-Sanguino Peña <jfs@debian.org> Tue, 22 Sep 2020 20:58:54 +0200
+ -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Tue, 22 Sep 2020 20:58:54 +0200
 
 tiger (1:3.2.4~rc1-2.1) unstable; urgency=medium
 
