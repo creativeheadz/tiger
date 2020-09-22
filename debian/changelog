@@ -13,13 +13,25 @@ tiger (1:3.2.4~rc1-3) unstable; urgency=medium
        bsdutils (>= 3.0-0), debianutils (>= 1.8). Debianutils is added for
        'which' (Closes: #964517)
      - Use default-mta instead of sendmail in the Recommends: line
-       (lintian fix:
-       mail-transport-agent-dependency-does-not-specify-default-mta)
+       [lintian fix:
+       mail-transport-agent-dependency-does-not-specify-default-mta]
   * debian/config, debian/postinst, debian/preinst: Use 'set -e' instead of
     in the #! line (lintian fix:  maintainer-script-without-set-e)
-  * debian/TODO.Debian rename to debian/TODO (lintian fix)
+  * debian/TODO.Debian rename to debian/TODO 
+    [lintian fix: incorrect-packaging-filename]
   * debian/watch: Use https instead of http for download.savannah.gnu.org
-    (lintian fix)
+    [lintian fix: debian-watch-uses-insecure-uri]
+  * debian/changelog debian/control: Remove trailing spaces at end of lines
+    [lintian fix: trailing-whitespace]
+  * debian/copyright: Move to machine readable copyright format. In the
+    process, do a thorough review of all scripts' headers and add the
+    information of the copyright owners for all scripts under scripts/,
+    systems/, audit/ and debian/
+    [lintian fix: no-dep5-copyright]
+  * debian/control, debian/compat: Update debelper compatibility level. Remove
+    debian/compat as the dependency is already defined through the virtual
+    package.  [lintian fix: uses-debhelper-compat-file,
+    package-uses-old-debhelper-compat-version]
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org> Tue, 22 Sep 2020 20:58:54 +0200
 
