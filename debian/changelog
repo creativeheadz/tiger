@@ -28,10 +28,8 @@ tiger (1:3.2.4~rc1-3) unstable; urgency=medium
     information of the copyright owners for all scripts under scripts/,
     systems/, audit/ and debian/
     [lintian fix: no-dep5-copyright]
-  * debian/control, debian/compat: Update debelper compatibility level. Remove
-    debian/compat as the dependency is already defined through the virtual
-    package.  [lintian fix: uses-debhelper-compat-file,
-    package-uses-old-debhelper-compat-version]
+  * debian/control, debian/compat: Update debelper compatibility level. 
+    [lintian fix: package-uses-old-debhelper-compat-version]
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org> Tue, 22 Sep 2020 20:58:54 +0200
 
