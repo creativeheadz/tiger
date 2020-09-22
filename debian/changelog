@@ -17,7 +17,7 @@ tiger (1:3.2.4~rc1-3) unstable; urgency=medium
        mail-transport-agent-dependency-does-not-specify-default-mta]
   * debian/config, debian/postinst, debian/preinst: Use 'set -e' instead of
     in the #! line (lintian fix:  maintainer-script-without-set-e)
-  * debian/TODO.Debian rename to debian/TODO 
+  * debian/TODO.Debian rename to debian/TODO
     [lintian fix: incorrect-packaging-filename]
   * debian/watch: Use https instead of http for download.savannah.gnu.org
     [lintian fix: debian-watch-uses-insecure-uri]
@@ -28,7 +28,7 @@ tiger (1:3.2.4~rc1-3) unstable; urgency=medium
     information of the copyright owners for all scripts under scripts/,
     systems/, audit/ and debian/
     [lintian fix: no-dep5-copyright]
-  * debian/control, debian/compat: Update debelper compatibility level. 
+  * debian/control, debian/compat: Update debelper compatibility level.
     [lintian fix: package-uses-old-debhelper-compat-version]
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Tue, 22 Sep 2020 20:58:54 +0200
