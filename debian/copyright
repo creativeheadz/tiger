@@ -36,7 +36,7 @@ Comment:
     [modifications for support of Debian GNU/Linux 2.x. made by]
     Javier Fernandez-Sanguino Peña <jfs@computer.org>
 
-Files: tiger tigexp  tigercron tigerrc* README* scripts/* systems/* c/* man/* doc/* AUTHORS BUGS.EXTERN CHANGES DESCRIPTION  USING check.d/README config contrib/fix_tiger_GROUPS.sh cronrc initdefs issue* other/cert-usc20.txt site-* sylist version*
+Files: tiger tigexp  tigercron tigerrc* README* scripts/* systems/* c/* man/* doc/* AUTHORS BUGS.EXTERN CHANGES CREDITS DESCRIPTION USING check.d/README config contrib/fix_tiger_GROUPS.sh cronrc initdefs issue* other/cert-usc20.txt site-* syslist version*
 Copyright: (C) 1993 Douglas Lee Schales, David K. Hess, David R. Safford
 License: GPL-1+
 
@@ -48,7 +48,7 @@ Files: install.sh
 Copyright: Copyright (c) 1997-2004 Ralf S. Engelschall <rse@engelschall.com>
 License: GPL-2+
 
-Files: scripts/aide_run  scripts/check_apache scripts/check_finddeleted scripts/check_ftpusers scripts/check_listeningprocs scripts/check_passwdformat scripts/check_runprocs scripts/check_tcpd scripts/check_umask scripts/integrit_run systems/SunOS/5/5.8/check_patches systems/SunOS/5/5.8/check_listeningprocs systems/SunOS/5/check_patches systems/SunOS/5/check_listeningprocs systems/Linux/2/deb_checkmd5sums systems/Linux/2/update_advisories.sh systems/Linux/2/check_rcumask systems/Linux/2/deb_nopackfiles systems/Linux/2/deb_checkadvisories systems/Linux/2/check_umask systems/Linux/2/check_listeningprocs systems/default/check_ndd c/Makefile* Makefile.in TODO TODO.checks configure* tiger_logo* util/consistency-check util/mkfilelst
+Files: scripts/aide_run  scripts/check_apache scripts/check_finddeleted scripts/check_ftpusers scripts/check_listeningprocs scripts/check_passwdformat scripts/check_runprocs scripts/check_tcpd scripts/check_umask scripts/integrit_run systems/SunOS/5/5.8/check_patches systems/SunOS/5/5.8/check_listeningprocs systems/SunOS/5/check_patches systems/SunOS/5/check_listeningprocs systems/Linux/2/deb_checkmd5sums systems/Linux/2/update_advisories.sh systems/Linux/2/check_rcumask systems/Linux/2/deb_nopackfiles systems/Linux/2/deb_checkadvisories systems/Linux/2/check_umask systems/Linux/2/check_listeningprocs systems/default/check_ndd c/Makefile* Makefile.in TODO TODO.checks configure* tiger_logo* util/consistency-check util/mkfilelst ANNOUNCE.3.0
 Copyright: (c) 2000-2003,2009 Javier Fernandez-Sanguino Peña <jfs@debian.org>
 License: GPL-2+
 
