@@ -2,7 +2,7 @@
 version=4
 # Savannah site
 opts=pgpsigurlmangle=s/$/.sig/ \
-    http://download.savannah.gnu.org/releases/tiger/tiger-(.+)\.tar\.gz
+    https://download.savannah.gnu.org/releases/tiger/tiger-(.+)\.tar\.gz
 #
 # Old site, no longer available and no longer upstream
 # ftp://www.net.tamu.edu/pub/security/TAMU/tiger-(.*)\.tar\.gz
