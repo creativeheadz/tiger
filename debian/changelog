@@ -15,11 +15,13 @@ tiger (1:3.2.4~rc1-3) unstable; urgency=medium
      - Use default-mta instead of sendmail in the Recommends: line
        (lintian fix:
        mail-transport-agent-dependency-does-not-specify-default-mta)
-  * debian/config, debian/postinst, debian/preinst: Use 'set -e' instead of 
+  * debian/config, debian/postinst, debian/preinst: Use 'set -e' instead of
     in the #! line (lintian fix:  maintainer-script-without-set-e)
+  * debian/TODO.Debian rename to debian/TODO (lintian fix)
+  * debian/watch: Use https instead of http for download.savannah.gnu.org
+    (lintian fix)
 
-
- -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Mon, 19 Aug 2019 08:00:27 +0200
+ -- Javier Fernández-Sanguino Peña <jfs@debian.org> Tue, 22 Sep 2020 20:58:54 +0200
 
 tiger (1:3.2.4~rc1-2.1) unstable; urgency=medium
 
@@ -35,19 +37,19 @@ tiger (1:3.2.4~rc1-2) unstable; urgency=medium
   * debian/config: Remove only files using xarg instead of -exec.
     Use rmdir to remove the main directory instead of using find.
     (Closes: #931581, #931926)
-  * debian/rules: 
+  * debian/rules:
        - Fix the code creating symlinks (Closes: #909620)
        - Add symlink for 5 and default (Closes: #928641)
   * config: Add the possibility of having a 'default' definition
-    and use that one instead of the generic one. This change and 
-    above symlinks should avoid any errors to users upgrading 
+    and use that one instead of the generic one. This change and
+    above symlinks should avoid any errors to users upgrading
     to linux-image or latest version of the kernel in the future
     (Closes: #928641) (LP: #1836789)
   * default/config: Fix typo in export call (Closes: #928640) (LP: #1830825)
   * scripts/check_passwd: Include patch based on the one provided by Christoph
     Anton Mitterer that includes the output of 'pwck -r' when the message is
     reported. (Closes: #512076)
-  * scripts/check_group: Include the output of 'grpck -r' when the message  
+  * scripts/check_group: Include the output of 'grpck -r' when the message
     is reported.
   * scripts/check_accounts: Do not complain about dormant accounts for
     accounts that are system accounts
@@ -72,14 +74,14 @@ tiger (1:3.2.4~rc1-1) unstable; urgency=low
        filesystems (LP: #1204527, #1305057)
      - systems/Linux/2/check_release:
          + Update Debian version, current stable is 9.3 and list of old Debian
-         versions 
+         versions
          + Add support to check for RHEL and Ubuntu releases. Now Ubuntu is no
          longer considered a Debian "unstable" version (LP: #248845)
      - scripts/check_accounts: Optimise as per suggestion by Arran Schlosberg
      - scripts/check_crontabs: Clean up gen_cron file content before it is used
        (Closes: #839635)
      - systems/Linux/2/check_lilo: Only complain if grub is world readable
-        when it has a password configured (LP: #248843). 
+        when it has a password configured (LP: #248843).
         Look for grub in the proper location (as used in Grub 2)
      - systems/Linux/2/check_release:  Update Debian version, current stable is
        9.3 and list of old Debian versions. Add support to check for RHEL and
@@ -110,7 +112,7 @@ tiger (1:3.2.3-15) unstable; urgency=medium
      - systems/Linux/2/check: Disable deb_checkadvisories as the Debian website
         content does not provide information to generate up to date listing
         of advisories. This feature can be best implemented using apticron,
-        cron-apt or painintheapt 
+        cron-apt or painintheapt
      - systems/Linux/2/deb_checkmd5sums: Do not call prelink with -c
      - systems/Linux/2/gen_mounts: Update with a large number of filesystems
        currently supported in the Kernel. Additionally, to prevent false
@@ -126,7 +128,7 @@ tiger (1:3.2.3-15) unstable; urgency=medium
      - ./systems/Linux/2/check_listeningprocs: Handle all addresses in the
        127.0.0.0/8 range as loopback addresses
      - scripts/check_signatures: Fix interpretation of md5sum output which
-        was broken in the script 
+        was broken in the script
 
  -- Javier Fernández-Sanguino Peña <jfs@debian.org>  Sun, 04 Feb 2018 20:44:04 +0100
 
@@ -182,12 +184,12 @@ tiger (1:3.2.3-12.1) unstable; urgency=medium
  -- Francois Marier <francois@debian.org>  Tue, 14 Oct 2014 23:07:58 +1300
 
 tiger (1:3.2.3-12) unstable; urgency=medium
-  
+
   [ Include changes done in upstream's GIT ]
   * scripts/check_passwd, scripts/check_anonftp, scripts/check_network: Added
     /usr/sbin/nologin to list of valid nologin shells (Closes: #734775, #717218)
     (LP: #248844)
-  * systems/Linux/2/deb_checkmd5sums: 
+  * systems/Linux/2/deb_checkmd5sums:
       - Fix the location of dpkg-divert, it has moved from /usr/sbin to
         /usr/bin (Closes: #732936, #735102)
       - Do not use dpkg-divert if not available
@@ -197,7 +199,7 @@ tiger (1:3.2.3-12) unstable; urgency=medium
       - Add fuse.gvfs-fuse-daemon as a filesystem and consider gvfs
         filesystems as non-LOCAL to be in the safe side. (LP: #1204531)
   - systems/Linux/2/check_single: Do not assume existance of /etc/inittab"
-  [ Debian specific changes ] 
+  [ Debian specific changes ]
   * debian/control: Bump standards, no changes required
   * debian/po/es.po: Fix Language in PO file
   * debian/po/ja.po: Update PO debconf based on Japanese team review
@@ -210,7 +212,7 @@ tiger (1:3.2.3-11) unstable; urgency=low
   * debian/postinst, debian/rules: Do not use example file at
     /usr/share/doc/tiger for the configuration. Copy the example file
     to /usr/share/tiger and use it from there instead (Closes: #710068)
-  * debian/rules: 
+  * debian/rules:
       - Add the issue and issue.net example files provided into
         /usr/share/doc/tiger/examples.
       - Remove auto-generated config files when cleaning just in case
@@ -218,7 +220,7 @@ tiger (1:3.2.3-11) unstable; urgency=low
   [ Updated with upstream content in GIT repository. The following is a list
     of changes relevant to Debian as they close existing bugs. ]
   * scripts/check_known: Determine properly the kernel version to decide
-    whether to user ifconfig (or not) (Closes: #708360, #709065, #687937) 
+    whether to user ifconfig (or not) (Closes: #708360, #709065, #687937)
   * Make util/mkfilelst a bash script since it uses a sourced script with
     arguments (Closes: #690644)
     - Note: We ignore other bashims reported in the bug reported due to the
@@ -237,11 +239,11 @@ tiger (1:3.2.3-11) unstable; urgency=low
 tiger (1:3.2.3-10) unstable; urgency=low
 
   * Update Debian Advisories
-  [ Update with content in latest GIT repository ] 
+  [ Update with content in latest GIT repository ]
   * systems/Linux/2/gen_mounts:
     - Added devtmpfs  (Closes: 653416)
     - Added sshfs and cgroup (Closes: 655276)
-  * tigerrc: 
+  * tigerrc:
     - Include support for sha512 password hashes (Closes: #657310)
   * audit/audit_windows.bat: Update audit script
   [ Patch provided by Christian Perrier ]
@@ -253,18 +255,18 @@ tiger (1:3.2.3-10) unstable; urgency=low
 
 tiger (1:3.2.3-9) unstable; urgency=low
 
-  * debian/control: 
+  * debian/control:
      - Enhance description
      - Add Recommends on integrity checking tools
   [ Take fixes introduced in upstream's GIT]:
   * systems/Linux/2/config: Add /run/, /run/shm and /run/lock
     to the list of potentially writable filesystems as these
     are commonly used as tmpfs (Closes: #633060)
-  * scripts/check_accounts: Sort the user files before joining them 
+  * scripts/check_accounts: Sort the user files before joining them
     (Closes: #624258)
   * scripts/check_devices
     - Extend the list of EXPECTEDDIRS to cover /dev/bsg (Closes: #616339)
-    - Do not test symbolic links if they point to regular files. 
+    - Do not test symbolic links if they point to regular files.
       (Closes: #616337)
   * systems/Linux/2/check_inittab: Improved the check so that it takes into
     account the availability of /etc/shutdown.allow (Closes: #603199)
@@ -284,14 +286,14 @@ tiger (1:3.2.3-8) unstable; urgency=high
 
 tiger (1:3.2.3-7) unstable; urgency=low
 
-  * debian/control: 
+  * debian/control:
       - Add Recommends to tripwire | aide
       - Review package description
   * Update to latest CVS:
     - [multiple files] Fix spelling (Closes: #609203)
     - systems/Linux/2/config: Add /dev/shm and /lib/init/rw to the writable
     filesystems (common tmpfs) (Closes: #603338)
-    - systems/Linux/2/gen_mounts: Added xenfs as a valid filesystem  
+    - systems/Linux/2/gen_mounts: Added xenfs as a valid filesystem
       (Closes: #615052)
     - Apply patch by Timo Lindfors to add support for SHA-512 passwords
      (This is the default used in Debian GNU/Linux squeeze and later releases)
@@ -333,9 +335,9 @@ tiger (1:3.2.3-4) unstable; urgency=low
 
   * Updated Debian Policy to 3.9.0.
   * Pull fixes from upstream SVN:
-    - Fixed the bashism problem with logical expression in 
+    - Fixed the bashism problem with logical expression in
       /systems/HPUX/check_trusted. (Closes: #581140).
-    - Added support to recognize fuse.ltspfs for ltspfs file system. Thanks to 
+    - Added support to recognize fuse.ltspfs for ltspfs file system. Thanks to
       Alexandre Cavalcante Alencar. (Closes: #587507).
   * Added debian/tiger.menu file.
   * Added debian/tiger.desktop file.
@@ -362,7 +364,7 @@ tiger (1:3.2.3-3) unstable; urgency=low
   * debian/changelog: wrap long lines
   * Lintian fixes to make the package lintian clean
     - debian/rules: Adjust executable bit to all shell files instead of just to
-      one selection of them. 
+      one selection of them.
     - Add debian/tiger.lintian-overrides to setup overrides for warnings
       that are not relevant for the package.
     - debian/rules: Add call to dh_lintian.
@@ -390,18 +392,18 @@ tiger (1:3.2.3-2) unstable; urgency=low
   * Updated some Debconf translations:
      + French translation, thanks to Christian Perrier (Closes: #565321).
      + Swedish translation, thanks to Martin Bagge (Closes: #565497).
-     + Japanese translation, thanks to "Hideki Yamane (Debian-JP)" 
-     (Closes: #565615).  
+     + Japanese translation, thanks to "Hideki Yamane (Debian-JP)"
+     (Closes: #565615).
      + German translation, thanks to Erik Schanze (Closes: #568175).
      + Russian translation, thanks to Yuri Kozlov (Closes: #537918)
   * Updated to Debian policy 3.8.4
-  * Fixed the Bashisms problem in the files: 
+  * Fixed the Bashisms problem in the files:
      + systems/default/check_ndd. Fixed just the problem with the alternative
        test command. (Closes: #530205)
      + systems/HPUX/check_passwdspec. (Closes: #530204)
   * Fixed the problem finding users in scripts/sub/check_suid. (Closes: #438122)
   [ Javier Fernandez-Sanguino ]
-  * Integrate all patches included in the 3.2.2-11 package release which were 
+  * Integrate all patches included in the 3.2.2-11 package release which were
     missing in 3.2.3-1 and generated regression bugs (Closes: #566893, #567857,
     #529041)
 
@@ -413,11 +415,11 @@ tiger (1:3.2.3-1) unstable; urgency=low
   * Updated to Debian Policy 3.8.3
   * Updated debhelper dependency version to 7.
   * Updated debhelper compatibility to 7.
-  * Added myself as Comaintainer, 
+  * Added myself as Comaintainer,
     Francisco Manuel Garcia Claramonte <francisco@debian.org>
   * Removed the Diff depends (Closes: #544113, #544041).
     Thanks to Santiago Vila and Karl Ferdinand Ebert for the patch.
-  * Changes to make the package lintian clean. 
+  * Changes to make the package lintian clean.
      + Updated dh_clean call to dh_prep in debian/rules.
      + Added ${misc:Depends} to Depends debian/control field of
        tiger and tiger-otheros binary packages.
@@ -426,7 +428,7 @@ tiger (1:3.2.3-1) unstable; urgency=low
   * Removed the clear idx file code in util/genmsgidx to allow build the
     Debian package.
   * Updated template description to avoid make a question, according to Debian
-    Developer's Reference (6.5.4.2.1). Updated debian/po/* files. 
+    Developer's Reference (6.5.4.2.1). Updated debian/po/* files.
     Updated spanish translation.
   * Added commands in debian/rules to remove unneeded Makefiles files in Debian
     package.
@@ -438,12 +440,12 @@ tiger (1:3.2.2-11) unstable; urgency=low
   * Sort the system/Linux/2/inetd file since 'join' complains about it not
     being sorted when used in check_inetd (Closes: #524783)
   * Add symbolic links so users can create the issue and issue.net templates
-    they want to check against when running check_issue in /etc/tiger/ 
+    they want to check against when running check_issue in /etc/tiger/
     (Closes: #511970)
   * scripts/find_files: Use patch provided by Khalid Shukri in order to
-    complain from danging symlinks properly so that they can be tiger.ignore'd 
+    complain from danging symlinks properly so that they can be tiger.ignore'd
     (Closes: 434333)
-  * debian/debian.ignore: 
+  * debian/debian.ignore:
      - Add an ignore message to remove the dangling symlinks that are
        udev-related.
      - Add an ignore message for /dev/log since world-writable permissions for
@@ -455,9 +457,9 @@ tiger (1:3.2.2-11) unstable; urgency=low
   * systems/Linux/2/check_rcumask: Remove shell login umask definitions from
   * the file (both bash and csh/tcsh) since these do not apply to the script
     (i.e. are not init.d related) and add /etc/init.d/rc handling
-    (Closes: 443807) 
+    (Closes: 443807)
   * doc/misc.txt: Add new messages for new umask analysis covered in
-    check_umask 
+    check_umask
   * doc/filesys.txt: Add a description of the new warning message introduced by
     the above patch.
   * doc/config.txt: Document that this happens also when the configuration
@@ -483,7 +485,7 @@ tiger (1:3.2.2-9) unstable; urgency=low
   * Fix systems/Linux/2/config so that it uses /etc/apache2 in Debian if it
     exists and /etc/apache otherwise. (Closes: 523699)
   * Change the wording of errors in tigerexp when the variable does not have a
-    value (Closes: 523699) 
+    value (Closes: 523699)
   * Throw away errors from executing 'df -t nfs' in  scripts/check_network
     (Closes: 511803)
   * Linux/2/gen_mounts: Added davfs, fuse and ext4 (Closes: 524722, 498468, 512567)
@@ -557,7 +559,7 @@ tiger (1:3.2.2-6) unstable; urgency=medium
   * Use UCF to handle configuration file changes to prevent prompting when
     upgrading to tiger versions that change the tigerrc. (Closes: #341595)
   * Remove stale left file created in /usr/lib/tiger/bin if it exists on purge
-  * Lintian fixes: 
+  * Lintian fixes:
        - Remove coreutils Depends as it is an Essential package
        - Remove code in postinst related to an ancient bug and associate
        debconf prompts.
@@ -600,7 +602,7 @@ tiger (1:3.2.2-3) unstable; urgency=low
 tiger (1:3.2.2-2) unstable; urgency=low
 
   * Remove all configuration files on purge, including tiger.default if
-    it exists (which is not a conffile since 1:3.2.1-36 and might be 
+    it exists (which is not a conffile since 1:3.2.1-36 and might be
     a leftover) (Closes: #455108)
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Sun, 09 Dec 2007 15:36:44 +0100
@@ -608,7 +610,7 @@ tiger (1:3.2.2-2) unstable; urgency=low
 tiger (1:3.2.2-1) unstable; urgency=low
 
   * New upstream release
-  * Remove debian/ dir from upstream's tarball to prevent FTBFS 
+  * Remove debian/ dir from upstream's tarball to prevent FTBFS
     (Closes: #450479)
   * Fix scripts:
     - scripts/check_crontabs, scripts/check_apache, scripts/check_xinetd:
@@ -617,7 +619,7 @@ tiger (1:3.2.2-1) unstable; urgency=low
       to obtain the IP address and port (Closes: 436904)
     - systems/Linux/2/gen_cron: Handles properly the case when the special
       @daily,@reboot, etc. definitions are used instead of real times. Also
-      fix bug deailing with variables in crontab contents (Closes: 418440) 
+      fix bug deailing with variables in crontab contents (Closes: 418440)
   * Add 'fuse' to the list of valid filesystems (Closes: #449439)
   * Add Dependency on bsdmainutils to get the COLUMN command (Closes: 448975)
   * Add Portuguese translation, thanks LuA-sa LourenA§o (Closes: 440372)
@@ -628,7 +630,7 @@ tiger (1:3.2.2-1) unstable; urgency=low
 
 tiger (1:3.2.1-38) unstable; urgency=low
 
-  * systems/Linux/2/gen_mounts, vmblock is now recognised as a non-local FS. 
+  * systems/Linux/2/gen_mounts, vmblock is now recognised as a non-local FS.
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Wed, 27 Jun 2007 00:46:54 +0200
 
@@ -643,7 +645,7 @@ tiger (1:3.2.1-36) unstable; urgency=low
   * Fix the location of Tiger's default file (Closes: #426182)
   * Updated the Debian advisories listing (as of today, latest DSA is 1316)
   * Changed the maintainer's email address
-  * system/Linux/2/check_lilo: run the boot loader check if on amd64 
+  * system/Linux/2/check_lilo: run the boot loader check if on amd64
     (Closes: #412669)
   * system/Linux/2/deb_checkmd5sums: Fix the script so that it understands
     properly the "new" md5sum format (Closes: #412822)
@@ -651,24 +653,24 @@ tiger (1:3.2.1-36) unstable; urgency=low
    (Closes:  #417330)
   * scripts/check_devices: Extend the list of EXPECTEDDIRS for Linux to cover
     udev-specific dirs (Closes: #417940, #420488)
-  * systems/Linux/2/check_rcumask: Skip comment lines defining umask 
+  * systems/Linux/2/check_rcumask: Skip comment lines defining umask
     (Closes: 418531)
   * scripts/check_ftpusers: Skip this check if there is no FTP daemon
     installed (Closes: #420486)
-  * scripts/check_printcap:  Skip this test if CUPS is installed 
+  * scripts/check_printcap:  Skip this test if CUPS is installed
     (Closes: #420487) (LP: #248852)
-  * system/Linux/2/gen_mounts: Added fusectl to the local filesystems 
+  * system/Linux/2/gen_mounts: Added fusectl to the local filesystems
     (Closes: #409386)
   * Debconf translations:
     - Included Dutch translation provided by Bart Cornelis (Closes: #414768)
-    - Included Portuguese translation provided by LuÃ­sa LourenÃ§o 
+    - Included Portuguese translation provided by LuÃ­sa LourenÃ§o
      (Closes: #415534)
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Fri, 22 Jun 2007 01:04:17 +0200
 
 tiger (1:3.2.1-35) unstable; urgency=low
 
-  * [scripts/check_rootkit] 
+  * [scripts/check_rootkit]
     Send stderr output of chkrootkit to /dev/null to avoid the 'warning, got
     bogus unix line' messages that netstat might output (Closes: #223847)
   * Update advisories
@@ -680,7 +682,7 @@ tiger (1:3.2.1-34) unstable; urgency=low
   * Linux/2/gen_mounts - Added selinuxfs to local FS (Closes: #397832)
   * scripts/check_accounts - Redirect find errors in home directories
     to /dev/null, prevents root being sent errors when using NFS mounted
-    home directories with root_squash. Thanks to Matus Harvan for the 
+    home directories with root_squash. Thanks to Matus Harvan for the
     patch (Closes: #386163)
   * Update Debian advisories lists.
 
@@ -688,16 +690,16 @@ tiger (1:3.2.1-34) unstable; urgency=low
 
 tiger (1:3.2.1-33) unstable; urgency=low
 
-  * Fix typo in check_rootkit script, thanks to Michael Cihar (Closes: #385475) 
+  * Fix typo in check_rootkit script, thanks to Michael Cihar (Closes: #385475)
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Thu, 31 Aug 2006 23:04:43 +0200
 
 tiger (1:3.2.1-32) unstable; urgency=low
 
-  * Modify config so that it will attempt to create a working directory if 
+  * Modify config so that it will attempt to create a working directory if
     it does not exist (Closes: #366919)
   * [scripts/check_rootkit] Introduce Tiger_CHKROOTKIT_ARGS so that
-    admins can ajust the behaviour of CHKROOTKIT (defaults to '-q') 
+    admins can ajust the behaviour of CHKROOTKIT (defaults to '-q')
     (Closes: #320341)
   * Include output of chkrootkit when a file is INFECTED (Closes: #277533)
 
@@ -773,7 +775,7 @@ tiger (1:3.2.1-27) unstable; urgency=low
     so it can cope with whitespaces in mount locations, added sanity
     check and fix a bug that mangled $fs (Closes: #315435)
     - Makefile.in: install files needed to run tiger -G (Closes: #319468)
-  * German translation update of debconf templates provided by  Erik Schanze 
+  * German translation update of debconf templates provided by  Erik Schanze
     (Closes: #311857)
   * Updated to latest batch of Debian advisories
 
@@ -785,7 +787,7 @@ tiger (1:3.2.1-26) unstable; urgency=low
     - check_listeningprocs (generic and Linux versions): Proper check for
       processes in loopback (Closes: #307695)
     - Linux/check_passwdspec:  Better fix for pwd=! (Closes #308141)
-    - Linux/deb_checkmd5sums: Prevent issues with /usr/bin/[ by adjusting 
+    - Linux/deb_checkmd5sums: Prevent issues with /usr/bin/[ by adjusting
       GREP calls (Closes #305484)
     - Linux/gen_mounts:  Added auto, udev when using on /dev,
       capifs and nfsd. (Closes: #305670 #307802 #307887 #308585)
@@ -811,7 +813,7 @@ tiger (1:3.2.1-25) unstable; urgency=low
 tiger (1:3.2.1-24) unstable; urgency=medium
 
   * Updated to CVS code:
-     - Fixed Linux/2/gen_mounts code which broke with the patches 
+     - Fixed Linux/2/gen_mounts code which broke with the patches
      implemented before the previous upload.
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Mon, 18 Apr 2005 18:23:30 +0200
@@ -857,7 +859,7 @@ tiger (1:3.2.1-20) unstable; urgency=low
     processes are not truncated (Closes: #288086)
     - (check_lilo) Only run if running on the x86 architecture (Closes: #288737)
     - (check_single) Only run if running on the x86 architecture (Closes: #288737)
-    - (check_passwdspec) Fixed password aging check. Separate all checks 
+    - (check_passwdspec) Fixed password aging check. Separate all checks
     so that they prevent bugs if pwd="!" (Closes: #297889)
     - (deb_checkmd5sums) Do not warn if the md5 file is not present in the
     list file (Closes: #299935)
@@ -882,7 +884,7 @@ tiger (1:3.2.1-18) unstable; urgency=low
   * scripts/check_passwd:
      - Delete temporary passwd files only on exit (Closes: #284899)
   * debian/server.ignore:
-     - Added a sample ignore line for users accessing a remote server 
+     - Added a sample ignore line for users accessing a remote server
       with X11Forwarding set to 'on' (Closes: #284220)
   * scripts/check_passwdformat:
      - Maximum user and group length set to 32 (Closes: #283446)
@@ -963,7 +965,7 @@ tiger (1:3.2.1-12) unstable; urgency=low
 tiger (1:3.2.1-11) unstable; urgency=low
 
   * Updated to latest CVS code which fixes:
-    - [check_accounts] Try to avoid eval problems if user/shells/directories 
+    - [check_accounts] Try to avoid eval problems if user/shells/directories
     contain non-empty (but invalid) characters (such as space)
     (Similar changes in some other scripts to avoid breakage in similar
     situations)
@@ -973,11 +975,11 @@ tiger (1:3.2.1-11) unstable; urgency=low
     - [deb_checkmd5sums] Fixed patch provided by Chung-chieh Shan
     (Closes: #234811)
 
-  * Remove check_finddeleted from the default configuration since it 
+  * Remove check_finddeleted from the default configuration since it
     is prone to a lot of false positives, also, it depends on LSOF
     (which is only recommended). I will reenable this sometime in
     the future and (maybe) provide a Debian-specific script to just
-    monitor for daemons that are using outdated libraries 
+    monitor for daemons that are using outdated libraries
     (Closes: #249331)
   * Send filesystem scans error output to /dev/null (need to fix this
     in scripts/find_files by not following symbolic links that point
@@ -999,14 +1001,14 @@ tiger (1:3.2.1-9) unstable; urgency=medium
   * Added some more common servers to the server.ignore example
   * Fix error in deb_checkmd5sums with patch from Chung-chieh Shan
   which avoids failure on packages whose names contain "." (Closes: #234811)
-  * Minor change in check_passwd to detect if no shell is defined for 
+  * Minor change in check_passwd to detect if no shell is defined for
   a given user (as suggested by raoul bhatia)
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed,  3 Mar 2004 13:13:05 +0100
 
 tiger (1:3.2.1-8) unstable; urgency=low
 
-  * check_rcumask: Proper warning if no umask settings are defined 
+  * check_rcumask: Proper warning if no umask settings are defined
     (Closes: #234661)
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 25 Feb 2004 20:39:16 +0100
@@ -1015,7 +1017,7 @@ tiger (1:3.2.1-7) unstable; urgency=low
 
   * Updated from CVS which includes a number of improvements including
     the following (relevant to Debian bugs):
-      - Added more information on check_finddeleted regarding 
+      - Added more information on check_finddeleted regarding
        how to use it and remove spurious errors. This script
        will not give false positives any longer on some special
        characterr) files like /dev/console or /dev/null and has
@@ -1023,11 +1025,11 @@ tiger (1:3.2.1-7) unstable; urgency=low
        only one message per deleted file now)
        (Closes: #232704,#231148, #225112)
       - Fixed password definitions adding the 'g-Z' 'A-Z' and
-      '.' sets (Closes: #227596) 
+      '.' sets (Closes: #227596)
       - Many scripts now controls YPCAT errors to printing errors in
-        hosts that are not properly configured.  
+        hosts that are not properly configured.
         (i.e. nsswitch.conf is defined to use NIS but there's no NIS
-        host) Errors are redirected to /dev/null when YPCAT is not 
+        host) Errors are redirected to /dev/null when YPCAT is not
         required as many systems do not include it, specially in Debian.
         (Closes: #225910)
       - Check_crontab will only warn if neither cron.allow
@@ -1059,15 +1061,15 @@ tiger (1:3.2.1-5) unstable; urgency=low
 
   * Updated from CVS to fix reported bugs:
     * fixed typo in check_lilo (Closes: #221470)
-  * This update also provides a number of fixes/enhancements which 
+  * This update also provides a number of fixes/enhancements which
     will be available in the next release:
     * check_crontabs adds more information in messages
-    * check_inetd does not report the services as not protected if 
+    * check_inetd does not report the services as not protected if
       TCP wrappers are undefined
     * per interface promiscuous detection with 'ip' for more accurate
       results in check_known
     * check_passwd message fix
-    * shadow password check is no longer in check_passwdformat (move to 
+    * shadow password check is no longer in check_passwdformat (move to
       account checks)
     * check_rootdir checks ownership
     * check_services will not misreport for services not defined
@@ -1128,7 +1130,7 @@ tiger (1:3.2.1-2) unstable; urgency=low
       (Closes: #211329, #162589)
     - Provides documentation for check_logfiles (Closes: #195192)
     - Adds support for HP-UX in several scripts (Closes: #195200, #197220)
-    - Changes gen_passwd_sets under Linux to identify des or md5 
+    - Changes gen_passwd_sets under Linux to identify des or md5
     (Closes: #197221)
     - Removes debug messages from check_rootdir (Closes: #197219)
     - Added tigercron.8 manpage (Closes: #148291)
@@ -1143,9 +1145,9 @@ tiger (1:3.2.1-2) unstable; urgency=low
     - check_path now uses -L to follow symlinks (Closes: #161993)
     - Adds new password check for empty passwords (Closes: #197228)
     - Fixed typo in accounts.txt spotted by Philipp Weis (Closes: #211793)
-    - check_passwdformat provides an improved message and allows daemon 
+    - check_passwdformat provides an improved message and allows daemon
       in uid 1 (Closes: #211328)
-    - also, check_passwdformat now will not warn on lenght issues for 
+    - also, check_passwdformat now will not warn on lenght issues for
       locked users. (Closes: #211327)
   * Added -XMacOSX to exclude the new OS provided upstream.
   * Modified debian/rules to move the MacOSX and Tru64 directories to
@@ -1192,7 +1194,7 @@ tiger (3.2-4) unstable; urgency=low
   * Updated to latest debian advisories
   * Modified postinst so it does not break when a user enters an e-mail
     address which includes a @ by using sed instead of Perl (Closes: #194955)
-  * Included a check to only ask the debconf tiger/mess question if 
+  * Included a check to only ask the debconf tiger/mess question if
     there is any cruft from previous versions.
   * Fixed check_logfiles including some of the things provided by Ryan
     Bradetich and some other fixes to make it output less false positives
@@ -1213,25 +1215,25 @@ tiger (3.2-3) unstable; urgency=low
 
 tiger (3.2-2) unstable; urgency=low
 
-  * Fix tigercron which was broken upstream (when the echo 
-    was removed). This broke the IDS functionality since 
+  * Fix tigercron which was broken upstream (when the echo
+    was removed). This broke the IDS functionality since
     tigercron never checked for changes!
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sun, 11 May 2003 21:26:04 +0200
 
 tiger (3.2-1) unstable; urgency=low
 
-  * New upstream version 
+  * New upstream version
      - False positives in services fixed (Closes: #132278)
      - Check_exports produces proper output (Closes: #162453)
      - Checks have been separated, now each check file prints it's
        comment (Closes: #165766)
      - Using the new ignore mechanism (better than the differential
-       mechanism) this package now provides a baseline for Debian GNU/Linux, 
-       hopefully this will make Matt test again this package :-) 
+       mechanism) this package now provides a baseline for Debian GNU/Linux,
+       hopefully this will make Matt test again this package :-)
        (Closes: #164308, #172375)
      - The new ignore mechanism can now be used to avoid false positives,
-       please customize as needed and read the notes on the 
+       please customize as needed and read the notes on the
        check_listeningprocs script (Closes: #136991)
      - Tigexp now gets modified by the Makefile (Closes: #189864)
   * Fixed dh_make boilerplate
@@ -1260,7 +1262,7 @@ tiger (3.2rc3-2) experimental; urgency=low
 
 tiger (3.2rc3-1) experimental; urgency=low
 
-  * New release candidate. 
+  * New release candidate.
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 23 Apr 2003 13:30:32 +0200
 
@@ -1271,17 +1273,17 @@ tiger (3.2rc2-1) experimental; urgency=low
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Mon, 21 Apr 2003 17:57:40 +0200
 
 tiger (3.2rc1-1) experimental; urgency=low
-  * New upstream version 
+  * New upstream version
      - False positives in services fixed (Closes: #132278)
      - Check_exports produces proper output (Closes: #162453)
      - Checks have been separated, now each check file prints it's
        comment (Closes: #165766)
      - Using the new ignore mechanism (better than the differential
-       mechanism) this package now provides a baseline for Debian GNU/Linux, 
-       hopefully this will make Matt test again this package :-) 
+       mechanism) this package now provides a baseline for Debian GNU/Linux,
+       hopefully this will make Matt test again this package :-)
        (Closes: #164308, #172375)
      - The new ignore mechanism can now be used to avoid false positives,
-       please customize as needed and read the notes on the 
+       please customize as needed and read the notes on the
        check_listeningprocs script (Closes: #136991)
      - Tigexp now gets modified by the Makefile (Closes: #189864)
 
@@ -1292,7 +1294,7 @@ tiger (3.1-5) unstable; urgency=low
   * Included some of the changes that will be in the next Tiger release
   * Config now sets the locale to POSIX (just in case it breaks some tests)
   * Check_listeningprocs now works with multiple program names (Closes: #164898)
-  * Recovered the fixes from 3.0-2 which has made an old bug surface 
+  * Recovered the fixes from 3.0-2 which has made an old bug surface
     (Closes: #164307, #166176, #166744)
   * Updated to latest advisories
   * Removed debugging output from systems/Linux/2/check_neverlogin
@@ -1371,8 +1373,8 @@ tiger (2.2.4p2-5) unstable; urgency=low
     program (this means /, /scripts and /systems/{default,Linux}.
     This was a requirement for adding tiger as a new project to the
     savannah site.
-    (probably next upstream version and Debian diff file will be 
-    reduced since I intend to make the current Debian codebase 
+    (probably next upstream version and Debian diff file will be
+    reduced since I intend to make the current Debian codebase
     upstream's 2.2.4p3)
   * Added a new check scripts/check_runprocs (not currently configured to
     run since it needs sysadmin to configure tigerrc properly to determine
@@ -1381,7 +1383,7 @@ tiger (2.2.4p2-5) unstable; urgency=low
     some paragraphs.
   * Written some notes on how to use Tiger as a host IDS.
   * Chmod'ed many scripts in order to avoid lintian warnings.
-  * Changed tiger so it first reads tigerrc in the local directory 
+  * Changed tiger so it first reads tigerrc in the local directory
   (useful for testing the package without installing or to use the tar.gz
   in other environments)
   * Fixed the scripts/check_anon in order to test if ftphome/etc/passwd
@@ -1397,7 +1399,7 @@ tiger (2.2.4p2-4) unstable; urgency=low
     - Fixed scripts/check_cron for problems in entries.
     - Fixed scripts/check_exports to avoid false positives.
     - Fixed scripts/check_path due to problems with parse_csh.
-    - Change scripts/check_perm to not warn when owner is bin and 
+    - Change scripts/check_perm to not warn when owner is bin and
       changed calls of echo to message().
     - Made some of the changes provided by ARC in scripts/check_inetd
      (save for the SORT and JOIN changes which do not seem to work)
@@ -1405,7 +1407,7 @@ tiger (2.2.4p2-4) unstable; urgency=low
     - Changed GROUPS to GROUPSS as ARC team does since it (might)
       be a readonly variable in some shells (see bash(1)). Even though
      it is not used in any script.
-     
+
   * Created a new package to provide all the scripts for other operating
     systems (Warning: you still need to compile the C programs: getpermit,
     md5, realpath, snefru and testsuid in those platforms for tiger to work
@@ -1422,13 +1424,13 @@ tiger (2.2.4p2-4) unstable; urgency=low
     way inetd services are being protected through the use of tcp_wrappers.
     This script has been written based on check_inetd.
   * Modified scripts/check_sendmail to check for sendmail.cf's banner
-  * Note. This new scripts have not been added to the cron entry. They will 
+  * Note. This new scripts have not been added to the cron entry. They will
     only be run when running the 'tiger' script.
 
   * Written some README files: howto write modules (README.writemodules),.
     how much time does it take for scripts to run (README.time), and
     information on making signatures (README.signatures)
-  
+
   * Changed tigexp to work if issued -F with no second argument
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sun, 26 May 2002 01:58:53 +0200
@@ -1457,12 +1459,12 @@ tiger (2.2.4p2-1) unstable; urgency=low
     (thus this release might be labeled "new upstream", avoid 2.2.4p1 since
     it is used in TAMU's distribution)
   * Updated to latest debian DSAs.
-  * Next release will have a new package to provide all the scripts for 
-    other Operating systems so that a central Debian server can be used 
+  * Next release will have a new package to provide all the scripts for
+    other Operating systems so that a central Debian server can be used
     with network filesystems as a single point of script distribution.
-  * Included tara's new check and scripts checks: devices, issue, 
+  * Included tara's new check and scripts checks: devices, issue,
     lilo, logfiles, network, patches, release, root, rootdir, single and
-    tripwire_run (this last one is deactivated in Debian since 
+    tripwire_run (this last one is deactivated in Debian since
     the package, if installed, will do the checks)
   * Included the following systems without changes: AIX-4, IRIX-{4,5,6},
     Linux-1, Next-3, UNICOS, UNICOSMK
@@ -1474,13 +1476,13 @@ tiger (2.2.4p2-1) unstable; urgency=low
     check_inetd, check_passwd, check_sendmail, systems/Linux/2/gen_mounts,
     tiger.
   * Updated scripts (not changed in Debian): check_path
-  * Fixed Linux's gen_cron to include CRONSPOOL and fixed 
+  * Fixed Linux's gen_cron to include CRONSPOOL and fixed
     systems/Linux/2/config to properly configure it (was set to /usr
     instead of /var) since it was not used this was not detected until now.
   * Updated the tiger configuration file (tigerrc)
   * Updated the manpage tiger.8
   * Moved check_listening from Linux-specific to all the generic location
-    (since it will work in any UNIX system with NETSAT). 
+    (since it will work in any UNIX system with NETSAT).
     Changed tigerrc accordingly adding Tiger_Check_LISTENING variable
     and renaming the previous variables for this check.
   * De-activated RedHat's specific (and written in Perl) check_network
@@ -1529,15 +1531,15 @@ tiger (2.2.4-22) unstable; urgency=low
   * Provided some more documentation in the tiger.8 manpage detailing which
     modules are available
   * Check_listeningprocs has been modified to allow it to not warn on
-    processes when using the Tiger_Listening_ValidProc variable in 
+    processes when using the Tiger_Listening_ValidProc variable in
     /etc/tigerrc this allows admins to remove processes which can dynamically
     change TCP/IP port (Closes: #134085)
   * Changed Tiger_Listening_Proc to Tiger_Listening_ValidUser (more precise).
-    WARNING: Postinst will not change this from the config file! 
-  * The changes introduced in check_listeningprocs as well as the 
-    check-against-template behavior configuration will (hopefully) reduce greatly 
+    WARNING: Postinst will not change this from the config file!
+  * The changes introduced in check_listeningprocs as well as the
+    check-against-template behavior configuration will (hopefully) reduce greatly
     false positives if properly configured (Closes: #126635)
-  * Set Tiger_Check_CRACK to 'N' by default and removed cron job since this 
+  * Set Tiger_Check_CRACK to 'N' by default and removed cron job since this
     feature does not work. Added 'john' Recommends: since the Debian package
     does provide that feature by itself.
   * Added check_sendmail to SCRIPTS in the Makefile (it was not being
@@ -1549,7 +1551,7 @@ tiger (2.2.4-21) unstable; urgency=low
 
   * Changed deb_nopackfile so it also checks the diversions file
   (Closes: #129343)
-  * Fixed deb_md5sums to work with files with namespaces by using 
+  * Fixed deb_md5sums to work with files with namespaces by using
   quotes properly (Closes: #129339)
   * Updated Debian Advisories (cvs, xsane...)
 
@@ -1563,7 +1565,7 @@ tiger (2.2.4-20) unstable; urgency=low
   mail spool checks (Closes: #135202)
   * Changed scripts/check_anon to check if the ftp user is in the
   system's passwords (Closes: #135205)
-  * Added proper dependecies (based on systems/Linux/2/config) 
+  * Added proper dependecies (based on systems/Linux/2/config)
   (Closes: #128796)
   * Added an Tiger_Output_FQDN option so that it uses hostname -f
   as the system name for reports (Closes: #129526)
@@ -1603,7 +1605,7 @@ tiger (2.2.4-18) unstable; urgency=low
   a new feature and varialbes in tigerrc so that cron jobs can be compared
   against "template" (policy-compliant?) runs. This can reduce false positives
   even if they cannot be reduced in a given module.
-  * Added configurable Tiger_Listening_Procs for gen_listeningprocs to 
+  * Added configurable Tiger_Listening_Procs for gen_listeningprocs to
   customize for local security policy (Closes: #126635)
   * Added debconf note (borrowed from snort) to configure mails receiver
   (Closes: #122256)
@@ -1625,9 +1627,9 @@ tiger (2.2.4-16) unstable; urgency=medium
   * Added -rf to prerm script when purging.
   * Commented nisplus from the gen_passwd_sets since there is no NISCAT in
    Linux
-  * Fixed scripts/check_known so it works properly in NIS environments. 
+  * Fixed scripts/check_known so it works properly in NIS environments.
   now uses the passwd_set properly instead of passwd_source
-      
+
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Fri, 21 Dec 2001 09:57:28 +0100
 
 tiger (2.2.4-15) unstable; urgency=low
@@ -1649,7 +1651,7 @@ tiger (2.2.4-14) unstable; urgency=high
 
 tiger (2.2.4-13) unstable; urgency=low
 
-  * Fixed tigercron shell problem which made it not work properly 
+  * Fixed tigercron shell problem which made it not work properly
   (Closes: #123116)
   * Setup tigerrrc so that Tiger_DPKG_Optimize defaults to 'Y'
 
@@ -1657,7 +1659,7 @@ tiger (2.2.4-13) unstable; urgency=low
 
 tiger (2.2.4-12) unstable; urgency=high
 
-  * Fixed cronrc so CPU consuming tasks are run once a day 
+  * Fixed cronrc so CPU consuming tasks are run once a day
   (Closes: #122378)
   * Fixed check_passwd so that uids and usernames are looked for correctly
   (Closes: #122391)
@@ -1679,8 +1681,8 @@ tiger (2.2.4-12) unstable; urgency=high
 tiger (2.2.4-11) unstable; urgency=medium
 
   * Changed file_access_list for Linux so /etc/aliases can be world readable (Closes: #112159)
-  * Fixed getuserhome command so it does not return directories beginning 
-  with ~. This fixes tiger from incorrectly guessing the ftp directory 
+  * Fixed getuserhome command so it does not return directories beginning
+  with ~. This fixes tiger from incorrectly guessing the ftp directory
   (Closes: #121800, #114008)
   * Fixed /var/run/utmp file permissions to follow Debian standards (Closes: #121501, #112217)
   * Fixed config.tbl since Debian-specific scripts were not being run.
@@ -1688,11 +1690,11 @@ tiger (2.2.4-11) unstable; urgency=medium
   * Fixed disk device checks in check_perm so that it does not complain
   for /dev/hd* which belong to group 'disk' (Closes: #112218)
   * Changed the postrm script so all files are removed on purge (Closes: #116267)
-  * Changed MAILER from mail to sendmail so we can send 'Subject' and 'From' 
+  * Changed MAILER from mail to sendmail so we can send 'Subject' and 'From'
   (Closes: #120679, #121681)
   * Fixed tigercron so mails get sent properly with a From line, since the
-  information is now sent to the mailer and not to the Tiger log no 
-  mails should be sent out if they do not include useful information 
+  information is now sent to the mailer and not to the Tiger log no
+  mails should be sent out if they do not include useful information
   (tiger takes care of diffing out reports) (Closes: #114334, #113588)
   * Added Recommends on mail transport agent since it's used for cron reporting.
   * Fixed gen_export_sets for Linux so it properly warns when using
@@ -1737,7 +1739,7 @@ tiger (2.2.4-7) unstable; urgency=low
 
 tiger (2.2.4-6) unstable; urgency=low
 
-  * Fixed Linux/2/config not being able to find SNEFRU, by adding 
+  * Fixed Linux/2/config not being able to find SNEFRU, by adding
    /usr/lib/tiger/bin to the SRCH line (Closes: #112870)
   * Fixed Linux/2/config not finding CUT since it was not exported (Closes: #112871)
   * Updated data from Debian Advisories from the WML sources
@@ -1757,9 +1759,9 @@ tiger (2.2.4-4) unstable; urgency=low
   (hopefully it will work with Debian and other Unices but I'm not sure
   ls -n is available there) (Closes: #112162)
   * Binaries now get compiled at build time
-  * Removed ./c from Makefile 
+  * Removed ./c from Makefile
   * Subsituted corrupted .c files on c/ (md5.c and snefru.c) (Closes: #112216)
-  * Modified scripts/check_know so it checks on uids and not on names (Closes: #112162) 
+  * Modified scripts/check_know so it checks on uids and not on names (Closes: #112162)
 
  -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Fri, 14 Sep 2001 20:34:30 +0200
 
