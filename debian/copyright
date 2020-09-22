@@ -99,7 +99,7 @@ Copyright: (c) 2001 by Marc Heuse <marc@suse.de>
            (c) 2004 Jeffrey Denton <dentonj@c2i2.com>
 License: GPL-2+
 
-Files: /c/snefru.c
+Files: c/snefru.c
 Copyright: (c) Xerox Corporation 1989. 
 License: XEROX-SNEFRU
 
