@@ -1,46 +1,133 @@
-This package was debianized by Javier Fernandez-Sanguino Peña <jfs@debian.org>
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: tiger
+Upstream-Contact: Javier Fernandez-Sanguino Peña <jfs@computer.org>
+Source: https://savannah.nongnu.org/projects/tiger/
+Comment:
+ This package was debianized by Javier Fernandez-Sanguino Peña <jfs@debian.org>
  on Thu, 23 Aug 2001 15:07:16 +0200.
+ .
+ It was downloaded from ftp://sunsite.unc.edu/pub/Linux/system/security
+ (original site is at http://www.net.tamu.edu/ftp/security/TAMU
+ more information at http://www.net.tamu.edu/network/tools/tiger.html)
+ .
+ The software is currently maintained in Savannah and available at
+ https://savannah.nongnu.org/projects/tiger/
+ .
+ The TARA version which has been also integrated in this package 
+ (even if the name of the upstream source has not been changed) is
+ available for download from http://www.arsc.com
+ .
+ Upstream Authors: 
+     Douglas Lee Schales
+     Dave Hess
+     Khalid Warraich
+     Dave Safford
+    [modifications for support of Redhat Linux 2.x. made by]
+    Robert L. Ziegler (rlz@mediaone.net) 
+    [modifications for NeXT, IRIX, SunOS 5.x, AIX 4, UNICOS systems
+    as well as a big number of bug fixes and new scripts, made by the
+    group from Advanced Research Corporation for tara, composed of:]
+    Liam Forbes <lforbes@arsc.edu>
+    Nathan Bills <bills@arsc.edu> and
+    Mike Kienenberger <mkienenb@arsc.edu>
+    [new checks for RedHat and Debian GNU/Linux 2.x. made by]
+    Paul Telford <paul_telford@hp.com>
+    Bryan Gartner <bryang@soccer.fc.hp.com>
+    [modifications for support of Debian GNU/Linux 2.x. made by]
+    Javier Fernandez-Sanguino Peña <jfs@computer.org>
 
-It was downloaded from ftp://sunsite.unc.edu/pub/Linux/system/security
-(original site is at http://www.net.tamu.edu/ftp/security/TAMU
-more information at http://www.net.tamu.edu/network/tools/tiger.html)
-
-The TARA version which has been also integrated in this package 
-(even if the name of the upstream source has not been changed) is
-available for download from http://www.arsc.com
-
-
-Upstream Authors: 
- Douglas Lee Schales
- Dave Hess
- Khalid Warraich
- Dave Safford
-[modifications for support of Redhat Linux 2.x. made by]
- Robert L. Ziegler (rlz@mediaone.net) 
-[modifications for NeXT, IRIX, SunOS 5.x, AIX 4, UNICOS systems
- as well as a big number of bug fixes and new scripts, made by the
- group from Advanced Research Corporation for tara, composed of:]
- Liam Forbes <lforbes@arsc.edu>
- Nathan Bills <bills@arsc.edu> and
- Mike Kienenberger <mkienenb@arsc.edu>
-[new checks for RedHat and Debian GNU/Linux 2.x. made by]
- Paul Telford <paul_telford@hp.com>
- Bryan Gartner <bryang@soccer.fc.hp.com>
-[modifications for support of Debian GNU/Linux 2.x. made by]
- Javier Fernandez-Sanguino Peña <jfs@computer.org>
-
-
+Files: *
 Copyright: (c) 1993 Texas A&M University Supercomputer Center
+License: GPL-1+
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 1, or (at your option)
-    any later version.
+Files: scripts/* systems/*
+Copyright: (C) 1993 Douglas Lee Schales, David K. Hess, David R. Safford
+License: GPL-2+
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+Files: scripts/aide_run  scripts/check_apache scripts/check_finddeleted scripts/check_ftpusers scripts/check_listeningprocs scripts/check_passwdformat scripts/check_runprocs scripts/check_tcpd scripts/check_umask scripts/integrit_run systems/SunOS/5/5.8/check_patches systems/SunOS/5/5.8/check_listeningprocs systems/SunOS/5/check_patches systems/SunOS/5/check_listeningprocs systems/Linux/2/deb_checkmd5sums systems/Linux/2/update_advisories.sh systems/Linux/2/check_rcumask systems/Linux/2/deb_nopackfiles systems/Linux/2/deb_checkadvisories systems/Linux/2/check_umask systems/Linux/2/check_listeningprocs systems/default/check_ndd
+Copyright: (c) 2000-2003,2009 Javier Fernandez-Sanguino Peña <jfs@debian.org>
+License: GPL-2+
 
-You can find a copy of the GPL license in your Debian system under
-the /usr/share/common-licenses directory.
+Files: scripts/ntp scripts/check_omniback scripts/check_ssh
+Copyright: (c) 2003 Ryan Bradetich
+License: GPL-2+
+
+Files: scripts/check_rootkit
+Copyright: (c) 2003 Advanced Research Corporation
+License: GPL-1+
+
+Files: scripts/check_xinetd 
+Copyright: (c) 2003 Michael Sconzo, Javier Fernandez-Sanguino Peña
+License: GPL-2+
+
+Files: systems/Linux/2/check_xinetd
+Copyright: (c) 2003 Michael Sconzo
+           (c) 2004 Javier Fernandez-Sanguino Peña,
+           (c) 2003 Ryan Bradetich
+License: GPL-2+
+
+Files: systems/Linux/2/check_neverlogin
+Copyright: (c) 2002 Marc Heuse
+License: GPL-2+
+
+Files: systems/Tru64/5/*
+Copyright: (c) 1993 Douglas Lee Schales, David K. Hess, David R. Safford
+           (c) 2004 Ryan Bradetich
+License: GPL-2+
+
+Files: systems/Tru64/5/check_passwdspec systems/Tru64/5/config
+Copyright: (c) 2003 Javier Fernandez-Sanguino
+           (c) 2004 Ryan Bradetich
+License: GPL-2+
+
+Files: debian/*
+Copyright: (c) 2001-2020 Javier Fernandez-Sanguino Peña <jfs@debian.org>
+License: GPL-2+
+
+Files: audit/*
+Copyright: (c) 2001 by Marc Heuse <marc@suse.de>
+License: GPL-2+
+
+Files: audit/audit_debian.sh
+Copyright: (c) 2001 by Marc Heuse <marc@suse.de>
+           (c) 2005 Javier Fernandez-Sanguino Peña <jfs@debian.org>
+License: GPL-2+
+
+Files: audit/audit_redhat.sh
+Copyright: (c) 2001 by Marc Heuse <marc@suse.de>
+           (c) 2005 Javier Fernandez-Sanguino Peña <jfs@debian.org>
+License: GPL-2+
+
+Files: audit/audit_slackware.sh
+Copyright: (c) 2001 by Marc Heuse <marc@suse.de>
+           (c) 2004 Jeffrey Denton <dentonj@c2i2.com>
+License: GPL-2+
+
+
+License: GPL-1+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 1, or (at your option)
+   any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You can find a copy of the GPL license in your Debian system under
+   the /usr/share/common-licenses directory.
+
+License: GPL-2+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 1, or (at your option)
+   any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You can find a copy of the GPL license in your Debian system under
+   the /usr/share/common-licenses directory.
