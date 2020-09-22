@@ -1,4 +1,4 @@
-tiger (1:3.2.4~rc1-3) UNRELEASED; urgency=medium
+tiger (1:3.2.4~rc1-3) unstable; urgency=medium
 
   * Acknowledge NMU (Closes: #969303)
   * config: Fix the logic in the use the default that was preventing
