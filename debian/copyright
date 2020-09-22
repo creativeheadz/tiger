@@ -36,19 +36,15 @@ Comment:
     [modifications for support of Debian GNU/Linux 2.x. made by]
     Javier Fernandez-Sanguino Peña <jfs@computer.org>
 
-Files: *
-Copyright: (c) 1993 Texas A&M University Supercomputer Center
+Files: tiger tigexp  tigercron tigerrc* README* scripts/* systems/* c/* man/* doc/*
+Copyright: (C) 1993 Douglas Lee Schales, David K. Hess, David R. Safford
 License: GPL-1+
 
-Files: scripts/* systems/*
-Copyright: (C) 1993 Douglas Lee Schales, David K. Hess, David R. Safford
-License: GPL-2+
-
-Files: scripts/aide_run  scripts/check_apache scripts/check_finddeleted scripts/check_ftpusers scripts/check_listeningprocs scripts/check_passwdformat scripts/check_runprocs scripts/check_tcpd scripts/check_umask scripts/integrit_run systems/SunOS/5/5.8/check_patches systems/SunOS/5/5.8/check_listeningprocs systems/SunOS/5/check_patches systems/SunOS/5/check_listeningprocs systems/Linux/2/deb_checkmd5sums systems/Linux/2/update_advisories.sh systems/Linux/2/check_rcumask systems/Linux/2/deb_nopackfiles systems/Linux/2/deb_checkadvisories systems/Linux/2/check_umask systems/Linux/2/check_listeningprocs systems/default/check_ndd
+Files: scripts/aide_run  scripts/check_apache scripts/check_finddeleted scripts/check_ftpusers scripts/check_listeningprocs scripts/check_passwdformat scripts/check_runprocs scripts/check_tcpd scripts/check_umask scripts/integrit_run systems/SunOS/5/5.8/check_patches systems/SunOS/5/5.8/check_listeningprocs systems/SunOS/5/check_patches systems/SunOS/5/check_listeningprocs systems/Linux/2/deb_checkmd5sums systems/Linux/2/update_advisories.sh systems/Linux/2/check_rcumask systems/Linux/2/deb_nopackfiles systems/Linux/2/deb_checkadvisories systems/Linux/2/check_umask systems/Linux/2/check_listeningprocs systems/default/check_ndd c/Makefile*
 Copyright: (c) 2000-2003,2009 Javier Fernandez-Sanguino Peña <jfs@debian.org>
 License: GPL-2+
 
-Files: scripts/ntp scripts/check_omniback scripts/check_ssh
+Files: scripts/check_ntp scripts/check_omniback scripts/check_ssh
 Copyright: (c) 2003 Ryan Bradetich
 License: GPL-2+
 
@@ -103,6 +99,10 @@ Copyright: (c) 2001 by Marc Heuse <marc@suse.de>
            (c) 2004 Jeffrey Denton <dentonj@c2i2.com>
 License: GPL-2+
 
+Files: /c/snefru.c
+Copyright: (c) Xerox Corporation 1989. 
+License: XEROX-SNEFRU
+
 
 License: GPL-1+
    This program is free software; you can redistribute it and/or modify
@@ -131,3 +131,20 @@ License: GPL-2+
    .
    You can find a copy of the GPL license in your Debian system under
    the /usr/share/common-licenses directory.
+
+License: XEROX-SNEFRU
+  License to copy and use this software is granted provided that it is
+  identified as the "Xerox Secure Hash Function" in all material mentioning
+  or referencing this software or this hash function.
+  .
+  License is also granted to make and use derivative works provided that such
+  works are identified as "derived from the Xerox Secure Hash Function" in
+  all material mentioning or referencing the derived work.
+  .
+  Xerox Corporation makes no representations concerning either the
+  merchantability of this software or the suitability of this software for
+  any particular purpose.  It is provided "as is" without express or implied
+  warranty of any kind.
+  .
+  These notices must be retained in any copies of any part of this software.
+
