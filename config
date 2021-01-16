@@ -355,7 +355,7 @@ checkfile()
   elif [ -f "$CONFIG_LOC/$OS/default/config" ]; then
     [ "$QUIET" != "Y" ] &&  {
     echo "--CONFIG-- [con005c] Using default configuration files for $OS. Using"
-    echo "           configuration files for generic $OS"
+    echo "           configuration files for default version of $OS"
     }
     CONFIG_DIR="$CONFIG_LOC/$OS/default"
   elif [ -f "$CONFIG_LOC/$OS/config" ]; then
