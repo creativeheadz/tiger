@@ -33,7 +33,49 @@ Changes (v 3.2.4)
 - Added support to recognize fuse.ltspfs for ltspfs file system and ltsp-server
   in systems/Linux/2/gen_mounts script.
 
--...More changes in progress...
+- Added a 'default' system directory for Linux, pointing to version 2, so
+  that any kernel version is checked with the Linux 2 configuration.
+
+- The output of pwck -r and grpck is now part of the report (Debian
+  bug #512076).
+
+- Dormant accounts are only reported for non-system accounts, as proposed
+  by Richard Laager (Ubuntu bug 248858).
+
+- Use 'command -v' instead of the deprecated which (Francois Marier,
+  Debian bug #992655).
+
+- Treat fuse.portal as a non-local file system (Francois Marier, Debian
+  bug #987512).
+
+- c/md5.c builds with GCC 15 (Richard Lewis, Debian bug #1097997).
+
+- Makefile.in: every install target now depends on installdirs, so
+  parallel installs work (Richard Lewis, Debian bug #1105709).
+
+- systems/Linux/2/deb_nopackfiles: support merged-/usr systems. The check
+  no longer reports every file in /bin, /sbin and /lib as unowned, and it
+  accepts files that dpkg records under either the /bin or the /usr/bin
+  form (Debian bug #1111306).
+
+- systems/Linux/2/deb_checkmd5sums:
+   * Stop using prelink, which was called with options it rejects
+     (Debian bug #505906, Savannah bug #52087).
+   * Parse current md5sum output, so missing package files are reported
+     again and file names with spaces are handled.
+   * Actually exclude /usr/share/doc, man, locale and the other
+     /usr/share directories that are meant to be skipped.
+
+- scripts/find_files: new tigerrc variable Tiger_FSScan_PruneDirs, a
+  pipe-separated list of find -path patterns for directories the file
+  system scan should skip. Based on a patch from Nicholas Bamber (Debian
+  bug #610785).
+
+- systems/Linux/2/gen_bootparam_sets: set SED rather than AWK when SED is
+  unset.
+
+- Tiger is now maintained at https://github.com/creativeheadz/tiger by
+  Andrei Trimbitas, continuing from the Savannah repository.
 
 
 Changes (v 3.2.3) 
