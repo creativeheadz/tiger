@@ -191,6 +191,12 @@ echo "Tiger security scripts *** $version ***"
   $DATE >> $logtmp
   echo "`$TIMECMD`> Beginning security report for ${HOSTNAME} ($ARCH $OS $REV)." >> $logtmp
   echo "`$TIMECMD`> Beginning security report for ${HOSTNAME}."
+  # The same findings as JSON Lines, next to the text report
+  [ "$Tiger_Output_JSON" != 'N' ] && {
+    Tiger_JSON_File="$LOGDIR/security.report.${HOSTNAME}.$datestamp.jsonl"
+    export Tiger_JSON_File
+    echo "{\"type\":\"run\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
+  }
 }
 
 _TIGER_RUN=Y
@@ -535,6 +541,16 @@ aidepid=
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}."
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}." >>$logtmp
+  [ -n "$Tiger_JSON_File" ] && {
+    counts=
+    for level in ALERT FAIL WARN INFO ERROR
+    do
+      n=`$GREP -c "\"type\":\"finding\",\"level\":\"$level\"" $Tiger_JSON_File`
+      counts="$counts${counts:+,}\"$level\":$n"
+    done
+    echo "{\"type\":\"summary\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts}}" >> $Tiger_JSON_File
+    echo "Findings as JSON Lines are in \`$Tiger_JSON_File'."
+  }
 
   if [ -n "`echo $LOGDIR | $AWK -F\@ '{print $2}'`" ]; then
     sendtologger $logtmp

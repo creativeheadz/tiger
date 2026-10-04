@@ -36,6 +36,22 @@ if [ -n "$report" ]; then
   echo "---  by code"
   grep -oE '\[[a-z]+[0-9]{3}[a-z]\]' "$report" | sort | uniq -c | sort -rn | head -15 | sed 's/^/     /'
 fi
+jsonl=`ls "$W"/log/security.report.*.jsonl 2>/dev/null | head -1`
+if [ -n "$jsonl" ] && command -v python3 >/dev/null; then
+  python3 - "$jsonl" "$report" <<'EOF' && echo "ok   JSON Lines report parses and matches the text" || { echo "FAIL JSON Lines report"; fail=1; }
+import json, re, sys
+recs = [json.loads(l) for l in open(sys.argv[1], encoding="ascii") if l.strip()]
+assert recs[0]["type"] == "run" and recs[-1]["type"] == "summary", (recs[0], recs[-1])
+finds = [r for r in recs if r["type"] == "finding"]
+text = open(sys.argv[2], encoding="latin-1").read()
+shown = re.findall(r"--(ALERT|FAIL|WARN|ERROR)-- \[([a-z]+[0-9]{3}[a-z])\]", text)
+json_shown = [(r["level"], r["id"]) for r in finds if r["level"] != "INFO"]
+assert sorted(shown) == sorted(json_shown), (len(shown), len(json_shown))
+assert recs[-1]["counts"]["WARN"] == sum(1 for r in finds if r["level"] == "WARN")
+EOF
+elif [ -z "$jsonl" ]; then
+  echo "FAIL no JSON Lines report in log/"; fail=1
+fi
 if [ -s "$W/stderr" ]; then
   echo "---  stderr"
   sort "$W/stderr" | uniq -c | sort -rn | head -10 | sed 's/^/     /'

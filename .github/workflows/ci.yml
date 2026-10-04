@@ -29,6 +29,8 @@ jobs:
         run: sh tests/ssh_check.sh
       - name: check_systemd against ss and systemd-analyze fixtures
         run: sh tests/systemd_check.sh
+      - name: JSON Lines report
+        run: sh tests/json_check.sh
       - name: ShellCheck (errors)
         # Tiger tests "[ $TESTEXEC file ]" with TESTEXEC=-x or -f, which
         # ShellCheck cannot parse; those files are reported but do not fail

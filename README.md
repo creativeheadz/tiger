@@ -44,6 +44,17 @@ To install system-wide instead:
 On Debian and Ubuntu, `apt install tiger` gives the original TIGER from
 the archive, not this fork.
 
+## Machine-readable output
+
+Every run also writes the findings as JSON Lines to
+`log/security.report.HOST.DATE.jsonl`: a `run` record first, one
+`finding` per message with `level`, `id`, `check`, `message` and an
+optional `detail`, and a `summary` with counts last. INFO findings are
+always included there, whatever the text report shows. Bytes above 127
+in a message are written as `\u00XX`, one per byte, so file names in any
+encoding survive and the file is plain ASCII. `Tiger_Output_JSON=N` in
+`tigerrc` turns it off.
+
 ## Where it is going
 
 [ROADMAP.md](ROADMAP.md): a modern Linux baseline, JSON output, a free
