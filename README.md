@@ -8,11 +8,17 @@ David K. Hess and David R. Safford, in the same tradition as COPS. Javier
 Fernández-Sanguino Peña maintained it on GNU Savannah from 2002, and it is
 still packaged in Debian.
 
-This repository continues TIGER from the Savannah history. Release 3.2.4
-finishes the 3.2.4 release candidate from 2018. It adds the fixes Debian
-carried as non-maintainer uploads and the patches waiting in Debian's bug
-tracker, and makes the Debian checks work on merged-/usr systems. See
-[CHANGES](CHANGES).
+**This is an independent fork, not the official TIGER.** The official
+project lives on GNU Savannah at <https://savannah.nongnu.org/projects/tiger/>
+and is maintained by Javier Fernández-Sanguino Peña, who also maintains the
+Debian package. This repository started from the Savannah history in
+October 2026 and is maintained separately by Andrei Trimbitas. Fixes made
+here are offered back to Savannah and to the Debian bug tracker.
+
+Release 3.2.4 here finishes the 3.2.4 release candidate from 2018. It adds
+the fixes Debian carried as non-maintainer uploads and the patches waiting
+in Debian's bug tracker, and makes the Debian checks work on merged-/usr
+systems. See [CHANGES](CHANGES).
 
 ## Running it
 
@@ -46,9 +52,9 @@ notices.
 
 ## History
 
-The original project page is <https://www.nongnu.org/tiger/>, and the
-Savannah repository is <https://git.savannah.nongnu.org/cgit/tiger.git>.
+The official project page is <https://www.nongnu.org/tiger/>, and the
+official repository is <https://git.savannah.nongnu.org/cgit/tiger.git>.
 [AUTHORS](AUTHORS) and [CREDITS](CREDITS) list everyone who built it.
 The original [README](README) and [USING](USING) cover the details.
 
-Maintained by Andrei Trimbitas.
+This fork is maintained by Andrei Trimbitas.

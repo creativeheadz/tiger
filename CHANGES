@@ -74,8 +74,9 @@ Changes (v 3.2.4)
 - systems/Linux/2/gen_bootparam_sets: set SED rather than AWK when SED is
   unset.
 
-- Tiger is now maintained at https://github.com/creativeheadz/tiger by
-  Andrei Trimbitas, continuing from the Savannah repository.
+- This release was made in an independent fork of Tiger at
+  https://github.com/creativeheadz/tiger by Andrei Trimbitas. The official
+  project remains on GNU Savannah, maintained by Javier Fernandez-Sanguino.
 
 
 Changes (v 3.2.3) 
