@@ -422,7 +422,7 @@ fi
     case $kind in
       D) message WARN fsys013w "" "$rest is a dangling symlink." ;;
       S) set -- $rest
-         message INFO fsys016i "" "$1 dangling symlinks under $2 are not listed (see Tiger_FSScan_DanglingDetail)." ;;
+         message WARN fsys016w "" "$1 dangling symlinks under $2 are not listed (see Tiger_FSScan_DanglingDetail)." ;;
     esac
   done
 } &
