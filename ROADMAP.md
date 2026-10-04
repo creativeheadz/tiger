@@ -1,12 +1,12 @@
 # Roadmap
 
-The goal: make Tiger the Linux security auditor people pick on purpose,
+The goal: make Tigris the Linux security auditor people pick on purpose,
 at least as good as Lynis and better where it counts. Lynis is the
 reference point because it is the tool people compare against.
 
 ## Where things stand
 
-|                       | Tiger 3.2.4                              | Lynis 3.1.7 (June 2026)                    |
+|                       | Tigris 3.2.4                              | Lynis 3.1.7 (June 2026)                    |
 |-----------------------|------------------------------------------|--------------------------------------------|
 | Language              | POSIX shell                              | POSIX shell                                |
 | Licence               | GPL-2.0-or-later                         | GPL-3.0                                    |
@@ -19,7 +19,7 @@ reference point because it is the tool people compare against.
 | Package integrity     | dpkg only                                | Limited                                    |
 | Test suite            | None                                     | None in the repository                     |
 
-Lynis is broad, maintained and popular (16k GitHub stars). Tiger can't
+Lynis is broad, maintained and popular (16k GitHub stars). Tigris can't
 out-grow that by copying it test for test. It can win on depth, output
 that other tools can use, honest evidence, and quality engineering.
 

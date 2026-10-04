@@ -45,11 +45,12 @@
 #
 #-----------------------------------------------------------------------------
 #
-echo "Tiger UN*X security checking system"
-echo "   Developed by Texas A&M University, 1994"
+echo "Tigris security checking system"
+echo "   Based on Tiger, developed by Texas A&M University, 1993-1994"
 echo "   Updated by the Advanced Research Corporation, 1999-2002"
-echo "   Further updated by Javier Fernandez-Sanguino, 2001-2018"
+echo "   Maintained by Javier Fernandez-Sanguino, 2001-2019"
 echo "   Contributions by Francisco Manuel Garcia Claramonte, 2009-2010"
+echo "   Continued as Tigris by Andrei Trimbitas, 2026"
 echo "   Covered by the GNU General Public License (GPL)"
 echo
 TigerInstallDir="."

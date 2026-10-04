@@ -122,7 +122,7 @@ do_siggen()
 
 do_usage()
 {
-echo "Tiger, version $TIGERVERSION"
+echo "Tigris, version $TIGERVERSION"
 echo "Usage: ./tiger [-vthqGSH]  [-B dir] [-l dir|@host] [-w dir] [-b dir] [-e|-E] [-c config] [-A arch] [-O os] [-R release]"
 echo ""
 echo "       -v     Show the Tiger version."
