@@ -328,7 +328,12 @@ Tiger_FSScan_ReadOnly=N
 # Directories the file system scan should skip, pipe-separated.
 # Each entry is a find -path pattern, e.g. '/srv/backups|/home/*/.cache'
 #
-Tiger_FSScan_PruneDirs=''
+# The default skips the stores that hold container images, Flatpak runtimes
+# and snaps. Their symlinks resolve inside their own root, not on the host,
+# and on a desktop they produced 16,000 dangling-symlink warnings in a run.
+# Set it to '' to scan them too.
+#
+Tiger_FSScan_PruneDirs='/var/lib/flatpak|/var/lib/docker|/var/lib/containerd|/var/lib/containers|/var/lib/snapd|/var/snap|/snap'
 #
 # List of dot files commonly found in user home directories.  These
 # will be checked by check_accounts for proper access permissions.
