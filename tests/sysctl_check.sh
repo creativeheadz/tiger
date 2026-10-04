@@ -38,7 +38,7 @@ net/ipv6/conf/default/accept_redirects      1 0
 net/ipv6/conf/all/accept_source_route       1 0
 net/ipv6/conf/default/accept_source_route   1 0
 '
-expected="lin020w lin021w lin022w lin023f lin024w lin025w lin026w lin027w lin028f lin029f lin030w lin031w lin032w lin033w lin034w lin035f"
+expected="lin020w lin021w lin022w lin023f lin024w lin025w lin026w lin027w lin028f lin029f lin030w lin031w lin032w lin033w lin034w lin035f lin036w"
 
 build()
 {
@@ -49,6 +49,11 @@ build()
     mkdir -p "$1/proc/sys/`dirname $key`"
     if [ "$2" = 2 ]; then echo "$bad"; else echo "$good"; fi > "$1/proc/sys/$key"
   done
+  # the kernel's CPU vulnerability verdicts
+  mkdir -p "$1/sys/devices/system/cpu/vulnerabilities"
+  echo "Not affected" > "$1/sys/devices/system/cpu/vulnerabilities/meltdown"
+  echo "Mitigation: Retpolines; IBPB: conditional" > "$1/sys/devices/system/cpu/vulnerabilities/spectre_v2"
+  if [ "$2" = 2 ]; then echo "Vulnerable: No microcode"; else echo "Mitigation: Clear CPU buffers"; fi > "$1/sys/devices/system/cpu/vulnerabilities/mds"
 }
 
 run()

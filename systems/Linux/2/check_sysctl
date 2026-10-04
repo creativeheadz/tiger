@@ -18,7 +18,8 @@
 # check_sysctl: kernel, file system and network hardening settings, read
 #               from /proc/sys and compared with the value that keeps
 #               unprivileged users away from kernel internals, keeps ASLR
-#               on, and keeps the protected_* file semantics.
+#               on, and keeps the protected_* file semantics; and the
+#               kernel's verdict on each CPU speculation flaw from sysfs.
 #
 # 10/04/2026 atrimbitas - Initial version. check_network_config covers the
 #                 IPv4 settings from 2002; this adds the kernel, fs and IPv6
@@ -67,7 +68,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds CAT SED || exit 1
+  haveallcmds CAT SED BASENAME || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
 
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -76,7 +77,7 @@ done
 
 #------------------------------------------------------------------------
 
-haveallcmds CAT SED || exit 1
+haveallcmds CAT SED BASENAME || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
 sysdir="${Tiger_Sysctl_Root:-}/proc/sys"
@@ -130,5 +131,19 @@ net.ipv6.conf.default.accept_redirects    eq 0 WARN lin034w IPv6 ICMP redirects 
 net.ipv6.conf.all.accept_source_route     eq 0 FAIL lin035f IPv6 source routing is accepted
 net.ipv6.conf.default.accept_source_route eq 0 FAIL lin035f IPv6 source routing is accepted on new interfaces
 EOF
+
+# The kernel's own verdict on each hardware speculation flaw: "Not affected",
+# "Mitigation: ..." or "Vulnerable", sometimes with a reason after a colon.
+vulndir="${Tiger_Sysctl_Root:-}/sys/devices/system/cpu/vulnerabilities"
+[ -d "$vulndir" ] &&
+for file in "$vulndir"/*
+do
+  [ -r "$file" ] || continue
+  status=`$CAT "$file" 2>/dev/null`
+  case "$status" in
+    Vulnerable*)
+      message WARN lin036w "" "CPU vulnerability `basename "$file"` is not mitigated: $status" ;;
+  esac
+done
 
 exit 0

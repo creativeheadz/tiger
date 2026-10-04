@@ -261,3 +261,12 @@ How many of the system's services systemd rates UNSAFE and EXPOSED
 overall. Most units on a desktop score badly, which is why Tiger only
 warns about the ones that listen on the network (sysd001w); this line
 gives the whole picture for anyone hardening a server unit by unit.
+%lin036w
+The kernel reports that a hardware speculation flaw (Spectre, Meltdown,
+MDS, Retbleed and their relatives) is not mitigated on this machine:
+the file under /sys/devices/system/cpu/vulnerabilities/ says Vulnerable,
+often with the reason after a colon, such as a missing microcode update
+or a mitigation turned off on the kernel command line (mitigations=off,
+nospectre_v2). Update the microcode package (intel-microcode or
+amd64-microcode), remove any such option from the boot command line,
+and reboot. The message quotes the kernel's own text.
