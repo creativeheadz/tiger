@@ -1,0 +1,83 @@
+# Mesajele în limba română pentru pachetul tiger.
+# Romanian translation of tiger.
+# Copyright © 2023 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the tiger package.
+#
+# Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2023.
+#
+# Cronologia traducerii fișierului „tiger”:
+# Traducerea inițială, făcută de R-GC, pentru versiunea tiger 1 3.2.4~rc1-3.2(2010-01-02).
+# Actualizare a traducerii pentru versiunea Y, făcută de X, Y(anul).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1 3.2.4~rc1-3.2\n"
+"Report-Msgid-Bugs-To: tiger@packages.debian.org\n"
+"POT-Creation-Date: 2010-01-02 01:05+0100\n"
+"PO-Revision-Date: 2023-03-26 18:26+0200\n"
+"Last-Translator: Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>\n"
+"Language-Team: Romanian <debian-l10n-romanian@lists.debian.org>\n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n==0 || (n!=1 && n%100>=1 && "
+"n%100<=19) ? 1 : 2);\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#. Type: string
+#. Description
+#: ../templates:1001
+msgid "Recipient of the daily mails:"
+msgstr "Destinatarul mesajelor zilnice:"
+
+#. Type: string
+#. Description
+#: ../templates:1001
+msgid ""
+"The user you enter below will receive all the emails that 'tiger' sends during "
+"the day when running the cron jobs. This does not mean that when executing the "
+"'tiger' program standalone this user will receive the reports. Also note that "
+"any administrator will be able to access the reports since they are available "
+"in the /var/log/tiger/ directory."
+msgstr ""
+"Utilizatorul pe care îl introduceți mai jos va primi toate mesajele pe care "
+"«tiger» le trimite în timpul zilei când rulează sarcinile «cron». Acest lucru "
+"nu înseamnă că atunci când se execută programul «tiger» independent, acest "
+"utilizator va primi rapoartele. De asemenea, rețineți că orice administrator va "
+"putea accesa rapoartele, deoarece acestea sunt disponibile în directorul „/var/"
+"log/tiger/”."
+
+#. Type: note
+#. Description
+#: ../templates:2001
+msgid "Take a minute to customize 'tiger'"
+msgstr "Acordați-vă un minut pentru a personaliza «tiger» pe gustul dvs."
+
+#. Type: note
+#. Description
+#: ../templates:2001
+msgid ""
+"You should customize the files at /etc/tiger/ to adapt to your local security "
+"policy. Firstly, customizing the kind of checks that will be made in this "
+"system, as well as the information needed for tests in order to reduce false "
+"positives (in /etc/tiger/tigerrc). Secondly, customizing at what times these "
+"tests will be executed (in /etc/tiger/cronrc). And thirdly, since some modules "
+"warnings might not be problems regarding your current security policy, define a "
+"given template file at /etc/tiger/templates/ using runs from each of the "
+"modules. Once defined, all the runs will be checked against each one of the "
+"templates available (one per module) and only new warnings will be issued."
+msgstr ""
+"Ar trebui să personalizați fișierele din directorul „/etc/tiger/” pentru a le "
+"adapta la politica de securitate locală. În primul rând, personalizarea tipului "
+"de verificări care vor fi efectuate în acest sistem, precum și a informațiilor "
+"necesare pentru teste pentru a reduce numărul de avertismente „fals "
+"pozitive” (în /etc/tiger/tigerrc). În al doilea rând, personalizarea orelor în "
+"care vor fi executate aceste teste (în /etc/tiger/cronrc). Și în al treilea "
+"rând, deoarece unele avertismente de module ar putea să nu reprezinte probleme "
+"în ceea ce privește politica de securitate actuală, definiți un fișier șablon "
+"dat la „/etc/tiger/templates/” folosind rulările anterioare pentru fiecare "
+"dintre module. Odată definite, toate rulările vor fi verificate în raport cu "
+"fiecare dintre șabloanele disponibile (unul per modul) și vor fi emise doar "
+"avertismente noi."
