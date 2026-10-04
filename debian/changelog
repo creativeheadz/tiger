@@ -1,3 +1,16 @@
+tiger (1:3.2.4-1) UNRELEASED; urgency=medium
+
+  * New upstream release, continued at https://github.com/creativeheadz/tiger
+    - Support merged-/usr systems in deb_nopackfiles (Closes: #1111306)
+    - Stop using prelink in deb_checkmd5sums and parse current md5sum
+      output (Closes: #505906)
+    - New Tiger_FSScan_PruneDirs setting (Closes: #610785)
+    - Make every install target depend on installdirs (Closes: #1105709)
+  * Acknowledge NMUs 1:3.2.4~rc1-3.1 to -3.5.
+  * Add Romanian debconf templates translation (Closes: #1033743)
+
+ -- Andrei Trimbitas <a.trimbitas@oldforge.tech>  Sun, 04 Oct 2026 16:41:33 +0100
+
 tiger (1:3.2.4~rc1-3.5) unstable; urgency=medium
 
   * Non-maintainer upload.
