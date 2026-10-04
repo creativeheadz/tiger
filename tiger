@@ -150,10 +150,12 @@ haveallfiles BASEDIR SCRIPTDIR CONFIG_DIR LOGDIR WORKDIR || exit 1
 # runs as root from a tree owned by someone else that skips every check, so
 # say so once, up front, instead of producing an empty report.
 #
+# A tree owned by the person who ran sudo is theirs to run: no privilege
+# boundary is crossed, so a developer's own checkout works without a chown.
 [ "$UUID" = 0 ] && {
   scripts_owner=`$LS -nd $SCRIPTDIR | $AWK '{ print $3; }'`
-  [ "$scripts_owner" != 0 ] && {
-    echo "--ERROR-- [init010e] Tiger is running as root but \`$SCRIPTDIR' is owned by uid $scripts_owner, so its check scripts would not be run. Make the tree root's first: chown -R root:root $BASEDIR"
+  [ "$scripts_owner" != 0 ] && [ "$scripts_owner" != "${SUDO_UID:-0}" ] && {
+    echo "--ERROR-- [init010e] Tiger is running as root but \`$SCRIPTDIR' is owned by uid $scripts_owner, so its check scripts would not be run. Run it with sudo as that user, or make the tree root's: chown -R root:root $BASEDIR"
     exit 1
   }
 }

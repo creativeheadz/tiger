@@ -19,13 +19,15 @@ The name is the Latin for tiger, and the root of the Icelandic
 
 ## Running it
 
-From the source tree, as root. Tigris will not run check scripts owned by
-another user, so the tree has to belong to root first:
+From your own checkout:
 
-    sudo chown -R root:root .
     sudo ./tigris
 
-(`./tiger` still works and does the same.) The report is written to
+(`./tiger` still works and does the same.) Tigris will not run check
+scripts owned by someone other than the user running it, with one
+exception: a tree owned by the person who ran `sudo` is theirs to run.
+A copy that cron runs, or an installed one, must belong to root. The
+report is written to
 `log/`. To look up what a message code in it means, build the message
 index once with `util/genmsgidx doc/*.txt`, then run, for example,
 `./tigexp lin005f`. Choose which checks run, and how, in `tigerrc`.

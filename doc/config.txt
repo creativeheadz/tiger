@@ -120,10 +120,10 @@ use a file which it did not create itself.
 Tiger is running as root but the directory holding its check scripts is
 owned by another user. Tiger never runs a check script owned by someone
 other than the user running it (see misc024e), so every check would be
-skipped and the report would be empty. This happens when Tiger is run
-with sudo from a source tree checked out by an ordinary user. Make the
-tree root's first, for example with 'chown -R root:root' on the Tiger
-directory, or run it from an installed copy.
+skipped and the report would be empty. A tree owned by the person who
+ran sudo is the exception: no privilege boundary is crossed, so it runs.
+Otherwise make the tree root's, for example with 'chown -R root:root' on
+the Tiger directory, or run it from an installed copy.
 %util001e
 The attempt to compile the signature checking program (SNEFRU) failed.
 This will prevent the tests of the integrity of system binaries from

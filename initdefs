@@ -514,7 +514,8 @@ run_script()
 	if [ "$__script_run" != "" ] ; then
             __script_owner=`$LS -nl $__script_run | $AWK '{ print $3; }'`
             if [ $TESTEXEC $__script_run ]; then
-	            if [ $__script_owner -eq $UUID ]; then
+	            # The owner may run it, and so may the same person via sudo
+	            if [ $__script_owner -eq $UUID ] || [ "$__script_owner" = "${SUDO_UID:-}" ]; then
 			$__script_run
 		    else
 			echo "--ERROR-- [misc024e] The $__script_run script will not be run since it is owned by a user ($__script_owner) different than the one running Tiger ($UUID)"
