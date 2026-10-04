@@ -77,8 +77,17 @@ usually clutter rather than a risk (help and documentation trees, icon
 themes, home directories, runtime directories), so Tiger reports how
 many and where instead of listing each one. The directories where each
 dangling link is still listed individually (fsys013w) are set by
-Tiger_FSScan_DanglingDetail in tigerrc; set it to '*' to list them all.
+Tiger_FSScan_DetailDirs in tigerrc; set it to '*' to list them all.
 To see the links themselves, run: find DIR -xdev -type l -xtype l
+%fsys017w
+Files with unusual names (see fsys005a) were found in a directory where
+such names are routine rather than suspicious: home directories, media
+and backup disks, and copies of other systems' files. Apple's resource
+fork files ("._name"), mail index files ("..cmeta") and browser lock
+files are the usual culprits. Tiger reports how many and where instead
+of listing each one. The directories where each file is still listed
+individually (fsys005a) are set by Tiger_FSScan_DetailDirs in tigerrc;
+set it to '*' to list them all.
 %fsys013w
 The symbolic link points to a file that does not exist in the filesystem.
 In itself, the link is not dangerous, but you should be aware of its 

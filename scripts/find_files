@@ -402,8 +402,9 @@ fi
   # privileged program may follow into a path someone else can create, so
   # those are listed one by one. Elsewhere (help files, icon themes, home
   # directories) they are clutter, and get one line per directory.
+  # sub/check_names applies the same split to unusual file names.
   [ -s $outfile.dangling ] &&
-  $AWK -v detail="${Tiger_FSScan_DanglingDetail-/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/local|/opt|/boot|/root|/var/lib|/var/spool|/srv}" '
+  $AWK -v detail="${Tiger_FSScan_DetailDirs-/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/local|/opt|/boot|/root|/var/lib|/var/spool|/srv}" '
     BEGIN { n = split(detail, prefix, "|") }
     {
       listed = (detail == "*")
@@ -422,7 +423,7 @@ fi
     case $kind in
       D) message WARN fsys013w "" "$rest is a dangling symlink." ;;
       S) set -- $rest
-         message WARN fsys016w "" "$1 dangling symlinks under $2 are not listed (see Tiger_FSScan_DanglingDetail)." ;;
+         message WARN fsys016w "" "$1 dangling symlinks under $2 are not listed (see Tiger_FSScan_DetailDirs)." ;;
     esac
   done
 } &

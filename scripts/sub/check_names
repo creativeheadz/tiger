@@ -46,20 +46,43 @@ file="$1"
 echo
 echo "# Checking unusual file names..."
 
-haveallcmds LS BASENAME || exit 1
+haveallcmds LS BASENAME AWK SORT || exit 1
 
 [ -s "$file" ] && {
-  $SORT -- "$file" |
-  while read pathname
+  # List each file in the system directories named by Tiger_FSScan_DetailDirs;
+  # elsewhere (home directories, data disks) odd names are routine and get
+  # one line per directory. Same split as find_files uses for dangling links.
+  $AWK -v detail="${Tiger_FSScan_DetailDirs-/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/local|/opt|/boot|/root|/var/lib|/var/spool|/srv}" '
+    BEGIN { n = split(detail, prefix, "|") }
+    {
+      listed = (detail == "*")
+      for (i = 1; i <= n && !listed; i++)
+        if (index($0, prefix[i]) == 1) listed = 1
+      if (listed) { print "D " $0; next }
+      split($0, part, "/")
+      dir = "/" part[2]
+      if (part[4] != "") dir = dir "/" part[3]
+      count[dir]++
+    }
+    END { for (dir in count) print "S " count[dir] " " dir }
+  ' "$file" | $SORT |
+  while read kind rest
   do
-    file="`$BASENAME -- \"$pathname\"`"
-    case "$file" in
-      .FSP*)
-	message WARN fsys009w "" "FSP server control file found:"
-	$LS $LSGROUP -ld -- "$pathname";;
-      *)
-	message ALERT fsys005a "" "Unusual filename \`$file' found:"
-	$LS $LSGROUP -ld -- "$pathname";;
+    case $kind in
+      D)
+	pathname=$rest
+	name="`$BASENAME -- \"$pathname\"`"
+	case "$name" in
+	  .FSP*)
+	    message WARN fsys009w "" "FSP server control file found:"
+	    $LS $LSGROUP -ld -- "$pathname";;
+	  *)
+	    message ALERT fsys005a "" "Unusual filename \`$name' found:"
+	    $LS $LSGROUP -ld -- "$pathname";;
+	esac;;
+      S)
+	set -- $rest
+	message WARN fsys017w "" "$1 files with unusual names under $2 are not listed (see Tiger_FSScan_DetailDirs).";;
     esac
   done
   echo

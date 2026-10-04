@@ -335,13 +335,15 @@ Tiger_FSScan_ReadOnly=N
 #
 Tiger_FSScan_PruneDirs='/var/lib/flatpak|/var/lib/docker|/var/lib/containerd|/var/lib/containers|/var/lib/snapd|/var/snap|/snap'
 #
-# Where dangling symlinks are listed one by one, pipe-separated path
-# prefixes. In these directories a dangling symlink can be a path a
-# privileged program follows into somewhere another user can create.
-# Dangling symlinks found elsewhere (help files, icon themes, home
-# directories) are counted per directory instead. Set to '*' to list all.
+# Where the filesystem scan lists its oddities one by one: pipe-separated
+# path prefixes. In these directories a dangling symlink can be a path a
+# privileged program follows into somewhere another user can create, and
+# a file with a strange name is worth a look. Elsewhere (help files, icon
+# themes, home directories, copies of other machines' disks) dangling
+# symlinks and odd names are routine, so they are counted per directory
+# instead. Set to '*' to list everything.
 #
-Tiger_FSScan_DanglingDetail='/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/local|/opt|/boot|/root|/var/lib|/var/spool|/srv'
+Tiger_FSScan_DetailDirs='/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/local|/opt|/boot|/root|/var/lib|/var/spool|/srv'
 #
 # List of dot files commonly found in user home directories.  These
 # will be checked by check_accounts for proper access permissions.
