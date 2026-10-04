@@ -56,15 +56,15 @@
 #
 
 # If run directly do this, just in case:
-[ -z "$SORT" ] && SORT=`which sort`
-[ -z "$JOIN" ] && JOIN=`which join`
-[ -z "$GREP" ] && GREP=`which grep`
-[ -z "$AWK" ] && AWK=`which awk`
-[ -z "$CAT" ] && CAT=`which cat`
-[ -z "$RM" ] && RM=`which rm`
-[ -z "$CP" ] && CP=`which cp`
-[ -z "$YPCAT" ] && YPCAT=`which ypcat 2>/dev/null`
-[ -z "$GETENT" ] && GETENT=`which getent 2>/dev/null`
+[ -z "$SORT" ] && SORT=`command -v sort`
+[ -z "$JOIN" ] && JOIN=`command -v join`
+[ -z "$GREP" ] && GREP=`command -v grep`
+[ -z "$AWK" ] && AWK=`command -v awk`
+[ -z "$CAT" ] && CAT=`command -v cat`
+[ -z "$RM" ] && RM=`command -v rm`
+[ -z "$CP" ] && CP=`command -v cp`
+[ -z "$YPCAT" ] && YPCAT=`command -v ypcat`
+[ -z "$GETENT" ] && GETENT=`command -v getent`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 local=0

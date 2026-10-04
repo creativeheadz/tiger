@@ -17,6 +17,11 @@
 #
 # Linux/deb_nopackfiles - 23/08/2001
 # 
+# 10/04/2026 - atrimbitas - Support merged-/usr systems (Debian bug #1111306).
+#              Test the directory itself for a symlink, since '/bin/' with
+#              a trailing slash resolves the link and /lib then pulled in
+#              all of /usr/lib. dpkg may record a file under /bin, /sbin or
+#              /lib or under /usr, so both forms count as owned.
 # 05/07/2006 - jfs - Skip directories that are symbolic links, this happens
 #              with /usr/X11R6/bin as the latest Xorg package
 #              versions just symlink this to /usr/bin/  (Debian bug #367931)
@@ -108,8 +113,8 @@ then
 	haveallcmds DPKG || exit 1
 fi
 
-safe_temp $WORKDIR/dpkg-packages.list
-trap 'delete $WORKDIR/dpkg-packages.list ; exit 1' 1 2 3 15
+safe_temp $WORKDIR/dpkg-packages.list $WORKDIR/dpkg-diversions.list
+trap 'delete $WORKDIR/dpkg-packages.list $WORKDIR/dpkg-diversions.list ; exit 1' 1 2 3 15
 
 # NOTE: /usr/lib cannot be added here since quite a lot of packages
 # will compile stuff there on installation which will result in a 
@@ -118,7 +123,7 @@ dirlist="/bin/ /usr/bin/ /sbin/ /usr/sbin/ /lib/ /usr/X11R6/bin"
 okdirs=""
 # Before using dirlist we are going to determine which values are ok
 for dir in $dirlist ; do
-	if [ -d $dir ] && [ ! -L $dir ] ; then
+	if [ -d $dir ] && [ ! -L "${dir%/}" ] ; then
 		if [ -n "$okdirs" ] ; then
 			okdirs="$dir $okdirs" 
 		else
@@ -141,6 +146,9 @@ then
         while read file
         do
                 pack=`$DPKG -S $file 2>/dev/null`
+                # On merged-/usr systems dpkg may record the file under /bin, /sbin or /lib
+                [ "$pack" = "" ] && [ "${file#/usr/}" != "$file" ] &&
+                pack=`$DPKG -S ${file#/usr} 2>/dev/null`
                 [ "$pack" = "" ] && {
                 message WARN lin001w "" "File \`$file' does not belong to any package." 
                 }
@@ -148,18 +156,25 @@ then
 else
         # Alternative (optimal but not following standard way)
 	seddirlist=`echo $dirlist | $SED -e 's/ /\\\\\|/g; s/\//\\\\\//g'`
+	# On merged-/usr systems /bin, /sbin and /lib link into /usr and dpkg
+	# may record a file under either path, so rewrite them to /usr
+	usrmerge=
+	for dir in bin sbin lib ; do
+		[ -L /$dir ] && usrmerge="$usrmerge -e s,^/$dir/,/usr/$dir/,"
+	done
 	$FIND /var/lib/dpkg/info -name "*.list" -exec cat {} \; |
-        $SED -ne "/^\($seddirlist\)/p" > $WORKDIR/dpkg-packages.list
+        $SED -n $usrmerge -e "/^\($seddirlist\)/p" > $WORKDIR/dpkg-packages.list
+	$SED -e '' $usrmerge /var/lib/dpkg/diversions > $WORKDIR/dpkg-diversions.list
         $FIND $dirlist -type f  2>/dev/null |
         # We are not using -maxdepth here, but we could...
         $GREP -x -F -v -f $WORKDIR/dpkg-packages.list |
         # To search for diversions
-        $GREP -x -F -v -f /var/lib/dpkg/diversions |
+        $GREP -x -F -v -f $WORKDIR/dpkg-diversions.list |
         while read file
         do
           message WARN lin001w "" "File \`$file' does not belong to any package."
         done
-        delete $WORKDIR/dpkg-packages.list
+        delete $WORKDIR/dpkg-packages.list $WORKDIR/dpkg-diversions.list
 fi
 
 exit 0

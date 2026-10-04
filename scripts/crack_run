@@ -91,7 +91,7 @@ if [ -z "$CRACK" ]
 then
   if [ -z "${Tiger_CRACK_LOC_OVERRIDE}" ]
   then
-    CRACK=`which crack`
+    CRACK=`command -v crack`
   else
     CRACK=${Tiger_CRACK_LOC_OVERRIDE}
   fi
@@ -101,7 +101,7 @@ if [ -z "$REPORTER" ]
 then
 if [ -z "${Tiger_CRACKREPORTER_LOC_OVERRIDE}" ]
 then
-   REPORTER=`which crack-reporter`
+   REPORTER=`command -v crack-reporter`
 else
    REPORTER=${Tiger_CRACKREPORTER_LOC_OVERRIDE}
 fi

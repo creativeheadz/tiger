@@ -114,7 +114,7 @@ if [ -z "$AIDE" ]
 then
 if [ -z "${Tiger_AIDE_LOC_OVERRIDE}" ]
 then 
-	AIDE=`which aide`
+	AIDE=`command -v aide`
 else 
 	AIDE=${Tiger_AIDE_LOC_OVERRIDE}
 fi

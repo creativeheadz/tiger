@@ -17,6 +17,16 @@
 #
 # Linux/deb_checkmd5sums - 24/08/2001
 #
+# 10/04/2026 - atrimbitas - Read md5sum's output as 'STATUS file' so file names
+#       with spaces work and FAILED is no longer taken for the file name
+#       (Benjamin S. in Debian bug #505906). Recognise current md5sum
+#       output, so missing files are reported again, and quote the file
+#       name in that grep. Exclude the /usr/share directories with an
+#       alternation: the bracket expression only ever matched one letter.
+# 10/04/2026 - atrimbitas - Stop using prelink to compute checksums. It was
+#       called with options it does not accept, so the check reported
+#       nothing on systems that had it installed, and prelink is no longer
+#       shipped (Debian bug #505906, Savannah bug #52087)
 # 01/23/2014 - jfs - Fix the location of dpkg-divert (Debian bug #732936 and #735102)
 # 12/19/2013 - jfs - Do not use dpkg-divert if not available
 # 09/09/2008 - jfs - Use prelink to calculate checksums if present (Debian bug #445531)
@@ -116,15 +126,6 @@ echo "# Checking md5sums of installed files"
 
 haveallcmds MD5SUM CAT CUT SED GREP EGREP BASENAME || exit 1
 
-# Prelink
-PRELINK=/usr/sbin/prelink
-if [ -x "$PRELINK" ] ; then
-    MD5SUM="$PRELINK -y --md5"
-    MD5SUM_CALL="$MD5SUM"
-else
-    MD5SUM_CALL="$MD5SUM -c"
-fi
-
 DIVERSIONS="/var/lib/dpkg/diversions"
 
 if [ -d /var/lib/dpkg/info ] 
@@ -146,18 +147,20 @@ while read md5file; do
 # { ls -d /usr/share/* |while read dir; do [ -d "$dir" ] && { echo -n "$dir:" ; find "$dir" -type f  | wc -l  ; } ; done ; } | awk -F : '{print $2" "$1;}' | sort -n |less
 #
 	$CAT "$md5file" |
-	$EGREP -v "usr/share/[doc|help|man|icons|pixmaps|i18n|locale|mime|games]/" |
+	$EGREP -v "usr/share/(doc|help|man|icons|pixmaps|fonts|i18n|locale|mime|games)/" |
 	$GREP -v " dev/" |
 	$GREP -v " lib/udev/devices/" |
 	$SED -e "s/^\(.*\)  \(.*\)/\1  \/\2/" |
-	$MD5SUM_CALL -c 2>&1 | $SED -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/; s/^.*md5sum: can't open \(.*\)/ERR \1/" | {
-		while read file err
+	$MD5SUM -c 2>&1 | $SED -n -e "s/^\(.*\): FAILED open or read$/ERR \1/p" \
+	    -e "s/^\(.*\): FAILED$/DIFF \1/p" \
+	    -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/p" \
+	    -e "s/^.*md5sum: can't open \(.*\)/ERR \1/p" | {
+		while read err file
 		do
 			package=`$BASENAME "$md5file" ".md5sums"`
-                        file=`echo $file | sed -e "s/:$//"`
 #                        echo "DEBUG: Checking file $file of $package ($err)" >&2
 			case $err in
-			DIFF|FAILED)
+			DIFF)
 				# don't check diverted now
 				[ -z "`$GREP -sxF \"$file\" $DIVERSIONS`" ] &&
 				# and conffiles should not be checked either
@@ -169,7 +172,7 @@ while read md5file; do
 				;;
 			ERR)
 # Check if this package 
- 				if $GREP -sqxF \"$file\" /var/lib/dpkg/info/$package.list ; then
+ 				if [ ! -e "$file" ] && $GREP -sqxF "$file" /var/lib/dpkg/info/$package.list ; then
 
 					message FAIL lin006f "" "Cannot check file \"$file\" provided by \"$package\" since it does not exist"
 				fi

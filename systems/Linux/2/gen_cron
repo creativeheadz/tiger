@@ -35,9 +35,9 @@
 #-----------------------------------------------------------------------------
 #
 # Defin commands we need, just in case
-[ -z "$FIND" ] && FIND=`which find` 
-[ -z "$LS" ] && LS=`which ls` 
-[ -z "$SED" ] && SED=`which sed` 
+[ -z "$FIND" ] && FIND=`command -v find`
+[ -z "$LS" ] && LS=`command -v ls`
+[ -z "$SED" ] && SED=`command -v sed`
 [ -z "$CRONSPOOL" ] && CRONSPOOL="/var/spool/cron/crontabs"
 
 [ ! -n "$GETUSERHOME" ] && GETUSERHOME=echo
