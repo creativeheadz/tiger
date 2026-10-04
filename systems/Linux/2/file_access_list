@@ -24,7 +24,7 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /bin/bash          root      root   0  0  1  1  1  1  0  1  1  0  1   W    001    002    003
 /bin/login         root      root   0  0  1  1  1  1  0  1  1  0  1   F    001    002    003
 /bin/sh            root      root   0  0  1  1  1  1  0  1  1  0  1   W    001    002    003
-/bin/su            root      root   0  0  1  1  1  1  0  1  1  0  1   F    001    002    003
+/bin/su            root      root   1  0  1  1  1  1  0  1  1  0  1   F    001    002    003
 /bin               root      root   0  0  1  1  1  1  0  1  1  0  1   W    001    002    003
 /boot              root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /dev               root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
@@ -75,11 +75,11 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /usr/bin/at        root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/bin/atq       root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/bin/atrm      root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/usr/bin/passwd    root      root   0  0  1  1  1  1  0  1  1  0  1   F    001    002    003
+/usr/bin/passwd    root      root   1  0  1  1  1  1  0  1  1  0  1   F    001    002    003
 /usr/bin/uudecode  root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/bin/uuencode  root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/usr/bin/wall      root      tty    1  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/usr/bin/write     root      tty    1  0  1  1  1  1  0  1  1  0  1   .    001    002    003
+/usr/bin/wall      root      .      0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
+/usr/bin/write     root      .      0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/games         root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/lib           root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/share         root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
@@ -90,7 +90,7 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /var/log/wtmp      root      utmp   0  0  1  1  0  1  1  0  1  0  0   .    001    002    003
 /var/run/utmp      root      utmp   0  0  1  1  0  1  1  0  1  0  0   W    017    017    017
 /var/spool         root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/var/tmp           root      root   0  1  1  1  1  1  1  1  1  1  1   .    001    002    003
+/var/tmp           root      root   0  0  1  1  1  1  1  1  1  1  1   .    001    002    003
 /var/yp            root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /var/yp/*          root      root   0  0  1  1  .  1  0  .  1  0  ..  001  002    003
 /vmlinuz           root      root   0  0  1  1  0  1  0  0  1  0  0   .    001    002    003
