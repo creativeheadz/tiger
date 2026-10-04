@@ -146,3 +146,95 @@ hosts (or interfaces) and lack capabilities to either restrict its
 use to specific local network IP addresses or hosts. 
 If the system is multi-home a local firewall configuration will prevent
 spoofing attacks due to "weak end host" issues.
+%lin020w
+kernel.kptr_restrict is 0, so any user can read kernel addresses from
+/proc/kallsyms and similar files, which defeats the randomisation of the
+kernel's own layout. Set it to 1 (hidden from unprivileged users) or 2
+(hidden from everyone):
+  # sysctl -w kernel.kptr_restrict=1
+and keep it in a file under /etc/sysctl.d/.
+%lin021w
+kernel.dmesg_restrict is 0, so any user can read the kernel log with
+dmesg. The log shows hardware, drivers, addresses and sometimes secrets
+an attacker finds useful:
+  # sysctl -w kernel.dmesg_restrict=1
+Note that /dev/kmsg has its own permissions (see dev004w).
+%lin022w
+kernel.yama.ptrace_scope is 0, so any process may attach to any other
+process of the same user with ptrace and read its memory, including the
+passwords and keys held by an agent or a browser. 1 restricts ptrace to
+a process's descendants, which is what debuggers need:
+  # sysctl -w kernel.yama.ptrace_scope=1
+%lin023f
+kernel.randomize_va_space is below 2, so address space layout
+randomisation is partly or wholly off and every process is laid out
+predictably, which is what most memory-corruption exploits rely on:
+  # sysctl -w kernel.randomize_va_space=2
+%lin024w
+kernel.sysrq is 1, so every SysRq function is available from the console
+keyboard and /proc/sysrq-trigger, including rebooting, killing all
+processes and dumping memory. Distributions ship a restricted bitmask
+(Ubuntu 176, Debian 438); 0 disables it entirely:
+  # sysctl -w kernel.sysrq=176
+%lin025w
+kernel.unprivileged_bpf_disabled is 0, so unprivileged users may load
+BPF programs into the kernel. The BPF verifier has been the source of
+several privilege escalations. 1 disables it until reboot, 2 until the
+next change:
+  # sysctl -w kernel.unprivileged_bpf_disabled=1
+%lin026w
+kernel.perf_event_paranoid is below 2, so unprivileged users may use the
+performance counters, which have been used to leak kernel data and to
+mount side-channel attacks:
+  # sysctl -w kernel.perf_event_paranoid=2
+%lin027w
+fs.suid_dumpable is 1, so a setuid program that crashes writes a core
+dump, which may hold secrets, into a directory any user can read. 0
+disables dumps for setuid programs; 2 writes them readable by root
+only, which is what systems using a crash handler such as apport need:
+  # sysctl -w fs.suid_dumpable=0
+%lin028f
+fs.protected_hardlinks is 0, so a user may create a hard link to a file
+they do not own and cannot write. Combined with a privileged program
+that writes to a path under the user's control, this is a classic way
+to overwrite system files:
+  # sysctl -w fs.protected_hardlinks=1
+%lin029f
+fs.protected_symlinks is 0, so a symlink in a world-writable sticky
+directory such as /tmp is followed no matter who created it. Privileged
+programs that open files in /tmp by name can then be made to open
+anything:
+  # sysctl -w fs.protected_symlinks=1
+%lin030w
+fs.protected_fifos is 0, so a program that opens a file by name in a
+world-writable sticky directory can be handed a FIFO created by another
+user instead, and block or read what that user feeds it:
+  # sysctl -w fs.protected_fifos=1
+%lin031w
+fs.protected_regular is 0, so a program that creates a file with O_CREAT
+in a world-writable sticky directory will happily open an existing file
+planted there by another user:
+  # sysctl -w fs.protected_regular=1
+%lin032w
+net.ipv4.conf.*.send_redirects is 1, so this host sends ICMP redirects.
+Only a router has reason to; from a host they can be used to steer
+other machines' traffic:
+  # sysctl -w net.ipv4.conf.all.send_redirects=0
+  # sysctl -w net.ipv4.conf.default.send_redirects=0
+%lin033w
+net.ipv4.icmp_ignore_bogus_error_responses is 0, so malformed ICMP error
+responses from broken routers are logged, which lets anyone fill the
+log:
+  # sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1
+%lin034w
+net.ipv6.conf.*.accept_redirects is 1, so the host accepts IPv6 ICMP
+redirects and lets any machine on the link change its routes. See
+lin012w for the IPv4 equivalent:
+  # sysctl -w net.ipv6.conf.all.accept_redirects=0
+  # sysctl -w net.ipv6.conf.default.accept_redirects=0
+%lin035f
+net.ipv6.conf.*.accept_source_route is 1, so the host accepts IPv6
+packets that dictate their own route. See lin016f for the IPv4
+equivalent:
+  # sysctl -w net.ipv6.conf.all.accept_source_route=0
+  # sysctl -w net.ipv6.conf.default.accept_source_route=0

@@ -74,6 +74,7 @@ Tiger_Check_NEVERLOG=Y          # Fast
 Tiger_Check_OS=Y                # Fast
 # - Linux, HPUX and Solaris specific
 Tiger_Check_NETWORKCONFIG=Y     # Fast
+Tiger_Check_SYSCTL=Y            # Fast - kernel, file system and IPv6 hardening settings
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       
 Tiger_Deb_NoPackFiles=Y
@@ -344,6 +345,11 @@ Tiger_FSScan_PruneDirs='/var/lib/flatpak|/var/lib/docker|/var/lib/containerd|/va
 # instead. Set to '*' to list everything.
 #
 Tiger_FSScan_DetailDirs='/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/local|/opt|/boot|/root|/var/lib|/var/spool|/srv'
+#
+# The sysctl check reads $Tiger_Sysctl_Root/proc/sys. Empty means this
+# system; the tests point it at a tree of their own.
+#
+Tiger_Sysctl_Root=''
 #
 # List of dot files commonly found in user home directories.  These
 # will be checked by check_accounts for proper access permissions.

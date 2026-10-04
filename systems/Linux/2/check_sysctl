@@ -1,0 +1,134 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_sysctl: kernel, file system and network hardening settings, read
+#               from /proc/sys and compared with the value that keeps
+#               unprivileged users away from kernel internals, keeps ASLR
+#               on, and keeps the protected_* file semantics.
+#
+# 10/04/2026 atrimbitas - Initial version. check_network_config covers the
+#                 IPv4 settings from 2002; this adds the kernel, fs and IPv6
+#                 ones. Tiger_Sysctl_Root prefixes the path so the tests can
+#                 point it at a tree of their own.
+#
+# References:
+#   https://www.kernel.org/doc/html/latest/admin-guide/sysctl/kernel.html
+#   https://www.kernel.org/doc/html/latest/admin-guide/sysctl/fs.html
+#   https://www.kernel.org/doc/html/latest/networking/ip-sysctl.html
+#
+#-----------------------------------------------------------------------------
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds CAT SED || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds CAT SED || exit 1
+haveallfiles BASEDIR WORKDIR || exit 1
+
+sysdir="${Tiger_Sysctl_Root:-}/proc/sys"
+[ -d "$sysdir" ] || {
+  message ERROR lin008e "" "The $sysdir filesystem is not available. Please make sure you have configured support for this pseudo-filesystem."
+  exit 1
+}
+
+echo
+echo "# Checking kernel and network hardening settings (sysctl)"
+
+# One setting per line: key, test, value, level, code, what a bad value means.
+# The test is eq (must equal), ge (must be at least) or ne (must not be).
+# A setting this kernel does not have is skipped; so is one whose value is
+# not a plain number.
+while read key test want level code text
+do
+  case "$key" in ''|\#*) continue ;; esac
+  file="$sysdir/`echo "$key" | $SED 's/\./\//g'`"
+  [ -r "$file" ] || continue
+  value=`$CAT "$file" 2>/dev/null | $SED 's/[[:space:]].*//'`
+  case "$value" in ''|*[!0-9-]*) continue ;; esac
+  ok=N
+  case "$test" in
+    eq) [ "$value" -eq "$want" ] && ok=Y ;;
+    ge) [ "$value" -ge "$want" ] && ok=Y ;;
+    ne) [ "$value" -ne "$want" ] && ok=Y ;;
+  esac
+  [ "$ok" = N ] && message $level $code "" "$key is $value: $text"
+done <<EOF
+# kernel
+kernel.kptr_restrict                      ge 1 WARN lin020w kernel addresses are readable by any user
+kernel.dmesg_restrict                     eq 1 WARN lin021w the kernel log is readable by any user
+kernel.yama.ptrace_scope                  ge 1 WARN lin022w any process may attach to another of the same user with ptrace
+kernel.randomize_va_space                 eq 2 FAIL lin023f address space layout randomisation is not fully enabled
+kernel.sysrq                              ne 1 WARN lin024w every SysRq function is enabled from the keyboard and /proc/sysrq-trigger
+kernel.unprivileged_bpf_disabled          ge 1 WARN lin025w unprivileged users may load BPF programs
+kernel.perf_event_paranoid                ge 2 WARN lin026w unprivileged users may use performance monitoring
+# file system
+fs.suid_dumpable                          ne 1 WARN lin027w setuid programs may dump core into directories any user can read
+fs.protected_hardlinks                    eq 1 FAIL lin028f users may create hard links to files they do not own
+fs.protected_symlinks                     eq 1 FAIL lin029f symlinks in world-writable directories are followed whoever owns them
+fs.protected_fifos                        ge 1 WARN lin030w FIFOs in world-writable directories are opened whoever owns them
+fs.protected_regular                      ge 1 WARN lin031w regular files in world-writable directories are opened whoever owns them
+# network
+net.ipv4.conf.all.send_redirects          eq 0 WARN lin032w the host sends ICMP redirects
+net.ipv4.conf.default.send_redirects      eq 0 WARN lin032w the host sends ICMP redirects on new interfaces
+net.ipv4.icmp_ignore_bogus_error_responses eq 1 WARN lin033w bogus ICMP error responses are logged, which floods the log
+net.ipv6.conf.all.accept_redirects        eq 0 WARN lin034w IPv6 ICMP redirects are accepted
+net.ipv6.conf.default.accept_redirects    eq 0 WARN lin034w IPv6 ICMP redirects are accepted on new interfaces
+net.ipv6.conf.all.accept_source_route     eq 0 FAIL lin035f IPv6 source routing is accepted
+net.ipv6.conf.default.accept_source_route eq 0 FAIL lin035f IPv6 source routing is accepted on new interfaces
+EOF
+
+exit 0

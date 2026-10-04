@@ -134,6 +134,10 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   $SYSTEMDIR/check_network_config
 }
 
+[ "$Tiger_Check_SYSCTL" != 'N' ] && {
+  $SYSTEMDIR/check_sysctl
+}
+
 [ "$Tiger_Check_PASSWD" != 'N' -a "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
   $SYSTEMDIR/check_passwdspec
 }
