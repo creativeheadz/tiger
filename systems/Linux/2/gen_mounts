@@ -184,6 +184,7 @@ localfs()
   [ "$1" = "fuse.gvfsd-fuse" ] && LOCAL=1       # Used in Ubuntu 13.10 (Saucy Salamander) replaces fuse.gvfs-fuse-daemon
   [ "$1" = "fuse.ltspfs" ] && LOCAL=0 		# Used by LTSP 5.x
   [ "$1" = "fuse.lxcfs" ] && LOCAL=0
+  [ "$1" = "fuse.portal" ] && LOCAL=0
   [ "$1" = "fuse.clamfs" ] && LOCAL=0           # ClamFS anti-virus protected file system
   [ "$1" = "fuse.javafs" ] && LOCAL=0           # Java FS, used by Wuala secure online storage, see:
                                                 # https://github.com/puniverse/javafs
