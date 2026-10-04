@@ -106,7 +106,9 @@ traditional strength.
 ## 4.0: where Tiger beats Lynis (large)
 
 - [ ] **JSON report** with a versioned schema, written next to the text
-      report. Exit codes that CI and automation can act on.
+      report. ([x] JSON Lines from `message()` itself, with run and summary
+      records, since October 2026; the schema document and a version
+      field are still to do.) Exit codes that CI and automation can act on.
 - [ ] **One metadata file per check**: ID, severity, category, controls,
       fix and references. The docs, `tiger explain <ID>` (replacing
       `tigexp`) and the JSON are all generated from it.
