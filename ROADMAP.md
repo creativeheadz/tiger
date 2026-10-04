@@ -84,8 +84,10 @@ traditional strength.
       config file. (`check_ssh`, 15 directives and the algorithm lists.)
 - [ ] sudo and sudoers.d, PAM (password quality, faillock), and accounts
       without passwords.
-- [ ] systemd: enabled services, timers next to cron, and unit hardening
-      (`systemd-analyze security`).
+- [ ] systemd: enabled services, timers next to cron, and [x] unit
+      hardening (`check_systemd`: `systemd-analyze security` for the units
+      that listen on the network, with the three protections that would
+      help most).
 - [ ] Firewall: nftables, iptables, ufw or firewalld present, with a
       default-deny policy.
 - [ ] Kernel: sysctl hardening ([x] `check_sysctl`: kptr/dmesg restrict,
