@@ -311,8 +311,10 @@ if [ -n "$Tiger_FSScan_PruneDirs" ]; then
   set -f
   for prunedir in $Tiger_FSScan_PruneDirs
   do
+    # Match the directory and anything below it: a mount point inside a
+    # pruned directory is a starting point of its own for find
     [ -n "$pruneopt" ] && pruneopt="$pruneopt -o"
-    pruneopt="$pruneopt -path '${prunedir%/}'"
+    pruneopt="$pruneopt -path '${prunedir%/}' -o -path '${prunedir%/}/*'"
   done
   set +f
   IFS=$saveIFS
