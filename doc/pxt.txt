@@ -6,6 +6,13 @@ any system user. This might open security holes if these are shared
 devices or hold binaries (disks for example). The administrator should
 properly set device access (using group configuration to provide
 access to a device to multiple users, for example).
+%dev004w
+The device can be read by any user. For most devices that is harmless
+and intended, but a few leak information: /dev/kmsg is the kernel log,
+which may show hardware, drivers and addresses an attacker would find
+useful (setting kernel.dmesg_restrict=1 only governs the dmesg call, not
+this file). Review whether the device needs to be world readable and
+restrict it with udev rules or group ownership if not.
 %dev003w
 There is a file in the devices directory which is a common file. Devices
 directory should only hold special files although some systems have
