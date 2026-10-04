@@ -91,6 +91,7 @@ PLATFORM_SCRIPTS=$$(find ./systems/ -type f)
 
 BINARIES=./tiger \
 	 ./tigris \
+	 ./tigris-diff \
 	 ./tigexp  \
 	 ./tigercron 
 

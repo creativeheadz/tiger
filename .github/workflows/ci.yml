@@ -14,7 +14,7 @@ jobs:
       - name: sh -n on every shell script
         run: |
           fail=0; n=0
-          for f in $(git ls-files tiger tigexp tigercron config initdefs scripts systems util tests); do
+          for f in $(git ls-files tiger tigris-diff tigexp tigercron config initdefs scripts systems util tests); do
             case "$f" in *.c|*.pl|*.txt|*.lst|*.tmpl|*.xref|*README*|*/services|*/inetd|*_list|*signatures*|*advisories*|*baseline*|*embedlist*|*facl*) continue;; esac
             [ -f "$f" ] || continue
             head -1 "$f" | grep -q 'perl' && continue
@@ -31,6 +31,8 @@ jobs:
         run: sh tests/systemd_check.sh
       - name: JSON Lines report
         run: sh tests/json_check.sh
+      - name: tigris-diff between two runs
+        run: sh tests/diff_check.sh
       - name: ShellCheck (errors)
         # Tiger tests "[ $TESTEXEC file ]" with TESTEXEC=-x or -f, which
         # ShellCheck cannot parse; those files are reported but do not fail

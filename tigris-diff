@@ -1,0 +1,147 @@
+#!/bin/sh
+#
+#     tigris - a security auditor for Linux, descended from TIGER
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# tigris-diff - what changed between two runs
+#
+#   tigris-diff [-a] [-j] [-l LOGDIR] [OLD.jsonl [NEW.jsonl]]
+#
+# Compares the JSON Lines reports of two runs and lists the findings that
+# are new in the second and the ones that were resolved since the first.
+# A finding is the same finding when its level, id and message are the
+# same. With no files, the two most recent runs in the log directory are
+# compared; with one, that run and the one before it.
+#
+#   -a   include INFO findings (left out by default)
+#   -j   write the result as one JSON object instead of text
+#   -l   the log directory (default: ./log if it exists, else /var/log/tiger)
+#
+# Exit status: 0 when nothing is new, 1 when something is, 2 on error.
+#
+#-----------------------------------------------------------------------------
+
+all=N
+json=N
+logdir=
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -a) all=Y ;;
+    -j) json=Y ;;
+    -l) logdir=$2; shift ;;
+    -h|--help) sed -n '18,33p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "tigris-diff: unknown option $1" >&2; exit 2 ;;
+    *)  break ;;
+  esac
+  shift
+done
+
+if [ $# -lt 2 ]; then
+  [ -n "$logdir" ] || { if [ -d ./log ]; then logdir=./log; else logdir=/var/log/tiger; fi; }
+  # newest last, by name: the date stamp sorts
+  set -- $# "$@" `ls "$logdir"/security.report.*.jsonl 2>/dev/null | sort`
+  n=$1; shift
+  if [ "$n" -eq 1 ]; then
+    new=$1; shift
+    old=
+    for f; do case "${f##*/}" in "${new##*/}") break ;; *) old=$f ;; esac; done
+    [ -n "$old" ] || { echo "tigris-diff: no run before $new in $logdir" >&2; exit 2; }
+  else
+    [ $# -ge 2 ] || { echo "tigris-diff: need two runs to compare; $logdir has $#" >&2; exit 2; }
+    while [ $# -gt 2 ]; do shift; done
+    old=$1; new=$2
+  fi
+else
+  old=$1; new=$2
+fi
+for f in "$old" "$new"
+do
+  [ -r "$f" ] || { echo "tigris-diff: cannot read $f" >&2; exit 2; }
+done
+
+awk -v all="$all" -v json="$json" -v oldfile="$old" -v newfile="$new" '
+# The raw value of a string field, escapes kept, so two records with the
+# same bytes compare equal without decoding.
+function jraw(rec, key,    i, s, out, c, n) {
+  i = index(rec, "\"" key "\":\"")
+  if (i == 0) return ""
+  s = substr(rec, i + length(key) + 4); out = ""; n = length(s)
+  for (i = 1; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (c == "\\") { out = out c substr(s, i + 1, 1); i++ }
+    else if (c == "\"") break
+    else out = out c
+  }
+  return out
+}
+function hex(h,    v, i) {
+  v = 0
+  for (i = 1; i <= length(h); i++) v = v * 16 + index("0123456789abcdef", tolower(substr(h, i, 1))) - 1
+  return v
+}
+# The same, decoded for people
+function jtext(rec, key,    s, out, c, i, n) {
+  s = jraw(rec, key); out = ""; n = length(s)
+  for (i = 1; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (c != "\\") { out = out c; continue }
+    i++; c = substr(s, i, 1)
+    if (c == "n") out = out "\n"
+    else if (c == "t") out = out "\t"
+    else if (c == "u") { out = out sprintf("%c", hex(substr(s, i + 1, 4))); i += 4 }
+    else out = out c
+  }
+  return out
+}
+function take(rec, which,    key, level) {
+  if (index(rec, "\"type\":\"finding\"") == 0) {
+    if (index(rec, "\"type\":\"run\"") > 0) run[which] = rec
+    return
+  }
+  level = jraw(rec, "level")
+  if (level == "INFO" && all != "Y") return
+  key = level "\t" jraw(rec, "id") "\t" jraw(rec, "message")
+  if (which == 1) { old[key] = rec; oldorder[++nold] = key }
+  else            { new[key] = rec; neworder[++nnew] = key }
+}
+function who(which,    r) {
+  r = run[which]
+  if (r == "") return (which == 1 ? oldfile : newfile)
+  return jtext(r, "host") " " jtext(r, "start")
+}
+FNR == NR { take($0, 1); next }
+          { take($0, 2) }
+END {
+  nres = 0; nadd = 0; same = 0
+  for (i = 1; i <= nold; i++) { k = oldorder[i]; if (!(k in new)) resolved[++nres] = k; else same++ }
+  for (i = 1; i <= nnew; i++) { k = neworder[i]; if (!(k in old)) added[++nadd] = k }
+  if (json == "Y") {
+    printf "{\"type\":\"diff\",\"from\":%s,\"to\":%s,", (run[1] == "" ? "null" : run[1]), (run[2] == "" ? "null" : run[2])
+    printf "\"new\":["
+    for (i = 1; i <= nadd; i++) printf "%s%s", (i > 1 ? "," : ""), new[added[i]]
+    printf "],\"resolved\":["
+    for (i = 1; i <= nres; i++) printf "%s%s", (i > 1 ? "," : ""), old[resolved[i]]
+    printf "],\"unchanged\":%d}\n", same
+  } else {
+    printf "Tigris diff: %s -> %s\n", who(1), who(2)
+    printf "  new (%d):\n", nadd
+    for (i = 1; i <= nadd; i++) { r = new[added[i]]; printf "    + %-5s %s %s\n", jtext(r, "level"), jtext(r, "id"), jtext(r, "message") }
+    printf "  resolved (%d):\n", nres
+    for (i = 1; i <= nres; i++) { r = old[resolved[i]]; printf "    - %-5s %s %s\n", jtext(r, "level"), jtext(r, "id"), jtext(r, "message") }
+    printf "  unchanged: %d%s\n", same, (all == "Y" ? "" : " (INFO not compared; -a includes it)")
+  }
+  exit (nadd > 0 ? 1 : 0)
+}' "$old" "$new"

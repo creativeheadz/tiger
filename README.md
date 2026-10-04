@@ -56,6 +56,14 @@ in a message are written as `\u00XX`, one per byte, so file names in any
 encoding survive and the file is plain ASCII. `Tiger_Output_JSON=N` in
 `tigerrc` turns it off.
 
+`tigris-diff` compares two of those files and lists what is new and what
+was resolved; with no arguments it takes the two most recent runs in
+`log/`. It exits 1 when anything is new, so a cron job or a CI step can
+act on it, and `-j` gives the same as one JSON object:
+
+    ./tigris-diff                      # the last two runs
+    ./tigris-diff old.jsonl new.jsonl  # any two
+
 ## Where it is going
 
 [ROADMAP.md](ROADMAP.md): a modern Linux baseline, JSON output, a free
