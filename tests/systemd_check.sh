@@ -39,6 +39,8 @@ EOT
 else
 cat <<EOT
   NAME                                   DESCRIPTION                                   EXPOSURE
+- PrivateNetwork=                        Service has access to the host's network                0.5
+- RestrictAddressFamilies=~AF_(INET|INET6) Service may allocate Internet sockets                0.3
 - RootDirectory=/RootImage=              Service runs within the host's root directory      0.1
 - User=/DynamicUser=                     Service runs as root user                          0.4
 - NoNewPrivileges=                       Service processes may acquire new privileges       0.3
@@ -67,6 +69,7 @@ check() { if grep -q "$1" "$W/joined"; then echo "ok   $2"; else echo "FAIL $2";
 nocheck() { if grep -q "$1" "$W/joined"; then echo "FAIL $2"; fail=1; else echo "ok   $2"; fi; }
 check 'sysd001w.*ssh.service listens on 22/tcp with exposure 9.6 (UNSAFE)'   "socket-activated ssh scored as its service, UNSAFE"
 check 'sysd001w.*ssh.service.*User=/DynamicUser=, NoNewPrivileges=, ProtectSystem='   "the three heaviest missing protections named, by weight"
+nocheck 'PrivateNetwork\|RestrictAddressFamilies'                               "network-isolating options are not suggested to a listener"
 check 'sysd001w.*cups.service listens on 631/tcp'                              "cups reported UNSAFE"
 check 'sysd002i.*avahi-daemon.service listens on 5353/udp with exposure 7.8'   "avahi reported EXPOSED as INFO"
 nocheck 'systemd-resolved'                                                     "an OK unit is not reported"
