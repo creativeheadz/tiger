@@ -37,10 +37,17 @@ that other tools can use, honest evidence, and quality engineering.
    never touches the network unless asked.
 5. **Linux first, done properly.** Debian, Ubuntu, RHEL-likes, Fedora,
    SUSE, Alpine and Arch. Other Unixes come back only with a maintainer
-   and a CI runner.
+   and a CI runner. Windows gets its own engine against the same spec
+   once that spec exists (see below).
 6. **No check ships without a test.** Each check must catch a planted
    problem and stay quiet on a clean system, as the 3.2.4 container
    tests did.
+7. **Lean.** Tiger must run well on a Raspberry Pi or a 512 MB VPS, not
+   just a workstation. Every release records the wall time, CPU time and
+   peak memory of a full run on a reference machine, and a change that
+   makes those worse needs a reason. No check spawns a process per file
+   when one pass will do, and the file system scan stays the only thing
+   allowed to take minutes.
 
 ## 3.2.x: maintenance (small)
 
@@ -121,16 +128,31 @@ traditional strength.
   temporary file, everything quoted. Tiger runs as root, so its own code
   has to be beyond reproach.
 - **Speed:** independent checks run in parallel, and a full run on a
-  typical server finishes in minutes.
+  typical server finishes in minutes. First target: `util/flogit`, which
+  runs `ls | awk` for every file the filesystem scan finds, so a root
+  disk with 500k files costs about a million processes. `find` can
+  classify ownership and permissions itself in one pass.
 - **Packaging:** a Debian upload through Javier or our own APT repository,
   Fedora COPR, the AUR, Alpine, and a container image to scan a host or
   image.
 - **Docs:** man pages, plus a GitHub Pages site generated from the check
   metadata.
 
+## Windows (after 4.0)
+
+Windows has nothing like Lynis or Tiger in the open: HardeningKitty
+checks settings against CIS and Microsoft baselines, and the rest is
+commercial. Tiger's shell code can't run on a Windows host, but after 4.0
+the parts that matter are language-neutral: the finding IDs and
+metadata, the JSON schema, the compliance mapping and the explanations.
+A `tiger.ps1` engine implements the same spec in PowerShell, using WMI
+and CIM, the registry, the event log, `Get-Hotfix`, `auditpol`,
+`secedit` and Defender's APIs, and emits the same JSON. One report
+format, one set of IDs, one `tiger explain`, two engines. It starts once
+the 4.0 schema is stable, so it's built against a fixed contract.
+
 ## Not planned
 
 - A GUI or a resident daemon. Tiger stays a command-line tool; dashboards
   belong to whatever reads its JSON.
 - Automatic remediation. Tiger shows the fix and the admin runs it.
-- Windows.
