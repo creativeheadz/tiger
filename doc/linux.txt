@@ -270,3 +270,50 @@ or a mitigation turned off on the kernel command line (mitigations=off,
 nospectre_v2). Update the microcode package (intel-microcode or
 amd64-microcode), remove any such option from the boot command line,
 and reboot. The message quotes the kernel's own text.
+%boot001w
+The LILO configuration file is readable by its group. It can hold the
+boot password in clear text and should be 0600 and owned by root.
+%boot002f
+The LILO configuration file is readable by everyone. It can hold the
+boot password in clear text; make it 0600, owned by root.
+%boot003w
+The GRUB configuration file is readable by its group. It can hold a
+boot password hash and the kernel command line; make it 0600 or 0400.
+%boot004f
+The GRUB configuration file is readable by everyone. It can hold a boot
+password hash and the kernel command line; make it 0600 or 0400.
+%boot005w
+Neither LILO's nor GRUB's configuration file could be read, so the boot
+loader checks were not done.
+%boot006w
+LILO is not configured with a password, so anyone at the console can
+boot with init=/bin/sh or single and get a root shell. Add password=
+and restricted to lilo.conf, make the file 0600 and rerun lilo.
+%boot007w
+LILO has "restricted" set, which only has an effect together with a
+password, and no password is configured. Add password= to lilo.conf,
+make the file 0600 and rerun lilo.
+%boot008w
+GRUB is not configured with a password, so anyone at the console can
+edit the boot entry (init=/bin/sh, single) and get a root shell. Set a
+superuser and a password with grub-mkpasswd-pbkdf2 in
+/etc/grub.d/40_custom and regenerate the configuration. On a machine
+without console access by untrusted people this may be acceptable.
+%lin037e
+None of the directories the package check looks at (/bin, /usr/bin,
+/sbin, /usr/sbin, /lib) is a plain directory on this system, so there is
+nothing to compare against the package database. This should not
+happen on a Linux system; check the dirlist in deb_nopackfiles.
+%ptch001f
+The patch management tool reports packages that have newer versions
+available. Install the updates, in particular the security ones.
+%ptch002f
+apt-get reports packages that have newer versions available. Run
+apt-get update && apt-get upgrade, or at least install the security
+updates.
+%ptch004w
+No supported patch management tool (apt, autorpm) was found, so the
+check for pending updates could not be done.
+%ptch005e
+The patch check needs root to refresh the package lists; run Tiger as
+root for a reliable result.

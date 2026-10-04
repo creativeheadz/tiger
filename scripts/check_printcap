@@ -113,7 +113,7 @@ check_filter()
       /*/*) {
 	if [ ! -f "$__comp" -a ! -d "$__comp" ]; then
 	  [ $pass -eq 1 ] && {
-	    message INFO xxxx "" "Printer control $__f's file \`$__comp' for printer \`$__pr' does not exist."
+	    message INFO prnt001i "" "Printer control $__f's file \`$__comp' for printer \`$__pr' does not exist."
 	    echo
 	  }
 	  

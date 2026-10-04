@@ -78,3 +78,6 @@ Tripwire has detected an inconsistency in the noted file.  This file
 has been modified in some way since the database was built -- either
 upgraded, removed or tampered with.  If this modification is legitimate
 please refresh the tripwire database by running "tripwire --update"
+%prnt001i
+A file named in a printer's printcap entry does not exist. Harmless if
+the printer is not in use; otherwise fix the entry.

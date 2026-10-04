@@ -100,3 +100,7 @@ Also check for legitimate services that you have commented
 out in your /etc/inetd.conf. Intruders may turn on a service
 that you previously thought you had turned off, or replace
 the inetd program with a Trojan horse program.
+%kis015i
+The ip command was not found, so promiscuous-mode detection used
+ifconfig, which reports it only for some drivers. Install iproute2 for
+a complete check.

@@ -76,7 +76,7 @@ haveallcmds FILECMD LS SGREP STRINGS && {
         $Tiger_Admin_Accounts|root)
           ;;
         *)
-          message FAIL fsys0012w \"\" \"File $file is not owned by an administrative user.\"
+          message FAIL fsys018f \"\" \"File $file is not owned by an administrative user.\"
           $LS $LSGROUP -ld \"$file\"
       esac"
     done

@@ -133,7 +133,7 @@ for dir in $dirlist ; do
 done
 dirlist=$okdirs
 if [ -z "$dirlist" ]; then
-	message ERROR linxxxw "" "None of the configured directories are available"
+	message ERROR lin037e "" "None of the configured directories are available"
 	exit 1
 fi
 

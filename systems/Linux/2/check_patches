@@ -93,7 +93,7 @@ then
 
 	if [ -s $tmplog ]
 	then
-		message FAIL ptch01f "" "Following packages not up to date:"
+		message FAIL ptch001f "" "Following packages not up to date:"
 		while read filename
 		do
 			echo "		$filename"
@@ -105,13 +105,13 @@ then
 elif [ -n "$APT" -a -x "$APT" ]
 then
 	tmplog="$WORKDIR/apt-get.out.tmp.$$"
-	[ "$UUID" -gt 0  ] && message ERROR ptch05e "" "This script is not running as super-user, it will probably be unable to update the package database from it's sources."
+	[ "$UUID" -gt 0  ] && message ERROR ptch005e "" "This script is not running as super-user, it will probably be unable to update the package database from it's sources."
 
        	$APT update 1> /dev/null
        	$APT -s upgrade | $GREP "^Inst" | awk '{print $2}' > $tmplog
 	if [ -s $tmplog ]
 	then
-               	message FAIL ptch02f "" "apt-get reports following packages not up to date:"    
+               	message FAIL ptch002f "" "apt-get reports following packages not up to date:"    
 		while read filename
 		do
 			echo "		$filename"
@@ -119,6 +119,6 @@ then
 		delete $tmplog
        	fi
 else
-	message WARN ptch04w "" "Can't find patch management tool."
+	message WARN ptch004w "" "Can't find patch management tool."
 fi
 

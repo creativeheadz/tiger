@@ -99,11 +99,11 @@ then
 
 	if [ $rgr -eq 1 -o $rgw -eq 1 -o $rgx -eq 1 ]
 	then
-                message WARN boot01 "" "The configuration file lilo.conf has group permissions"
+                message WARN boot001w "" "The configuration file lilo.conf has group permissions"
 	fi
 	if [ $ror -eq 1 -o $row -eq 1 -o $rox -eq 1 ]
 	then
-                message FAIL boot01 "" "The configuration file lilo.conf has other permissions"
+                message FAIL boot002f "" "The configuration file lilo.conf has other permissions"
         fi
 
 	done
@@ -111,10 +111,10 @@ then
 	# Lilo password checks
 	if [ -n "`$GREP ^restricted $file`" ] ; then
             if [ -z "`$GREP ^password $file`" ] ; then
-                message WARN boot05 "" "The bootloader is restricted but does not seem to have a password configured."
+                message WARN boot007w "" "The bootloader is restricted but does not seem to have a password configured."
 	    fi 
 	else
-                message WARN boot04 "" "The bootloader lilo is not configured with a password"
+                message WARN boot006w "" "The bootloader lilo is not configured with a password"
 	fi
 
 fi
@@ -141,7 +141,7 @@ then
 	found="Y"
 	# GRUB password checks
         if [ -z "`$EGREP '^[[:blank:]]*password' $file`" ] ; then
-                message WARN boot06 "" "The Grub bootloader configuation file ($file) does not have a password configured."
+                message WARN boot008w "" "The Grub bootloader configuation file ($file) does not have a password configured."
 	else 
 
         # If GRUB *does* have a password then we check its permissions. Otherwise, we 
@@ -151,17 +151,17 @@ then
             do
 
             if [ $rgr -eq 1 -o $rgw -eq 1 -o $rgx -eq 1 ]; then
-                message WARN boot02 "" "The Grub bootloader configuration file $file has group permissions. Should be 0600 o 0400."
+                message WARN boot003w "" "The Grub bootloader configuration file $file has group permissions. Should be 0600 o 0400."
             fi
             if [ $ror -eq 1 -o $row -eq 1 -o $rox -eq 1 ]; then
-                message FAIL boot02 "" "The Grub bootloader configuration file $file has world readable permissions. Should be 0600 o 0400."
+                message FAIL boot004f "" "The Grub bootloader configuration file $file has world readable permissions. Should be 0600 o 0400."
             fi
 	    done
         fi
 fi
 
 [ "$found" != 'Y' ] && {
-	message WARN boot03w "" "Could not access LILO's or Grub's configuration file"
+	message WARN boot005w "" "Could not access LILO's or Grub's configuration file"
 }
 
 exit 0

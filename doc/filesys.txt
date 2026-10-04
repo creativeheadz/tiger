@@ -117,3 +117,9 @@ the orphaned files.
 This circumstance might also show up if the group database is not fully
 defined locally (i.e. some of it is in an external repository such as an
 LDAP). If this is the case you can safely ignore this warning.
+%fsys018f
+A setuid file is owned by an ordinary user rather than an
+administrative account. A setuid program runs with its owner's
+privileges, so this gives whoever can run it that user's identity, and
+the owner can change the program at will. Setuid files should be owned
+by root or another administrative account, or not be setuid.

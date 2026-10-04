@@ -255,3 +255,7 @@ the script owner and permissions.
 The script will not be run since it is not executable. This might be a problem
 with the installation of Tiger so you should recheck the script's file owner
 and permissions.
+%trip001f
+Tripwire reports that a file it is watching has been modified since the
+database was last updated. If the change was expected (an upgrade),
+update the database; if not, treat it as a possible intrusion.

@@ -126,7 +126,7 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
   haveallcmds IFCONFIG && { 
      # Note: This is Linux specific 
      # (maybe should be moved to systems/Linux/2/check_known)
-     [ ! -x "$IP" -o "$OS" != "Linux" ] && message INFO kisXXX "" "Using $IFCONFIG instead of $IP, promiscuous mode detection incomplete. Installing $IP adds libpcap/libnet-based sniffer detection capabilities."
+     [ ! -x "$IP" -o "$OS" != "Linux" ] && message INFO kis015i "" "Using $IFCONFIG instead of $IP, promiscuous mode detection incomplete. Installing $IP adds libpcap/libnet-based sniffer detection capabilities."
 
      # Extract kernel major and minor version, only take numbers
      MAJOR_VER=`echo $REV | $CUT -f 1 -d . | $EGREP '^[0-9].*'`
