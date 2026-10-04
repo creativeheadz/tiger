@@ -1,0 +1,91 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# util/realpath - 10/04/2026
+#
+# Resolve symbolic links the way c/realpath does, for trees where the C
+# helper has not been built. The config scripts point REALPATH here when
+# $BINDIR/realpath is missing. The system's own realpath has a different
+# interface (no stdin mode, no -d), so it cannot stand in directly.
+#
+#   realpath [-d] PATH...     print the resolved path of each PATH
+#   realpath [-d] < LIST      print "PATH RESOLVED" for each line of LIST
+#
+# -d is accepted for compatibility. The C version then also prints the
+# directory in front of each symlink it follows; no check reads that.
+#
+#-----------------------------------------------------------------------------
+
+[ "$1" = "-d" ] && shift
+
+# Prefer one realpath or readlink process for the whole list
+batch=
+if realpath -m -- / >/dev/null 2>&1 ; then
+  batch="realpath -m --"
+elif readlink -f -- / >/dev/null 2>&1 ; then
+  batch="readlink -f --"
+fi
+
+resolve_one()
+{
+  if [ -n "$batch" ]; then
+    $batch "$1" 2>/dev/null
+  else
+    # No resolver at hand: follow the final component by hand
+    __p=$1
+    __n=0
+    while [ -h "$__p" ] && [ $__n -lt 32 ]
+    do
+      __t=`ls -ld -- "$__p" | sed 's/.* -> //'`
+      case "$__t" in
+        /*) __p=$__t ;;
+         *) __p=`dirname -- "$__p"`/$__t ;;
+      esac
+      __n=`expr $__n + 1`
+    done
+    printf '%s\n' "$__p"
+  fi
+}
+
+if [ $# -gt 0 ]; then
+  for path
+  do
+    resolve_one "$path"
+  done
+  exit 0
+fi
+
+# List on stdin. Resolve it in one go when the resolver takes a batch, and
+# pair each answer with its question; the resolvers above never drop a line.
+if [ -n "$batch" ]; then
+  tmpdir=`mktemp -d "${TMPDIR:-/tmp}/tiger-realpath.XXXXXX"` || exit 1
+  trap 'rm -rf "$tmpdir"' 0 1 2 3 15
+  cat > "$tmpdir/in"
+  tr '\n' '\0' < "$tmpdir/in" | xargs -0 $batch > "$tmpdir/out" 2>/dev/null
+  if [ `wc -l < "$tmpdir/in"` -eq `wc -l < "$tmpdir/out"` ]; then
+    paste -d ' ' "$tmpdir/in" "$tmpdir/out"
+    exit 0
+  fi
+  # Lines did not pair up, so go one by one below
+fi
+
+while IFS= read -r path
+do
+  resolved=`resolve_one "$path"`
+  [ -n "$resolved" ] && printf '%s %s\n' "$path" "$resolved"
+done
+exit 0

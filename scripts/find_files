@@ -251,6 +251,44 @@ done
 [ -n "$suidopt$sgidopt$devopt$linkopt$wdiropt$nownopt$nogrpopt" ] &&
 findopt="$findopt \)"
 
+#
+# When find can write each class of file to its own list (-fprintf, GNU
+# findutils and bfs), let it do the whole job in one pass. Otherwise every
+# matching file goes through util/flogit, which runs ls and awk per file.
+#
+fastfind=
+$FIND /dev/null -maxdepth 0 -xtype l -fprintf /dev/null '' >/dev/null 2>&1 &&
+  fastfind=Y
+
+# Build the one-pass find expression for one set of output files
+fastopts()
+{
+  fo=
+  [ "$Tiger_FSScan_ofNote" != 'N' ] && {
+    fo="\( \( -name ..."
+    IFS=/
+    for fspec in $filespecs
+    do
+      fo="$fo -o -name \"$fspec\""
+    done
+    IFS=$saveifs
+    fo="$fo \) -fprintf \"$1.other.$2\" '%p\n' \)"
+  }
+  [ "x$Tiger_FSScan_Setuid" != 'xN' ] &&
+    fo="$fo${fo:+ ,} \( -perm -004000 ! -type d -fprintf \"$1.suid.$2\" '%p\n' \)"
+  [ "x$Tiger_FSScan_Setgid" != 'xN' ] &&
+    fo="$fo${fo:+ ,} \( -perm -002000 ! -type d -fprintf \"$1.sgid.$2\" '%p\n' \)"
+  [ "x$Tiger_FSScan_Devs" != 'xN' ] &&
+    fo="$fo${fo:+ ,} \( \( -type b -o -type c \) -fprintf \"$1.dev.$2\" '%p\n' \)"
+  [ "x$Tiger_FSScan_SymLinks" != 'xN' ] &&
+    fo="$fo${fo:+ ,} \( -type l -fprintf \"$1.link.$2\" '%p\n' \) , \( -type l -xtype l -fprintf \"$1.dangling.$2\" '%p\n' \)"
+  [ "x$Tiger_FSScan_WDIR" != 'xN' ] &&
+    fo="$fo${fo:+ ,} \( -type d -perm -000002 -fprintf \"$1.wdir.$2\" '%p\n' \)"
+  [ "x$Tiger_FSScan_Unowned" != 'xN' ] &&
+    fo="$fo${fo:+ ,} \( -nouser -fprintf \"$1.nouser.$2\" '%p\n' \) , \( -nogroup -fprintf \"$1.nogroup.$2\" '%p\n' \)"
+  [ -n "$fo" ] && printf '%s\n' "\( $fo \)"
+}
+
 pidlist=$WORKDIR/pid.list$$
 mountlist=$WORKDIR/mount.list$$
 outfile=$WORKDIR/find.out.$$
@@ -315,6 +353,14 @@ fi
       # Do not change these variable names
       otherfile="${outfile}.other.$counter"	
 
+      if [ -n "$fastfind" ]; then
+        # One find for all the mount points on this line: -xdev applies to
+        # each starting point, and -fprintf truncates its file when find
+        # starts, so one find per mount point would keep only the last
+        fastopt=`fastopts "$outfile" "$counter"`
+        [ -n "$fastopt" ] &&
+          eval nice -5 $FIND $disklist $findpruneopt $pruneopt $fastopt 2>/dev/null
+      else
 #     echo "$FIND x $findpruneopt $pruneopt $findopt -print" 1>&2
       for mountpt in $disklist
       do
@@ -322,11 +368,12 @@ fi
 	#     being used in the find options.  Commented out --mlk
         #     cd /
 	eval nice -5 $FIND "$mountpt" $findpruneopt $pruneopt $findopt -print 2>/dev/null
-      done | nice -6 $output 2>&1 | 
+      done | nice -6 $output 2>&1 |
         sed -e '/No such file/s/^.*:[[:space:]]\(.*\):[[:space:]].*$/\1/' |
-        while  read symlink ; do 
+        while  read symlink ; do
             message WARN fsys013w "" "$symlink is a dangling symlink."
         done
+      fi
     } &
     echo $! >> $pidlist
     counter=`$EXPR $counter + 1`
@@ -335,7 +382,7 @@ fi
   $WAIT `[ "$WAIT" != 'wait' ] && $CAT $pidlist`
   pidlist=
 
-  for what in suid sgid other dev link wdir nouser nogroup
+  for what in suid sgid other dev link wdir nouser nogroup dangling
   do
     count=1
     while [ $count -lt $counter ]
@@ -347,6 +394,13 @@ fi
     done |
     $SORT > $outfile.${what}
   done
+
+  # The one-pass find lists dangling symlinks; the flogit path reports them as it goes
+  [ -s $outfile.dangling ] &&
+  while read symlink
+  do
+    message WARN fsys013w "" "$symlink is a dangling symlink."
+  done < $outfile.dangling
 } &
 
 pid=$!
