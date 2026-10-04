@@ -196,6 +196,77 @@ elif [ -f /etc/ssh/sshd_config ]; then
 fi
 }
 
+#
+# The effective configuration, as sshd itself resolves it: Include files,
+# Match-free defaults and all. Needs a working sshd and (for its host keys)
+# root; otherwise the text parsing below is used. Tiger_SSHD_Cmd lets the
+# tests feed a fixture in sshd -T format.
+#
+effective=
+sshd_cmd=${Tiger_SSHD_Cmd:-}
+if [ -z "$sshd_cmd" ]; then
+	for d in /usr/sbin /usr/local/sbin /sbin
+	do
+		[ -x "$d/sshd" ] && { sshd_cmd="$d/sshd -T"; break; }
+	done
+	# A single configured file that is not the default: ask sshd about that one
+	case "$SSHD_CONFIG" in
+		''|/etc/ssh/sshd_config|*' '*) ;;
+		*) [ -n "$sshd_cmd" ] && sshd_cmd="$sshd_cmd -f $SSHD_CONFIG" ;;
+	esac
+fi
+if [ -n "$sshd_cmd" ]; then
+	effective=$WORKDIR/sshd.effective.$$
+	safe_temp $effective
+	$sshd_cmd 2>/dev/null | $TR 'A-Z' 'a-z' > $effective
+	[ -s "$effective" ] || { delete $effective; effective=; }
+fi
+
+# Value of one keyword in the effective configuration (lower case)
+setting()
+{
+	$AWK -v k="$1" '$1 == k { $1 = ""; sub(/^ /, ""); print; exit }' $effective
+}
+
+if [ -n "$effective" ]; then
+	echo "# Checking the effective sshd configuration (sshd -T)..."
+	# keyword, test, wanted, level, code, what the wrong value means.
+	# 'is' takes a case pattern; 'le' a number the value must not exceed.
+	while read key test want level code text
+	do
+		case "$key" in ''|\#*) continue ;; esac
+		value=`setting $key`
+		[ -z "$value" ] && continue
+		ok=N
+		case "$test" in
+			is) eval "case \"\$value\" in $want) ok=Y ;; esac" ;;
+			le) case "$value" in *[!0-9]*) ok=Y ;; *) [ "$value" -le "$want" ] && ok=Y ;; esac ;;
+		esac
+		[ "$ok" = N ] && message $level $code "" "sshd: $key is $value: $text"
+	done <<EOF
+passwordauthentication       is no                                                           WARN ssh004w passwords are accepted for login
+permitrootlogin              is no|prohibit-password|without-password|forced-commands-only   FAIL ssh006f root may log in with a password
+permitemptypasswords         is no                                                           FAIL ssh007f accounts with an empty password may log in
+x11forwarding                is no                                                           WARN ssh008w X11 is forwarded, which exposes the client's display to this server
+maxauthtries                 le 4                                                            WARN ssh009w more than four authentication attempts are allowed per connection
+usepam                       is yes                                                          WARN ssh010w PAM is bypassed, so its account and session rules do not apply
+kbdinteractiveauthentication is no                                                           WARN ssh011w keyboard-interactive login is open, which PAM can turn into a password prompt
+logingracetime               le 60                                                           WARN ssh012w an unauthenticated connection may be held open for more than 60 seconds
+hostbasedauthentication      is no                                                           WARN ssh013w hosts are trusted on the strength of their host key alone
+ignorerhosts                 is yes                                                          WARN ssh014w .rhosts and .shosts files are consulted
+permituserenvironment        is no                                                           WARN ssh015w users may set LD_PRELOAD and the like through authorized_keys
+loglevel                     is info|verbose|debug|debug1|debug2|debug3                      WARN ssh016w logins are not logged in enough detail to investigate
+EOF
+	weak=`setting ciphers | $TR ',' '\n' | $GREP -E 'cbc|arcfour|rc4|3des|blowfish|cast128' | $TR '\n' ' '`
+	[ -n "$weak" ] && message WARN ssh017w "" "sshd: weak ciphers are enabled: $weak"
+	weak=`setting macs | $TR ',' '\n' | $GREP -E 'md5|-96$|-96-etm|ripemd' | $TR '\n' ' '`
+	[ -n "$weak" ] && message WARN ssh018w "" "sshd: weak MACs are enabled: $weak"
+	weak=`setting kexalgorithms | $TR ',' '\n' | $GREP -E 'diffie-hellman-group1-|diffie-hellman-group14-sha1|group-exchange-sha1' | $TR '\n' ' '`
+	[ -n "$weak" ] && message WARN ssh019w "" "sshd: weak key exchange algorithms are enabled: $weak"
+	delete $effective
+	exit 0
+fi
+
 # Main loop, check all the specified sshd_config files.
 if [ -n "$SSHD_CONFIG" ] 
 then

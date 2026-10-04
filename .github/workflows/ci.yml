@@ -25,6 +25,8 @@ jobs:
           exit $fail
       - name: check_sysctl against known trees
         run: sh tests/sysctl_check.sh
+      - name: check_ssh against sshd -T fixtures
+        run: sh tests/ssh_check.sh
       - name: ShellCheck (errors)
         # Tiger tests "[ $TESTEXEC file ]" with TESTEXEC=-x or -f, which
         # ShellCheck cannot parse; those files are reported but do not fail

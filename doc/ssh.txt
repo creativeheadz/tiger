@@ -19,3 +19,58 @@ The variable SSHD_CONFIG is not defined which means that you have
 not setup (or the system has been enable to find) your SSH configuration
 files. You should setup that variable in your site-`hostname`
 configuration file.
+%ssh006f
+PermitRootLogin is yes, so root may log in over SSH with a password,
+which puts the one account every attacker tries behind a guessable
+secret. Set it to no, or to prohibit-password if root needs key-based
+access for automation.
+%ssh007f
+PermitEmptyPasswords is yes, so an account with an empty password can
+log in over the network. Set it to no.
+%ssh008w
+X11Forwarding is yes. A forwarded X11 connection lets the server read
+and inject into the client's display. Set it to no unless users need
+it; they can still request it per session with ssh -X where allowed.
+%ssh009w
+MaxAuthTries is above 4, which gives a password-guessing client more
+attempts per connection before it is dropped. Set it to 4 or fewer.
+%ssh010w
+UsePAM is no, so account expiry, access rules and session set-up in the
+PAM stack are not applied to SSH logins. Set it to yes.
+%ssh011w
+KbdInteractiveAuthentication (ChallengeResponseAuthentication in older
+versions) is yes. With PAM in use this is a password prompt by another
+name, and it stays open when PasswordAuthentication is no. Set it to no
+unless a one-time-password module depends on it.
+%ssh012w
+LoginGraceTime is above 60 seconds, so an unauthenticated connection
+can tie up a slot for longer than it needs to, which makes exhausting
+MaxStartups easier. Set it to 60 or less.
+%ssh013w
+HostbasedAuthentication is yes, so a connection is accepted because of
+the client host's key rather than the user's. Set it to no.
+%ssh014w
+IgnoreRhosts is no, so .rhosts and .shosts files in home directories
+take part in host-based authentication. Set it to yes.
+%ssh015w
+PermitUserEnvironment is yes, so a user can set environment variables
+such as LD_PRELOAD from authorized_keys and have them applied to the
+login, which bypasses restrictions placed on the shell. Set it to no.
+%ssh016w
+LogLevel is below INFO, so successful and failed logins are not logged
+in enough detail to investigate an incident. Set it to INFO or VERBOSE.
+%ssh017w
+The effective Ciphers list includes algorithms that are broken or
+deprecated (CBC modes, arcfour, 3DES, Blowfish, CAST). Set Ciphers to
+the AEAD and CTR modes only, for example:
+  Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+%ssh018w
+The effective MACs list includes MD5, RIPEMD or truncated 96-bit MACs.
+Set MACs to the SHA-2 encrypt-then-MAC variants, for example:
+  MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com
+HMAC-SHA1 is not flagged yet but is next to go.
+%ssh019w
+The effective KexAlgorithms list includes SHA-1 based or 1024-bit
+Diffie-Hellman groups. Set KexAlgorithms to curve25519 and the SHA-2
+groups, for example:
+  KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha256
