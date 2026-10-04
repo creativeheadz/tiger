@@ -64,6 +64,19 @@ act on it, and `-j` gives the same as one JSON object:
     ./tigris-diff                      # the last two runs
     ./tigris-diff old.jsonl new.jsonl  # any two
 
+A finding you have looked at and decided to live with can be accepted,
+with a reason and, if you want, an expiry date:
+
+    ./tigris-accept lin015w -r "Docker needs IP forwarding" 
+    ./tigris-accept sysd001w -m "docker.service*" -r "sandboxing tracked in #12" -u 2027-01-31
+    ./tigris-accept -l
+
+An accepted finding stays out of the text report (the run says how many
+were left out) and stays in the JSON report marked `accepted` with the
+reason and date. When the date passes it is reported again, with a
+warning that the acceptance expired. The entries live in
+`tigris.accepted` next to `tigerrc`.
+
 ## Where it is going
 
 [ROADMAP.md](ROADMAP.md): a modern Linux baseline, JSON output, a free

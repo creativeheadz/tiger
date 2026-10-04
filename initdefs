@@ -186,6 +186,32 @@ json_escape()
         }'
 }
 
+# Is this finding accepted? ACCEPT_FILE (tigris.accepted, managed by
+# tigris-accept) has one entry per line: id, expiry (YYYY-MM-DD or -),
+# message glob (or -), reason. Sets accepted_reason and accepted_until on
+# a match that has not expired. Dates compare as YYYYMMDD numbers.
+accepted_message()
+{
+  accepted_reason=; accepted_until=
+  [ -n "$ACCEPT_FILE" ] && [ -f "$ACCEPT_FILE" ] || return 1
+  __today=`$DATE +%Y%m%d 2>/dev/null`
+  __tab=`printf '\t'`
+  while IFS="$__tab" read __aid __auntil __aglob __areason
+  do
+    case "$__aid" in ''|\#*) continue ;; esac
+    [ "$__aid" = "$1" ] || continue
+    case "$__aglob" in ''|-) ;; *) case "$2" in $__aglob) ;; *) continue ;; esac ;; esac
+    case "$__auntil" in
+      ''|-) ;;
+      *) __u=`echo "$__auntil" | $SED 's/-//g'`
+         [ -n "$__today" ] && [ "$__u" -lt "$__today" ] 2>/dev/null && continue ;;
+    esac
+    accepted_reason=$__areason; accepted_until=$__auntil
+    return 0
+  done < "$ACCEPT_FILE"
+  return 1
+}
+
 # One JSON Lines record per finding, when Tiger_JSON_File is set. Built in
 # full first and written with one call, so checks running in parallel do
 # not interleave. INFO goes in regardless of Tiger_Show_INFO_Msgs: the
@@ -196,6 +222,7 @@ json_record()
   _jmsg=`printf '%s' "$4" | json_escape`
   _jline="{\"type\":\"finding\",\"level\":\"$1\",\"id\":\"$2\",\"check\":\"${0##*/}\",\"message\":\"$_jmsg\""
   [ -n "$3" ] && _jline="$_jline,\"detail\":\"`printf '%s' "$3" | json_escape`\""
+  [ -n "$accepted_reason" ] && _jline="$_jline,\"accepted\":{\"reason\":\"`printf '%s' "$accepted_reason" | json_escape`\",\"until\":\"${accepted_until:--}\"}"
   printf '%s}\n' "$_jline" >> "$Tiger_JSON_File"
 }
 
@@ -210,6 +237,14 @@ message()
   # If the message should be ignore it is removed
   ignore_message "$_level $_msgid $_mesg" && return 
 
+  # An accepted finding goes to the JSON, marked, and is counted, but not
+  # to the text report
+  if accepted_message "$_msgid" "$_mesg"; then
+    json_record "$_level" "$_msgid" "$_trail" "$_mesg"
+    accepted_reason=; accepted_until=
+    [ -n "$Tiger_Accepted_Log" ] && echo "$_msgid" >> "$Tiger_Accepted_Log"
+    return
+  fi
   json_record "$_level" "$_msgid" "$_trail" "$_mesg"
 
   [ "$HTML" = "N" ] && {

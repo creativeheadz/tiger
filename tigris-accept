@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+#     tigris - a security auditor for Linux, descended from TIGER
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# tigris-accept - acknowledge a finding, with a reason and an expiry
+#
+#   tigris-accept ID -r REASON [-u YYYY-MM-DD] [-m GLOB] [-f FILE]
+#   tigris-accept -l [-f FILE]
+#   tigris-accept -d ID [-m GLOB] [-f FILE]
+#
+# An accepted finding is left out of the text report (the run says how
+# many were) and stays in the JSON report marked accepted, with the
+# reason and the date. When the date passes the finding is reported
+# again and the run warns that the acceptance has expired. GLOB narrows
+# the acceptance to messages matching a shell pattern, e.g.
+# 'docker.service listens on 2283/tcp*'; without it every message with
+# that id is accepted.
+#
+# The file is tigris.accepted next to tigerrc: ./tigris.accepted when
+# run from a source tree, /etc/tiger/tigris.accepted when installed.
+# One entry per line, tab-separated: id, expiry or -, glob or -, reason.
+#
+#-----------------------------------------------------------------------------
+
+file=
+mode=add
+id=
+reason=
+until=-
+glob=-
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -l) mode=list ;;
+    -d) mode=delete; id=$2; shift ;;
+    -r) reason=$2; shift ;;
+    -u) until=$2; shift ;;
+    -m) glob=$2; shift ;;
+    -f) file=$2; shift ;;
+    -h|--help) sed -n '18,35p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "tigris-accept: unknown option $1" >&2; exit 2 ;;
+    *)  [ -z "$id" ] && id=$1 || { echo "tigris-accept: one id at a time" >&2; exit 2; } ;;
+  esac
+  shift
+done
+[ -n "$file" ] || { if [ -f ./tigerrc ]; then file=./tigris.accepted; else file=/etc/tiger/tigris.accepted; fi; }
+tab=`printf '\t'`
+
+case "$mode" in
+  list)
+    [ -f "$file" ] || { echo "no accepted findings ($file does not exist)"; exit 0; }
+    today=`date +%Y%m%d`
+    awk -F'\t' -v today="$today" '
+      /^[[:space:]]*(#|$)/ { next }
+      { until = $2; expired = ""
+        if (until != "-" && until != "") { u = until; gsub(/-/, "", u); if (u + 0 < today + 0) expired = "  (expired)" }
+        printf "%-10s until %-10s %s%s\n    %s\n", $1, until, ($3 == "-" || $3 == "" ? "" : "messages matching: " $3), expired, $4 }' "$file"
+    ;;
+  delete)
+    [ -n "$id" ] || { echo "tigris-accept: -d needs an id" >&2; exit 2; }
+    [ -f "$file" ] || { echo "tigris-accept: $file does not exist" >&2; exit 1; }
+    tmp=`mktemp "${file}.XXXXXX"` || exit 1
+    awk -F'\t' -v id="$id" -v glob="$glob" '!($1 == id && (glob == "-" || $3 == glob))' "$file" > "$tmp" && mv "$tmp" "$file"
+    echo "removed $id${glob:+ ($glob)} from $file"
+    ;;
+  add)
+    [ -n "$id" ] || { echo "tigris-accept: which finding? give its id (see the report)" >&2; exit 2; }
+    [ -n "$reason" ] || { echo "tigris-accept: a reason is required (-r). Future you will want to know." >&2; exit 2; }
+    case "$id" in *[!a-z0-9]*|"") echo "tigris-accept: '$id' does not look like a message id" >&2; exit 2 ;; esac
+    case "$until" in
+      -) ;;
+      [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+      *) echo "tigris-accept: -u takes a date as YYYY-MM-DD" >&2; exit 2 ;;
+    esac
+    case "$reason$glob" in *"$tab"*) echo "tigris-accept: no tabs in the reason or the pattern" >&2; exit 2 ;; esac
+    [ -f "$file" ] || {
+      printf '# Accepted findings: id, expiry (YYYY-MM-DD or -), message pattern (glob or -), reason.\n# Managed by tigris-accept; tab-separated.\n' > "$file" || { echo "tigris-accept: cannot write $file" >&2; exit 1; }
+    }
+    printf '%s\t%s\t%s\t%s\n' "$id" "$until" "$glob" "$reason" >> "$file" || exit 1
+    if [ "$until" = - ]; then
+      echo "accepted $id with no expiry; it will not be reported until removed with: tigris-accept -d $id"
+    else
+      echo "accepted $id until $until; after that it is reported again"
+    fi
+    ;;
+esac
+exit 0

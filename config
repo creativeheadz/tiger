@@ -242,13 +242,14 @@ checkfile()
   WORKDIR="$TigerWorkDir"
   RCFILE=${TigerConfigDir:=.}/tigerrc
   IGNORE_FILE=${TigerConfigDir:=.}/tiger.ignore
+  ACCEPT_FILE=${TigerConfigDir:=.}/tigris.accepted
   TIGERHOMEDIR="$BASEDIR"
   EXPLAINREPORT=N
   SERVERCHECK=N
   Tiger_TESTMODE=N
   HTML=N
   export BASEDIR LOGDIR WORKDIR BINDIR EXPLAINREPORT SERVERCHECK 
-  export TIGERHOMEDIR RCFILE IGNORE_FILE 
+  export TIGERHOMEDIR RCFILE IGNORE_FILE ACCEPT_FILE
   export Tiger_TESTMODE TigerCleanup HTML
   doversion=0
   

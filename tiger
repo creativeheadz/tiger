@@ -205,6 +205,9 @@ echo "Tiger security scripts *** $version ***"
 
 _TIGER_RUN=Y
 export _TIGER_RUN
+Tiger_Accepted_Log=$WORKDIR/accepted.$$
+export Tiger_Accepted_Log
+: > $Tiger_Accepted_Log
 OUTPUTMETHOD="$CAT"
 
 Tiger_PasswdFiles=$WORKDIR/passwd.list.$$
@@ -542,6 +545,23 @@ aidepid=
 
 #echo "`$TIMECMD`> Security report completed for ${HOSTNAME}."
 
+# Acceptances that have run out are findings again; say so once each
+[ -n "$ACCEPT_FILE" ] && [ -f "$ACCEPT_FILE" ] && {
+  today=`$DATE +%Y%m%d`
+  while IFS="`printf '\t'`" read aid auntil aglob areason
+  do
+    case "$aid" in ''|\#*) continue ;; esac
+    case "$auntil" in ''|-) continue ;; esac
+    [ "`echo $auntil | $SED 's/-//g'`" -lt "$today" ] 2>/dev/null &&
+      message WARN acpt001w "" "The acceptance of $aid expired on $auntil (reason given: $areason); it is reported again. Renew or remove it with tigris-accept." >> $logtmp
+  done < "$ACCEPT_FILE"
+}
+naccepted=`$GREP -c . $Tiger_Accepted_Log 2>/dev/null`
+[ "$naccepted" -gt 0 ] 2>/dev/null && {
+  echo "" >> $logtmp
+  echo "# $naccepted accepted findings were left out of this report (tigris-accept -l lists them; they are in the JSON report marked accepted)." >> $logtmp
+}
+delete $Tiger_Accepted_Log
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}."
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}." >>$logtmp

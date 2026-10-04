@@ -259,3 +259,8 @@ and permissions.
 Tripwire reports that a file it is watching has been modified since the
 database was last updated. If the change was expected (an upgrade),
 update the database; if not, treat it as a possible intrusion.
+%acpt001w
+A finding was accepted with tigris-accept until a date that has now
+passed, so it is reported again. Either the condition was meant to be
+fixed by then, or the acceptance should be renewed with a new date and,
+if it has changed, a new reason: tigris-accept ID -r REASON -u DATE.
