@@ -23,9 +23,9 @@
 #-----------------------------------------------------------------------------
 #
 # For debugging purposes
-[ -z "$GREP" ] && GREP=`which grep`
-[ -z "$SED" ] && SED=`which sed`
-[ -z "$AWK" ] && AWK=`which awk`
+[ -z "$GREP" ] && GREP=`command -v grep`
+[ -z "$SED" ] && SED=`command -v sed`
+[ -z "$AWK" ] && AWK=`command -v awk`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 EXPFILE=/etc/exports

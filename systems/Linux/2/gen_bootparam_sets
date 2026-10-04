@@ -25,10 +25,10 @@
 #
 
 # If run directly do this, just in case:
-[ -z "$AWK" ] && AWK=`which awk`
-[ -z "$SED" ] && AWK=`which sed`
-[ -z "$RM" ] && RM=`which rm`
-[ -z "$YPCAT" ] && YPCAT=`which ypcat 2>/dev/null`
+[ -z "$AWK" ] && AWK=`command -v awk`
+[ -z "$SED" ] && AWK=`command -v sed`
+[ -z "$RM" ] && RM=`command -v rm`
+[ -z "$YPCAT" ] && YPCAT=`command -v ypcat`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 [ -r /etc/bootparams ] && {

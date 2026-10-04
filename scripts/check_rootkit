@@ -143,7 +143,7 @@ fi
 # Chkrookit binary location|override + default check
 if [ -z "${Tiger_CHKROOTKIT_LOC_OVERRIDE}" ]
 then
-        CHKROOTKIT=`which chkrootkit 2>/dev/null`
+        CHKROOTKIT=`command -v chkrootkit`
 else
         CHKROOTKIT=${Tiger_CHKROOTKIT_LOC_OVERRIDE}
 fi

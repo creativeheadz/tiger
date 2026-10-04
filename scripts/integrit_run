@@ -83,7 +83,7 @@ if [ -z "$INTEGRIT" ]
 then
 if [ -z "${Tiger_INTEGRIT_LOC_OVERRIDE}" ]
 then
-   INTEGRIT=`which integrit`
+   INTEGRIT=`command -v integrit`
 else
    INTEGRIT=${Tiger_INTEGRIT_LOC_OVERRIDE}
 fi

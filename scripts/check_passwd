@@ -328,7 +328,7 @@ done < $WORKDIR/pass.list.$$
 }
 
 # Verify the sudo file format.
-if [ -n "`which visudo`" ] && [ -r /etc/sudoers ] ; then
+if [ -n "`command -v visudo`" ] && [ -r /etc/sudoers ] ; then
     if ! `visudo -cq` ; then
         message FAIL pass021f "" "Integrity of sudoers files questionable (run 'visudo -c')."
     fi

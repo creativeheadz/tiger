@@ -24,13 +24,13 @@
 #
 
 # If run directly do this, just in case:
-[ -z "$GREP" ] && GREP=`which grep`
-[ -z "$AWK" ] && AWK=`which awk`
-[ -z "$SED" ] && SED=`which sed`
-[ -z "$SORT" ] && SORT=`which sort`
-[ -z "$COMM" ] && COMM=`which comm`
-[ -z "$RM" ] && RM=`which rm`
-[ -z "$YPCAT" ] && YPCAT=`which ypcat 2>/dev/null`
+[ -z "$GREP" ] && GREP=`command -v grep`
+[ -z "$AWK" ] && AWK=`command -v awk`
+[ -z "$SED" ] && SED=`command -v sed`
+[ -z "$SORT" ] && SORT=`command -v sort`
+[ -z "$COMM" ] && COMM=`command -v comm`
+[ -z "$RM" ] && RM=`command -v rm`
+[ -z "$YPCAT" ] && YPCAT=`command -v ypcat`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 
