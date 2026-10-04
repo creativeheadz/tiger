@@ -17,6 +17,10 @@
 #
 # Linux/deb_checkmd5sums - 24/08/2001
 #
+# 10/04/2026 - atrimbitas - Stop using prelink to compute checksums. It was
+#       called with options it does not accept, so the check reported
+#       nothing on systems that had it installed, and prelink is no longer
+#       shipped (Debian bug #505906, Savannah bug #52087)
 # 01/23/2014 - jfs - Fix the location of dpkg-divert (Debian bug #732936 and #735102)
 # 12/19/2013 - jfs - Do not use dpkg-divert if not available
 # 09/09/2008 - jfs - Use prelink to calculate checksums if present (Debian bug #445531)
@@ -116,15 +120,6 @@ echo "# Checking md5sums of installed files"
 
 haveallcmds MD5SUM CAT CUT SED GREP EGREP BASENAME || exit 1
 
-# Prelink
-PRELINK=/usr/sbin/prelink
-if [ -x "$PRELINK" ] ; then
-    MD5SUM="$PRELINK -y --md5"
-    MD5SUM_CALL="$MD5SUM"
-else
-    MD5SUM_CALL="$MD5SUM -c"
-fi
-
 DIVERSIONS="/var/lib/dpkg/diversions"
 
 if [ -d /var/lib/dpkg/info ] 
@@ -150,7 +145,7 @@ while read md5file; do
 	$GREP -v " dev/" |
 	$GREP -v " lib/udev/devices/" |
 	$SED -e "s/^\(.*\)  \(.*\)/\1  \/\2/" |
-	$MD5SUM_CALL -c 2>&1 | $SED -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/; s/^.*md5sum: can't open \(.*\)/ERR \1/" | {
+	$MD5SUM -c 2>&1 | $SED -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/; s/^.*md5sum: can't open \(.*\)/ERR \1/" | {
 		while read file err
 		do
 			package=`$BASENAME "$md5file" ".md5sums"`
