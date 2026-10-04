@@ -61,6 +61,8 @@ notices.
 ## History
 
 The 3.2.4 release here finished the release candidate TIGER left in 2018;
-see [CHANGES](CHANGES). [AUTHORS](AUTHORS) and [CREDITS](CREDITS) list
+see [CHANGES](CHANGES). TIGER's configurations for AIX, HP-UX, IRIX,
+NeXT, SunOS, Tru64, UNICOS and Mac OS X were retired after that release;
+they are in the git history under the tag `attic/other-unix-2026-10`. [AUTHORS](AUTHORS) and [CREDITS](CREDITS) list
 everyone who built TIGER. The original [README](README) and
 [USING](USING) still describe the internals accurately.
