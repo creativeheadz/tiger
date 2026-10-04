@@ -80,16 +80,18 @@ traditional strength.
       against what the package manager says should be there.
 
 **New checks**
-- [ ] SSH: read the effective configuration from `sshd -T`, not just the
-      config file.
+- [x] SSH: read the effective configuration from `sshd -T`, not just the
+      config file. (`check_ssh`, 15 directives and the algorithm lists.)
 - [ ] sudo and sudoers.d, PAM (password quality, faillock), and accounts
       without passwords.
 - [ ] systemd: enabled services, timers next to cron, and unit hardening
       (`systemd-analyze security`).
 - [ ] Firewall: nftables, iptables, ufw or firewalld present, with a
       default-deny policy.
-- [ ] Kernel: sysctl hardening, lockdown, Secure Boot, and CPU
-      vulnerability mitigations (`/sys/devices/system/cpu/vulnerabilities`).
+- [ ] Kernel: sysctl hardening ([x] `check_sysctl`: kptr/dmesg restrict,
+      Yama, ASLR, SysRq, BPF, perf, `fs.protected_*`, IPv6 redirects and
+      source routing), lockdown, Secure Boot, and CPU vulnerability
+      mitigations (`/sys/devices/system/cpu/vulnerabilities`).
 - [ ] AppArmor or SELinux enforcing, auditd, and journald persistence.
 - [ ] Time sync (chrony, timesyncd) instead of the NTP-only check.
 - [ ] Updates: automatic security updates configured, pending security
@@ -128,11 +130,14 @@ traditional strength.
 - **Safety:** no `eval` of data read from the system, `mktemp` for every
   temporary file, everything quoted. Tiger runs as root, so its own code
   has to be beyond reproach.
-- **Speed:** independent checks run in parallel, and a full run on a
-  typical server finishes in minutes. First target: `util/flogit`, which
-  runs `ls | awk` for every file the filesystem scan finds, so a root
-  disk with 500k files costs about a million processes. `find` can
-  classify ownership and permissions itself in one pass.
+- **Speed and memory:** independent checks run in parallel, and a full
+  run on a typical server finishes in minutes. Reference machine (Linux
+  Mint 22.3 desktop, 1.8 TB root disk, 2.4k packages), full run as root:
+  - 3.2.4 as released: 7:16 wall, 159 MB peak, 49,651 report lines
+  - after wave 1 and 2 (October 2026): 1:55 wall, 35 MB peak, 211 lines
+  The two big ones were `util/flogit` (an `ls | awk` per file, about a
+  million processes; now one `find` pass) and `deb_checkmd5sums` (a
+  `dpkg -S` per diversion at 130 MB each; now one `grep`).
 - **Packaging:** a Debian upload through Javier or our own APT repository,
   Fedora COPR, the AUR, Alpine, and a container image to scan a host or
   image.
