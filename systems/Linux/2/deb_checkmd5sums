@@ -213,7 +213,8 @@ $SED 's,^/var/lib/dpkg/info/\(.*\)\.list:, \1 ,' > $divowners
     set X `$AWK -v f="$file" -v g="$altfile" '$2 == f || $2 == g { print $1 }' $divowners`
     while [ "$2" != "" ]
     do
-      if [ "$2" = "$bypackage" ]
+      # dpkg-divert names the diverter without its architecture
+      if [ "${2%%:*}" = "$bypackage" ]
       then
         currentfile=$file
       else
