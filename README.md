@@ -47,7 +47,8 @@ the archive, not this fork.
 ## Machine-readable output
 
 Every run also writes the findings as JSON Lines to
-`log/security.report.HOST.DATE.jsonl`: a `run` record first, one
+`log/security.report.HOST.DATE.jsonl`: a `run` record first (with an `id`
+for the run, the host, OS and the `tigerrc` used), one
 `finding` per message with `level`, `id`, `check`, `message` and an
 optional `detail`, and a `summary` with counts last. INFO findings are
 always included there, whatever the text report shows. Bytes above 127

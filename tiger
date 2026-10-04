@@ -195,7 +195,11 @@ echo "Tiger security scripts *** $version ***"
   [ "$Tiger_Output_JSON" != 'N' ] && {
     Tiger_JSON_File="$LOGDIR/security.report.${HOSTNAME}.$datestamp.jsonl"
     export Tiger_JSON_File
-    echo "{\"type\":\"run\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
+    # An id for this run, so its records can be told from another run's
+    Tiger_Run_Id=`$CAT /proc/sys/kernel/random/uuid 2>/dev/null`
+    [ -n "$Tiger_Run_Id" ] || Tiger_Run_Id="${HOSTNAME}-${datestamp}-$$"
+    export Tiger_Run_Id
+    echo "{\"type\":\"run\",\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\",\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
   }
 }
 
@@ -548,7 +552,7 @@ aidepid=
       n=`$GREP -c "\"type\":\"finding\",\"level\":\"$level\"" $Tiger_JSON_File`
       counts="$counts${counts:+,}\"$level\":$n"
     done
-    echo "{\"type\":\"summary\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts}}" >> $Tiger_JSON_File
+    echo "{\"type\":\"summary\",\"id\":\"$Tiger_Run_Id\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts}}" >> $Tiger_JSON_File
     echo "Findings as JSON Lines are in \`$Tiger_JSON_File'."
   }
 
