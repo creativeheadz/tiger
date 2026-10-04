@@ -44,8 +44,9 @@ recs = [json.loads(l) for l in open(sys.argv[1], encoding="ascii") if l.strip()]
 assert recs[0]["type"] == "run" and recs[-1]["type"] == "summary", (recs[0], recs[-1])
 finds = [r for r in recs if r["type"] == "finding"]
 text = open(sys.argv[2], encoding="latin-1").read()
-shown = re.findall(r"--(ALERT|FAIL|WARN|ERROR)-- \[([a-z]+[0-9]{3}[a-z])\]", text)
-json_shown = [(r["level"], r["id"]) for r in finds if r["level"] != "INFO"]
+# ERROR lines from the init helpers are plain echoes and never reach the JSON
+shown = re.findall(r"--(ALERT|FAIL|WARN)-- \[([a-z]+[0-9]{3}[a-z])\]", text)
+json_shown = [(r["level"], r["id"]) for r in finds if r["level"] in ("ALERT", "FAIL", "WARN")]
 assert sorted(shown) == sorted(json_shown), (len(shown), len(json_shown))
 assert recs[-1]["counts"]["WARN"] == sum(1 for r in finds if r["level"] == "WARN")
 EOF
