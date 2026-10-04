@@ -134,6 +134,16 @@ if [ "$OS" = "Linux" ] ; then
 # Loginlog does not exist
 # Btmp does exist (see lastb(1))
 	LOGINLOG=""
+# The system log is /var/log/messages on Red Hat and SUSE but
+# /var/log/syslog on Debian and its derivatives, and with a persistent
+# journal (/var/log/journal) there need not be a text log at all
+	if [ ! -f "$MESSAGES" ] ; then
+		if [ -f /var/log/syslog ] ; then
+			MESSAGES=/var/log/syslog
+		elif [ -d /var/log/journal ] && [ -n "`$LS -A /var/log/journal 2>/dev/null`" ] ; then
+			MESSAGES=""
+		fi
+	fi
 fi
 
 if [ "$OS" = "HPUX" ] ; then
