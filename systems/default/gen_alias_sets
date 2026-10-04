@@ -20,8 +20,8 @@
 #-----------------------------------------------------------------------------
 #
 # If run directly for testing purposes
-[ -z "$GREP" ] && GREP=`which grep`
-[ -z "$SORT" ] && SORT=`which grep`
+[ -z "$GREP" ] && GREP=`command -v grep`
+[ -z "$SORT" ] && SORT=`command -v sort`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 

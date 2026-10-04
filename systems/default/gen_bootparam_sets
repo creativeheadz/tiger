@@ -20,11 +20,11 @@
 #-----------------------------------------------------------------------------
 #
 # If run directly for testing purposes
-[ -z "$GREP" ] && GREP=`which grep`
-[ -z "$SORT" ] && SORT=`which grep`
-[ -z "$CAT" ] && CAT=`which cat`
-[ -z "$SED" ] && SED=`which sed`
-[ -z "$AWK" ] && AWK=`which sed`
+[ -z "$GREP" ] && GREP=`command -v grep`
+[ -z "$SORT" ] && SORT=`command -v sort`
+[ -z "$CAT" ] && CAT=`command -v cat`
+[ -z "$SED" ] && SED=`command -v sed`
+[ -z "$AWK" ] && AWK=`command -v awk`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 

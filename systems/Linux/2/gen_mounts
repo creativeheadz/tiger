@@ -362,10 +362,10 @@ localfs()
 }
 
 # If run directly do this, just in case:
-[ -z "$GETFS" ] && GETFS=`which mount`
-[ -z "$SED" ] && SED=`which sed`
-[ -z "$BASENAME" ] && BASENAME=`which basename`
-[ -z "$EGREP" ] && EGREP=`which egrep`
+[ -z "$GETFS" ] && GETFS=`command -v mount`
+[ -z "$SED" ] && SED=`command -v sed`
+[ -z "$BASENAME" ] && BASENAME=`command -v basename`
+[ -z "$EGREP" ] && EGREP=`command -v egrep`
 
 $GETFS  |
 while read line

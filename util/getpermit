@@ -25,8 +25,8 @@
 #
 #-----------------------------------------------------------------------------
 #
-LS=`which ls`
-AWK=`which awk`
+LS=`command -v ls`
+AWK=`command -v awk`
 LSLINK=-L
 
 

@@ -35,10 +35,10 @@
 #   (Always_Report_ERR?)
 #-----------------------------------------------------------------------------
 #
-[ -z "$DIFF" ] && DIFF=`which diff`
-[ -z "$CAT" ] && CAT=`which cat`
-[ -z "$RM" ] && RM=`which rm`
-[ -z "$SORT" ] && SORT=`which sort`
+[ -z "$DIFF" ] && DIFF=`command -v diff`
+[ -z "$CAT" ] && CAT=`command -v cat`
+[ -z "$RM" ] && RM=`command -v rm`
+[ -z "$SORT" ] && SORT=`command -v sort`
 [ -z "$SORT" ] && SORT=$CAT
 [ -z "$WORKDIR" ] && WORKDIR="/tmp"
 

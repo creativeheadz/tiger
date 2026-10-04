@@ -50,7 +50,7 @@
 # - Consider the use of 'dlocate' which will be faster than DPKG. Notice
 # however that it's priority "optional"
 # dlocate could be faster
-# DLOCATE=`which dlocate`
+# DLOCATE=`command -v dlocate`
 # DLOCATE=${DLOCATE:-$DPKG}
 #
 #-----------------------------------------------------------------------------

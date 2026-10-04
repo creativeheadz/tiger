@@ -29,13 +29,13 @@
 
 [ -z "$WORKDIR" ] && WORKDIR=./run
 [ -z "$BASEDIR" ] && BASEDIR=.
-[ -z "$GREP" ] && GREP=`which grep`
-[ -z "$EGREP" ] && EGREP=`which egrep`
-[ -z "$TAIL" ] && TAIL=`which tail`
-[ -z "$AWK" ] && AWK=`which awk`
-[ -z "$LS" ] && LS=`which ls`
-[ -z "$CAT" ] && CAT=`which cat`
-[ -z "$SED" ] && CAT=`which sed`
+[ -z "$GREP" ] && GREP=`command -v grep`
+[ -z "$EGREP" ] && EGREP=`command -v egrep`
+[ -z "$TAIL" ] && TAIL=`command -v tail`
+[ -z "$AWK" ] && AWK=`command -v awk`
+[ -z "$LS" ] && LS=`command -v ls`
+[ -z "$CAT" ] && CAT=`command -v cat`
+[ -z "$SED" ] && SED=`command -v sed`
 
 confile=
 [ -n "$1" ] && {

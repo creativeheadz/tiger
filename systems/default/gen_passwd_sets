@@ -23,15 +23,15 @@
 #-----------------------------------------------------------------------------
 #
 
-[ ! -n "$SORT" ] && SORT=`which sort`
-[ ! -n "$GREP" ] && GREP=`which grep`
-[ ! -n "$AWK" ] && AWK=`which awk`
-[ ! -n "$JOIN" ] && JOIN=`which join`
-[ ! -n "$CAT" ] && CAT=`which cat`
-[ ! -n "$RM" ] && RM=`which rm`
-[ ! -n "$SED" ] && SED=`which sed`
-[ ! -n "$YPCAT" ] && YPCAT=`which ypcat`
-[ ! -n "$NISCAT" ] && NISCAT=`which niscat`
+[ ! -n "$SORT" ] && SORT=`command -v sort`
+[ ! -n "$GREP" ] && GREP=`command -v grep`
+[ ! -n "$AWK" ] && AWK=`command -v awk`
+[ ! -n "$JOIN" ] && JOIN=`command -v join`
+[ ! -n "$CAT" ] && CAT=`command -v cat`
+[ ! -n "$RM" ] && RM=`command -v rm`
+[ ! -n "$SED" ] && SED=`command -v sed`
+[ ! -n "$YPCAT" ] && YPCAT=`command -v ypcat`
+[ ! -n "$NISCAT" ] && NISCAT=`command -v niscat`
 [ ! -n "$WORKDIR" ] && WORKDIR=/tmp
 
 local=0

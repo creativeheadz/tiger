@@ -21,7 +21,7 @@
 #
 
 # If run directly for testing purposes
-[ -z "$GREP" ] && GREP=`which grep`
+[ -z "$GREP" ] && GREP=`command -v grep`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 
