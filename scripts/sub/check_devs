@@ -66,7 +66,9 @@ do
 done
 
 # The "hw" hack is due to SGI renaming devices in IRIX 6.5
-eval $greps | $GREP -v '^'/hw> $WORKDIR/dev.list.$$
+# systemd keeps zero-permission placeholder nodes under .../systemd/inaccessible/
+# for its InaccessiblePaths= sandboxing; they are expected, not planted
+eval $greps | $GREP -v '^'/hw | $GREP -v '/systemd/inaccessible/' > $WORKDIR/dev.list.$$
 
 [ -s $WORKDIR/dev.list.$$ ] && {
   message ALERT fsys006a "" "Unexpected device files found:"
