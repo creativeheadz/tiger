@@ -67,7 +67,7 @@ What the system looks like in 2026, not 2003.
 **Clear out the old**
 - [x] Move the dead platforms (AIX, HP-UX, IRIX, NeXT, SunOS, Tru64,
       UNICOS, Mac OS X) to an `attic` tag: `attic/other-unix-2026-10`,
-      353 files.
+      364 files.
 - [ ] Turn off by default, or retire, checks for things that are gone:
       inetd/xinetd, rhosts, anonymous FTP, printcap, OmniBack, NIS+, LILO,
       and the static Debian advisory list from the early 2000s.
