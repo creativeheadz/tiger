@@ -71,6 +71,14 @@ setgid programs which appear in the OS distribution.
 The listed program is not owned by an administrative user.  The 
 majority of SUID programs should probably be owned by an 
 administrative user.
+%fsys016i
+Dangling symbolic links were found in a directory where they are
+usually clutter rather than a risk (help and documentation trees, icon
+themes, home directories, runtime directories), so Tiger reports how
+many and where instead of listing each one. The directories where each
+dangling link is still listed individually (fsys013w) are set by
+Tiger_FSScan_DanglingDetail in tigerrc; set it to '*' to list them all.
+To see the links themselves, run: find DIR -xdev -type l -xtype l
 %fsys013w
 The symbolic link points to a file that does not exist in the filesystem.
 In itself, the link is not dangerous, but you should be aware of its 
