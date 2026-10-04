@@ -370,6 +370,10 @@ checkfile()
     echo "           configuration files for generic $OS"
     }
     CONFIG_DIR="$CONFIG_LOC/$OS/default"
+    # run_script looks for the system-specific checks under $OS/$REL, so
+    # send it to default as well; otherwise a new major release (kernel 7
+    # with symlinks up to 6) silently gets the generic checks instead
+    REL=default
   elif [ -f "$CONFIG_LOC/$OS/config" ]; then
     [ "$QUIET" != "Y" ] &&  {
     echo "--CONFIG-- [con005c] No configuration files for $OS $REV.  Using"
