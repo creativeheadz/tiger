@@ -77,11 +77,8 @@ haveallof()
 TESTEXEC=-x
 
 # Setup a tempfile
-[ -n "$TMPDIR" ] && TMPDIR=/tmp/
-tempfile=""
-if command -v tempfile >/dev/null 2>&1 ; then
-    tempfile=`tempfile`
-fi
+[ -z "$TMPDIR" ] && TMPDIR=/tmp
+tempfile=`mktemp "$TMPDIR/tiger.XXXXXX" 2>/dev/null`
 [ -z "$tempfile" ] && tempfile=$TMPDIR/te.$$
 [ ! -e $tempfile ] && >$tempfile
 

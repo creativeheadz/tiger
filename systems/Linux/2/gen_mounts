@@ -365,7 +365,7 @@ localfs()
 [ -z "$GETFS" ] && GETFS=`command -v mount`
 [ -z "$SED" ] && SED=`command -v sed`
 [ -z "$BASENAME" ] && BASENAME=`command -v basename`
-[ -z "$EGREP" ] && EGREP=`command -v egrep`
+[ -z "$EGREP" ] && EGREP="`command -v grep` -E"
 
 $GETFS  |
 while read line

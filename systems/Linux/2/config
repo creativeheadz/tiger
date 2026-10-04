@@ -128,7 +128,7 @@ COLUMN=`findcmd column`
 CMP=`findcmd cmp`
 
 GREP=`findcmd grep`
-EGREP=`findcmd egrep`
+EGREP="$GREP -E"
 SED=`findcmd sed`
 SORT=`findcmd sort`
 COMM=`findcmd comm`

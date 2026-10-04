@@ -30,7 +30,7 @@
 [ -z "$WORKDIR" ] && WORKDIR=./run
 [ -z "$BASEDIR" ] && BASEDIR=.
 [ -z "$GREP" ] && GREP=`command -v grep`
-[ -z "$EGREP" ] && EGREP=`command -v egrep`
+[ -z "$EGREP" ] && EGREP="$GREP -E"
 [ -z "$TAIL" ] && TAIL=`command -v tail`
 [ -z "$AWK" ] && AWK=`command -v awk`
 [ -z "$LS" ] && LS=`command -v ls`
