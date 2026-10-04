@@ -1,3 +1,41 @@
+tiger (1:3.2.4~rc1-3.5) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Apply first hunk of patch from Richard Lewis to just fix the FTBFS with
+    GCC-15 (Closes: #1097997)
+
+ -- Florian Ernst <florian@debian.org>  Mon, 15 Sep 2025 19:06:42 +0200
+
+tiger (1:3.2.4~rc1-3.4) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Apply patch from Francois Marier <francois@debian.org> to handle
+    which deprecation. (Closes: #992655)
+
+ -- Chris Hofstaedtler <zeha@debian.org>  Wed, 15 Jan 2025 12:01:29 +0100
+
+tiger (1:3.2.4~rc1-3.3) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Make requirement for root when building the package explicit
+    for now.  (Closes: #1089454)
+
+ -- Niels Thykier <niels@thykier.net>  Mon, 30 Dec 2024 19:07:45 +0000
+
+tiger (1:3.2.4~rc1-3.2) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * debian/rules: add symlink for Linux 6 (Closes: #1022940)
+
+ -- Francois Marier <francois@debian.org>  Thu, 27 Oct 2022 21:35:23 -0700
+
+tiger (1:3.2.4~rc1-3.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Teach tiger about fuse.portal (Closes: #987512)
+
+ -- Francois Marier <francois@debian.org>  Fri, 23 Sep 2022 12:03:08 -0700
+
 tiger (1:3.2.4~rc1-3) unstable; urgency=medium
 
   * Acknowledge NMU (Closes: #969303)
