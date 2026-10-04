@@ -1,0 +1,159 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_systemd: sandboxing of the services that listen on the network,
+#                as systemd-analyze security scores it.
+#
+# 10/04/2026 atrimbitas - Initial version. Every unit on a desktop scores
+#                 badly, so listing them all would bury the report. The
+#                 units that matter are the ones reachable from the
+#                 network: ss names each listening socket's cgroup, which
+#                 names the unit, and only those are scored. For each one
+#                 rated UNSAFE the three protections that would help most
+#                 are named. Tiger_SS_Cmd and Tiger_Systemd_Analyze_Cmd let
+#                 the tests feed fixtures.
+#
+# References:
+#   man systemd-analyze (security), man systemd.exec (sandboxing options)
+#
+#-----------------------------------------------------------------------------
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK SED SORT GREP || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK SED SORT GREP || exit 1
+haveallfiles BASEDIR WORKDIR || exit 1
+
+ss_cmd=${Tiger_SS_Cmd:-}
+analyze_cmd=${Tiger_Systemd_Analyze_Cmd:-}
+if [ -z "$analyze_cmd" ]; then
+  # Only on a systemd system with the tool at hand; otherwise nothing to say
+  [ -d /run/systemd/system ] || exit 0
+  for d in /usr/bin /bin
+  do
+    [ -x "$d/systemd-analyze" ] && { analyze_cmd="$d/systemd-analyze security --no-pager"; break; }
+  done
+  [ -n "$analyze_cmd" ] || exit 0
+fi
+if [ -z "$ss_cmd" ]; then
+  for d in /usr/sbin /sbin /usr/bin /bin
+  do
+    [ -x "$d/ss" ] && { ss_cmd="$d/ss -Hlntupe"; break; }
+  done
+  [ -n "$ss_cmd" ] || exit 0
+fi
+
+echo
+echo "# Checking the sandboxing of network-facing services (systemd-analyze security)..."
+
+units=$WORKDIR/sysd.units.$$
+scores=$WORKDIR/sysd.scores.$$
+safe_temp $units $scores
+trap 'delete $units $scores ; exit 1' 1 2 3 15
+
+# Listening sockets by unit: "unit port/proto". A .socket unit activates the
+# .service of the same name, which is what gets scored. User services and
+# session scopes are left alone: they are not system services.
+$ss_cmd 2>/dev/null |
+$AWK '{
+  unit = ""
+  for (i = 1; i <= NF; i++)
+    if ($i ~ /^cgroup:\/system\.slice\//) { unit = $i; sub(/^cgroup:.*\//, "", unit) }
+  if (unit == "") next
+  sub(/\.socket$/, ".service", unit)
+  port = $5; sub(/.*:/, "", port)
+  print unit, port "/" $1
+}' | $SORT -u > $units
+
+[ -s $units ] || { delete $units $scores; exit 0; }
+
+# The overview gives every system service a score; keep the ones we need
+$analyze_cmd 2>/dev/null |
+$AWK 'NR > 1 && $1 ~ /\.service$/ && $2 ~ /^[0-9.]+$/ { print $1, $2, $3 }' > $scores
+
+total=`$GREP -c . $scores`
+unsafe=`$AWK '$3 == "UNSAFE"' $scores | $GREP -c .`
+exposed=`$AWK '$3 == "EXPOSED"' $scores | $GREP -c .`
+[ "$total" -gt 0 ] &&
+  message INFO sysd003i "" "systemd rates $unsafe of $total system services UNSAFE and $exposed EXPOSED (systemd-analyze security)."
+
+$AWK '{ u[$1] = u[$1] (u[$1] == "" ? "" : ",") $2 } END { for (k in u) print k, u[k] }' $units |
+$SORT |
+while read unit ports
+do
+  set X `$AWK -v u="$unit" '$1 == u { print $2, $3 }' $scores`
+  score=$2; predicate=$3
+  [ -z "$score" ] && continue
+  case "$predicate" in
+    UNSAFE)
+      # The three unmet protections that carry the most weight. Tiger runs
+      # with LC_ALL=C, where systemd marks an unmet one with "-" rather
+      # than the cross it prints in a UTF-8 locale; accept both.
+      missing=`$analyze_cmd $unit 2>/dev/null |
+        $AWK '($1 == "-" || $1 == "\342\234\227") && $NF ~ /^[0-9.]+$/ { print $NF, $2 }' |
+        $SORT -rn | $SED 3q | $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $2 }'`
+      message WARN sysd001w "" "$unit listens on $ports with exposure $score ($predicate); most useful: ${missing:-see systemd-analyze security $unit}."
+      ;;
+    EXPOSED)
+      message INFO sysd002i "" "$unit listens on $ports with exposure $score ($predicate)."
+      ;;
+  esac
+done
+
+delete $units $scores
+exit 0

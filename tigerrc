@@ -75,6 +75,7 @@ Tiger_Check_OS=Y                # Fast
 # - Linux, HPUX and Solaris specific
 Tiger_Check_NETWORKCONFIG=Y     # Fast
 Tiger_Check_SYSCTL=Y            # Fast - kernel, file system and IPv6 hardening settings
+Tiger_Check_SYSTEMD=Y           # Fast - sandboxing of network-facing systemd services
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       
 Tiger_Deb_NoPackFiles=Y

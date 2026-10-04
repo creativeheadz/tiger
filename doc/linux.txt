@@ -238,3 +238,26 @@ packets that dictate their own route. See lin016f for the IPv4
 equivalent:
   # sysctl -w net.ipv6.conf.all.accept_source_route=0
   # sysctl -w net.ipv6.conf.default.accept_source_route=0
+%sysd001w
+The service listens on the network and systemd rates its sandboxing
+UNSAFE (exposure 9.0 or more out of 10): it runs with little or nothing
+between it and the rest of the system, so a flaw in it is a flaw in the
+host. The message names the three unmet protections that would lower
+the score most. Add them to a drop-in, for example:
+  # systemctl edit UNIT
+  [Service]
+  NoNewPrivileges=yes
+  ProtectSystem=strict
+  PrivateTmp=yes
+then restart the unit and run 'systemd-analyze security UNIT' to see
+what remains. Services that genuinely need root or wide file access
+will stay above 0 but rarely need to stay above 9.
+%sysd002i
+The service listens on the network and systemd rates its sandboxing
+EXPOSED (exposure between 7.0 and 8.9). See sysd001w for how to read
+'systemd-analyze security UNIT' and tighten it.
+%sysd003i
+How many of the system's services systemd rates UNSAFE and EXPOSED
+overall. Most units on a desktop score badly, which is why Tiger only
+warns about the ones that listen on the network (sysd001w); this line
+gives the whole picture for anyone hardening a server unit by unit.
