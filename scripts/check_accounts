@@ -218,6 +218,11 @@ check_users()
          ;;
      esac
 
+     # Service accounts that cannot log in (mail, nobody, systemd-*) have
+     # shared or absent homes by design; their permissions are not theirs
+     case "$shell" in
+       */nologin|*/false) continue ;;
+     esac
      # Verify the home directory is accessable.
      [ ! -d "$home/" ] && {
        [ -n "$uid" ] && [ $Tiger_Accounts_Trust -lt $uid ] && [ "$host" = "$HOSTNAME" ] && {

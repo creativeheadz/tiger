@@ -186,8 +186,10 @@ delete $WORKDIR/cron.in.$$
 
 
 # Check for existence of root crontab
+# Not having a root crontab is not a weakness; on systemd systems it is
+# the norm. Worth knowing, not worth a warning.
 [ ! -r $CRONSPOOL/root ] &&
-     message WARN cron004w "" "Root crontab does not exist"
+     message INFO cron004w "" "Root crontab does not exist"
 
 # Check for existence of root cron.allow
 [ -z "$CRONALLOW" ] && CRONALLOW=/etc/cron.allow

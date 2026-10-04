@@ -90,11 +90,11 @@ haveallfiles BASEDIR WORKDIR || exit 1
 safe_temp "$WORKDIR/pass.list.$$"
 trap 'delete $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
 
-if ! $FIND /bin /sbin /usr/bin /usr/sbin/ /usr/local/bin \
-           /usr/local/sbin -name "*ftpd" >/dev/null 2>&1 ; then
-# No FTP server found, exit and do not implement this check
-    exit 0
-fi
+# No FTP server, no check. find exits 0 whether or not it found anything,
+# so look at its output; tftpd is not an FTP server
+ftpd=`$FIND /bin /sbin /usr/bin /usr/sbin/ /usr/local/bin /usr/local/sbin \
+           -name "*ftpd" ! -name "*tftpd" 2>/dev/null | $HEAD -n 1`
+[ -z "$ftpd" ] && exit 0
 
 # Just in case if it's not configured properly
 [ -z "${Tiger_Accounts_Trust}" ] && { 

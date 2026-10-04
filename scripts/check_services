@@ -134,19 +134,22 @@ checkservices ()
     }
   done < $SERVICESFILE
 
-  # Check that these services are not set for any other services.
-  while read currservice currport
-  do 
-    matches=`$GREP " $currport$" $services | $AWK '{ print $1 }'`
-    for service in $matches
+  # Check that no port is assigned to two different services in the
+  # system's own file. Aliases share one line and are not read into the
+  # list, so two lines for one port and protocol is a real double
+  # assignment. (The reference list is not used here: it is older than
+  # most renames, so "ssmtp" against today's "submissions" is not a fault.)
+  $AWK '{ print $2, $1 }' $services | $SORT |
+  $AWK '{ if ($1 == port) { names = names " " $2; n++ }
+          else { if (n > 1) print port, names; port = $1; names = $2; n = 1 } }
+        END { if (n > 1) print port, names }' |
+  while read currport first others
+  do
+    for service in $others
     do
-      if [ $service != $currservice ]; then
-        origmatch=`$GREP " $currport$" $SERVICESFILE | $AWK '{ print $1 }' | $GREP $service`
-	[ -z "$origmatch" ] && 
-		message WARN inet003w "" "The port for service $currservice is also assigned to service $service."
-      fi
+      message WARN inet003w "" "The port $currport is assigned to service $first and also to service $service."
     done
-  done < $SERVICESFILE
+  done
 
   # Print out any other entries that have been added
   $AWK '{ print $1 " " $2 }' $services |
