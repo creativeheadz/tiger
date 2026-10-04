@@ -17,6 +17,8 @@
 #
 # check_passwd  - 06/14/93
 #
+# 10/04/2026 atrimbitas Service accounts without a login shell are not
+#                reported for having / as home or for sharing a home
 # 07/27/2002 jfs Added a sanity check for password files
 # 08/09/2002 jfs Fixed some ! tests 
 # 10/28/2002 jfs Improved check with patch from Bob Hall
@@ -162,9 +164,13 @@ check_passwd_entries()
          ;;
     esac"
 
-    # Report users with / as their homedir
+    # Report users with / as their homedir. Service accounts that cannot
+    # log in (systemd-*, polkitd, ...) are given / on purpose; skip them.
     [ "$home" = / ] && {
-      message WARN pass016w "" "User $login has $home as home directory"
+      case "$shell" in
+        */nologin|*/false|"") ;;
+        *) message WARN pass016w "" "User $login has $home as home directory" ;;
+      esac
     }
 
     # Mark as an emptyshell, if shell is not specified.
@@ -287,9 +293,10 @@ do
       message WARN pass002w "" "UID $uid exists multiple times ($times) in $source."
   done
 
-  # Check for multiple entries with duplicate home directories.
+  # Check for multiple entries with duplicate home directories. Service
+  # accounts without a login shell share / or /nonexistent by design.
   $EGREP -v "^($Tiger_Admin_Accounts):" $WORKDIR/p1uid.$$ |
-  $AWK -F: '{print $6}' |
+  $AWK -F: '$7 !~ /\/(nologin|false)$/ && $6 != "/" && $6 != "/nonexistent" {print $6}' |
   $SORT |
   $UNIQ -c |
   while read times homedir
