@@ -21,7 +21,7 @@
 # all the checks configured for your system in the tigerrc configuration 
 # file.
 #
-# 05/14/2005 jfs Patch from Nicolas François which fixes aide output handling
+# 05/14/2005 jfs Patch from Nicolas Franï¿½ois which fixes aide output handling
 # 01/25/2005 cslater Added separate config variable for 
 #		 check_passwdformat.
 # 01/15/2003 jfs Check should use INETDCONF (and not INETDFILE).
@@ -143,6 +143,19 @@ trap 'tigercleanup; exit 1' 1 2 3 15
 
 haveallcmds CAT DATE DATECMD GEN_PASSWD_SETS GREP MV RM TIMECMD || exit 1
 haveallfiles BASEDIR SCRIPTDIR CONFIG_DIR LOGDIR WORKDIR || exit 1
+
+#
+# Check scripts owned by another user are never run (misc024e). When Tiger
+# runs as root from a tree owned by someone else that skips every check, so
+# say so once, up front, instead of producing an empty report.
+#
+[ "$UUID" = 0 ] && {
+  scripts_owner=`$LS -nd $SCRIPTDIR | $AWK '{ print $3; }'`
+  [ "$scripts_owner" != 0 ] && {
+    echo "--ERROR-- [init010e] Tiger is running as root but \`$SCRIPTDIR' is owned by uid $scripts_owner, so its check scripts would not be run. Make the tree root's first: chown -R root:root $BASEDIR"
+    exit 1
+  }
+}
 haveallvars HOSTNAME OS REL REV ARCH || exit 1
 
 version="$TIGERVERSION"

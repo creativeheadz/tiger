@@ -16,9 +16,11 @@ tracker, and makes the Debian checks work on merged-/usr systems. See
 
 ## Running it
 
-From the source tree, as root:
+From the source tree, as root. Tiger will not run check scripts owned by
+another user, so the tree has to belong to root first:
 
-    ./tiger
+    sudo chown -R root:root .
+    sudo ./tiger
 
 The report is written to `log/`. To look up what a message code in it
 means, build the message index once with `util/genmsgidx doc/*.txt`,
