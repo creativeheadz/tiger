@@ -28,6 +28,7 @@ CC=@CC@
 all: ${BINLIST}
 
 install:  all
+	$(INSTALL) -d ../bin
 	$(INSTALL) -m0755 ${BINLIST} ../bin/
 
 
