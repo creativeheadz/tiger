@@ -124,7 +124,7 @@ done
 echo
 echo "# Checking md5sums of installed files"
 
-haveallcmds MD5SUM CAT CUT SED GREP EGREP BASENAME || exit 1
+haveallcmds MD5SUM CAT CUT SED GREP EGREP BASENAME AWK SORT || exit 1
 
 DIVERSIONS="/var/lib/dpkg/diversions"
 
@@ -183,19 +183,34 @@ while read md5file; do
     }
 done
 # check diversions
-
-
 if [ -x /usr/bin/dpkg-divert ]; then
+divlist=$WORKDIR/divert.list.$$
+divpat=$WORKDIR/divert.pat.$$
+divowners=$WORKDIR/divert.owners.$$
+safe_temp $divlist $divpat $divowners
 /usr/bin/dpkg-divert --list |
 # extract the file diverted, the backup file and the diverter package
 $SED -e 's/diversion of \(\/.*\) to \(\/.*\) by \(.*\)$/\1;\2;\3/' \
-     -e 's/local diversion of \(\/.*\) to \(\/.*\)$/\1;\2;LOCAL/' | {
+     -e 's/local diversion of \(\/.*\) to \(\/.*\)$/\1;\2;LOCAL/' > $divlist
+# Which packages ship each diverted file: one pass over the .list files.
+# dpkg -S loads the whole package database (130 MB, a quarter of a second)
+# and this used to run it once per diversion. On a merged-/usr system the
+# file may be recorded under /bin or /usr/bin, so look for both forms.
+$CUT -d';' -f1 $divlist |
+$SED -e 'p' -e 's,^/usr/,/,; t' -e 's,^/,/usr/,' | $SORT -u > $divpat
+$GREP -xF -f $divpat /var/lib/dpkg/info/*.list 2>/dev/null |
+$SED 's,^/var/lib/dpkg/info/\(.*\)\.list:, \1 ,' > $divowners
+{
   saveIFS=$IFS
   IFS=";"
   while read file tofile bypackage
   do
-    IFS=":" ; set X `$DPKG -S "$file" | $GREP -v "^diversion by "`
-    IFS=", " ; set X $2
+    case "$file" in
+      /usr/*) altfile=${file#/usr} ;;
+      *)      altfile=/usr$file ;;
+    esac
+    IFS=" "
+    set X `$AWK -v f="$file" -v g="$altfile" '$2 == f || $2 == g { print $1 }' $divowners`
     while [ "$2" != "" ]
     do
       if [ "$2" = "$bypackage" ]
@@ -220,11 +235,12 @@ $SED -e 's/diversion of \(\/.*\) to \(\/.*\) by \(.*\)$/\1;\2;\3/' \
       shift
     done
     IFS=";"
-  done
+  done < $divlist
 
   # restore IFS
   IFS=$saveIFS
 }
+delete $divlist $divpat $divowners
 fi
 
 else
