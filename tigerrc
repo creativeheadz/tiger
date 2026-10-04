@@ -325,6 +325,11 @@ Tiger_FSScan_NonLocal=''	# Filesystems considered to be non-local to the system,
 #
 Tiger_FSScan_ReadOnly=N
 #
+# Directories the file system scan should skip, pipe-separated.
+# Each entry is a find -path pattern, e.g. '/srv/backups|/home/*/.cache'
+#
+Tiger_FSScan_PruneDirs=''
+#
 # List of dot files commonly found in user home directories.  These
 # will be checked by check_accounts for proper access permissions.
 # 
