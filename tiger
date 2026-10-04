@@ -92,7 +92,7 @@ sendtologger()
   logger_port="5353"
   logger_name=`echo $LOGDIR | $AWK -F\@ '{print $2}'`
   safe_temp $WORKDIR/logger.$$
-  $TigerCleanup="$TigerCleanup $WORKDIR/logger.$$"
+  TigerCleanup="$TigerCleanup $WORKDIR/logger.$$"
   echo "sleep 5; cat $logfile; sleep 5" >$WORKDIR/logger.$$
   sh $WORKDIR/logger.$$ | telnet $logger_name $logger_port
   if [ "$?" -ne 0 ]; then

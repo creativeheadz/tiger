@@ -98,7 +98,7 @@ fi
 
 # Just in case if it's not configured properly
 [ -z "${Tiger_Accounts_Trust}" ] && { 
-	Tiger_Accounts_Trust = 999
+	Tiger_Accounts_Trust=999
 	export Tiger_Accounts_Trust
 }
 FTPUSERS=/etc/ftpusers
