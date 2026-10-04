@@ -92,8 +92,8 @@ traditional strength.
       default-deny policy.
 - [ ] Kernel: sysctl hardening ([x] `check_sysctl`: kptr/dmesg restrict,
       Yama, ASLR, SysRq, BPF, perf, `fs.protected_*`, IPv6 redirects and
-      source routing), lockdown, Secure Boot, and CPU vulnerability
-      mitigations (`/sys/devices/system/cpu/vulnerabilities`).
+      source routing; [x] CPU vulnerability mitigations from
+      `/sys/devices/system/cpu/vulnerabilities`), lockdown and Secure Boot.
 - [ ] AppArmor or SELinux enforcing, auditd, and journald persistence.
 - [ ] Time sync (chrony, timesyncd) instead of the NTP-only check.
 - [ ] Updates: automatic security updates configured, pending security
