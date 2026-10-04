@@ -125,6 +125,11 @@ if [ -r $GLOBALFILE ] ; then
            | $CUT -d" " -f2`
 fi
 
+# With pam_umask in the session stack, login shells get the login.defs
+# umask from PAM and the shell start-up files need not set one
+PAMUMASK=
+[ -n "$GLOBALUMASK" ] && [ -r /etc/pam.d/common-session ] &&
+  $GREP -q '^[^#]*pam_umask\.so' /etc/pam.d/common-session && PAMUMASK=Y
 if [ -z "$GLOBALUMASK" ]; then
 	message WARN misc026w "" "There is no default umask settings for user login shells in $GLOBALFILE"
 else
@@ -167,12 +172,12 @@ shellname="dash"
 Findumask=0
 check_umask /etc/profile || Findumask=1
 # Warn if dash is installed and no definitions have been found
-if [ $Findumask -eq 0 ] && [ -x /bin/dash ] ; then
+if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x /bin/dash ] ; then
         message WARN misc021w "" "There is no umask definition for the $shellname shell"
 fi
 # Same with ksh
 shellname="ksh"
-if [ $Findumask -eq 0 ] && [ -x /bin/ksh ] ; then
+if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x /bin/ksh ] ; then
         message WARN misc021w "" "There is no umask definition for the $shellname shell"
 fi
 
@@ -186,7 +191,7 @@ do
     check_umask $file || Findumask=1
 done
 # Warn if bash is installed and no definitions have been found
-if [ $Findumask -eq 0 ] && [ -x /bin/bash ] ; then
+if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x /bin/bash ] ; then
         message WARN misc021w "" "There is no umask definition for the $shellname shell"
 fi
 

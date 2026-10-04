@@ -93,6 +93,11 @@ echo "# Checking for correct umask settings for init scripts..."
 
 haveallcmds HEAD TAIL GREP EXPAND SED CUT  || exit 1
 
+# Under systemd the init.d scripts that remain are run by the service
+# manager with its own umask (0022 unless a unit says otherwise), not by
+# /etc/init.d/rc, so there is nothing for this check to look at
+[ -d /run/systemd/system ] && exit 0
+
 
 #####
 # Check various possible files

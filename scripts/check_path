@@ -332,6 +332,12 @@ realpath="$REALPATH -d"
 [ ! -n "$SYSDEFAULTPATH" ] && {
   SYSDEFAULTPATH="/bin:/usr/bin:/usr/sbin"
 }
+# On Linux the initial PATH usually comes from /etc/environment through
+# pam_env, not from /etc/profile; when it does, /etc/profile need not set it
+pamenvpath=
+[ -r /etc/environment ] && [ -r /etc/pam.d/login ] &&
+  $GREP -q '^PATH=' /etc/environment &&
+  $GREP -q '^[^#]*pam_env\.so' /etc/pam.d/login && pamenvpath=Y
 [ -n "$Tiger_Global_PATH" ] && {
   for file in $Tiger_Global_PATH
     do
@@ -339,7 +345,7 @@ realpath="$REALPATH -d"
         case $file in
           /etc/profile|/etc/bashrc)
             found=`$GREP -v \# $file | $GREP PATH | $GREP export 2>/dev/null`
-            if [ -z "$found" ]; then
+            if [ -z "$found" ] && [ -z "$pamenvpath" ]; then
                 message WARN path009w "" "$file does not export an initial setting for PATH."
             fi
             ;;
