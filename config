@@ -313,6 +313,18 @@ checkfile()
           # From here on we should have a working WORKDIR
   fi
 
+  # Create the log directory too, unless reports go to a remote logger (host@)
+  case "$LOGDIR" in
+    *@*) ;;
+    *) if [ ! -d "$LOGDIR" ] ; then
+         [ "$QUIET" != "Y" ] && echo "Creating log directory $LOGDIR"
+         if ! ( umask 077; mkdir -p "$LOGDIR" ) >/dev/null 2>&1; then
+           echo "Configured log directory $LOGDIR cannot be created (should you use -l?)" >&2
+           exit 1
+         fi
+       fi ;;
+  esac
+
 
   [ "$QUIET" != "Y" ] && echo "Configuring..."
 
@@ -415,7 +427,7 @@ checkfile()
   #
 
   [ -n "$RCFILE" -a -r $RCFILE ] && {
-    tempfile=`tempfile -d $WORKDIR` || tempfile=$WORKDIR/rcfile.$$
+    tempfile=`mktemp "$WORKDIR/rcfile.XXXXXX" 2>/dev/null` || tempfile=$WORKDIR/rcfile.$$
     $GREP -v '^#' $RCFILE |
     $SED -e 's/^\(.*\)=/export \1; \1=/' > $tempfile
     . $tempfile
