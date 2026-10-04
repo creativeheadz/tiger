@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  lint:
+    name: Syntax and ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: sh -n on every shell script
+        run: |
+          fail=0; n=0
+          for f in $(git ls-files tiger tigexp tigercron config initdefs scripts systems util tests); do
+            case "$f" in *.c|*.pl|*.txt|*.lst|*.tmpl|*.xref|*README*|*/services|*/inetd|*_list|*signatures*|*advisories*|*baseline*|*embedlist*|*facl*) continue;; esac
+            [ -f "$f" ] || continue
+            head -1 "$f" | grep -q 'perl' && continue
+            n=$((n+1))
+            sh -n "$f" || { echo "::error file=$f::sh -n failed"; fail=1; }
+          done
+          echo "$n scripts checked"
+          exit $fail
+      - name: ShellCheck (errors)
+        # Tiger tests "[ $TESTEXEC file ]" with TESTEXEC=-x or -f, which
+        # ShellCheck cannot parse; those files are reported but do not fail
+        # the build yet.
+        continue-on-error: true
+        run: |
+          shellcheck --version | head -2
+          shellcheck -s sh -S error tiger tigexp tigercron config initdefs util/realpath tests/*.sh \
+            $(git ls-files scripts systems/Linux/2 systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$')
+
+  build:
+    name: Build C helpers and docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./configure
+      - run: make
+      - name: Install the helpers into bin/
+        run: |
+          make -C c install
+          ls -l bin/
+          test -x bin/realpath && test -x bin/snefru
+      - name: Message index built
+        run: test -s doc/explain.idx
+
+  smoke:
+    name: Full run on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo sh tests/smoke.sh
+
+  debian-checks:
+    name: Debian checks (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:stable", "debian:sid", "ubuntu:24.04"]
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Plant problems and check they are found
+        run: sh tests/deb_checks.sh
