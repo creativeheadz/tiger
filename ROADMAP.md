@@ -115,9 +115,11 @@ traditional strength.
 - [ ] **Open compliance mapping**, free: CIS Controls v8, ISO 27001:2022
       Annex A, NIST 800-53 and UK Cyber Essentials, kept as data files.
       Lynis only offers this in its paid edition.
-- [ ] **Drift as a first-class feature**: `tiger diff` between runs, and
-      `tiger accept <ID>` to acknowledge a finding with a reason and an
-      expiry date. This builds on what `tigercron` already does.
+- [ ] **Drift as a first-class feature**: [x] `tigris-diff` between two
+      JSON runs (new, resolved, unchanged; exit 1 on anything new; `-j`),
+      and still to do `tigris accept <ID>` to acknowledge a finding with a
+      reason and an expiry date. This builds on what `tigercron` already
+      does.
 - [ ] **Offline audit**: `tiger --root /mnt/image` audits a mounted disk,
       a container image's root filesystem or a VM snapshot without booting
       it. Lynis can't do this.
