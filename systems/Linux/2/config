@@ -164,7 +164,8 @@ MD5SUM=`findcmd md5sum`
 if [ -f "$BINDIR/realpath" ]; then
 	REALPATH=$BINDIR/realpath
 else 
-	REALPATH=`findcmd realpath`
+	# The system realpath has a different interface, so use the shell version
+	REALPATH=$BASEDIR/util/realpath
 fi
 PWD=`findcmd pwd`
 # Package management tools

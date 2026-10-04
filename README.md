@@ -27,6 +27,10 @@ means, build the message index once with `util/genmsgidx doc/*.txt`,
 then run, for example, `./tigexp lin005f`. Choose which checks run, and
 how, in `tigerrc`.
 
+Tiger needs no compiler. If you have one, `make && make -C c install`
+builds a few small C helpers into `bin/`, which Tiger then prefers to
+its shell equivalents.
+
 To install system-wide instead:
 
     ./configure
