@@ -107,8 +107,9 @@ traditional strength.
 
 - [ ] **JSON report** with a versioned schema, written next to the text
       report. ([x] JSON Lines from `message()` itself, with run and summary
-      records, since October 2026; the schema document and a version
-      field are still to do.) Exit codes that CI and automation can act on.
+      records; [x] a `schema` version in the run record, a JSON Schema in
+      `doc/`, `doc/json-format.md` as the contract, and CI validating a
+      real run against it.) Exit codes that CI and automation can act on.
 - [ ] **One metadata file per check**: ID, severity, category, controls,
       fix and references. The docs, `tiger explain <ID>` (replacing
       `tigexp`) and the JSON are all generated from it.

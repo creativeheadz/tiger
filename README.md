@@ -54,7 +54,8 @@ optional `detail`, and a `summary` with counts last. INFO findings are
 always included there, whatever the text report shows. Bytes above 127
 in a message are written as `\u00XX`, one per byte, so file names in any
 encoding survive and the file is plain ASCII. `Tiger_Output_JSON=N` in
-`tigerrc` turns it off.
+`tigerrc` turns it off. The format is a documented contract with a version
+field and a JSON Schema: [doc/json-format.md](doc/json-format.md).
 
 `tigris-diff` compares two of those files and lists what is new and what
 was resolved; with no arguments it takes the two most recent runs in

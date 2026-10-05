@@ -17,7 +17,7 @@ bad()  { echo "FAIL $1"; fail=1; }
 
 mkdir -p "$W/log"
 cat > "$W/log/security.report.box.261004-10:00.jsonl" <<'EOF'
-{"type":"run","id":"run-a","tool":"tigris","version":"3.2.4","host":"box","os":"Linux","release":"7.0","arch":"x86_64","start":"2026-10-04T10:00:00Z"}
+{"type":"run","schema":1,"id":"run-a","tool":"tigris","version":"3.2.4","host":"box","os":"Linux","release":"7.0","arch":"x86_64","start":"2026-10-04T10:00:00Z"}
 {"type":"finding","level":"WARN","id":"ssh004w","check":"check_ssh","message":"sshd: passwordauthentication is yes: passwords are accepted for login"}
 {"type":"finding","level":"FAIL","id":"lin016f","check":"check_network_config","message":"The system permits source routing from incoming packets"}
 {"type":"finding","level":"WARN","id":"fsys013w","check":"find_files","message":"/etc/odd \"quoted\" caf\u00e9 is a dangling symlink."}
@@ -25,7 +25,7 @@ cat > "$W/log/security.report.box.261004-10:00.jsonl" <<'EOF'
 {"type":"summary","id":"run-a","end":"2026-10-04T10:02:00Z","counts":{"ALERT":0,"FAIL":1,"WARN":2,"INFO":1,"ERROR":0}}
 EOF
 cat > "$W/log/security.report.box.261004-11:00.jsonl" <<'EOF'
-{"type":"run","id":"run-b","tool":"tigris","version":"3.2.4","host":"box","os":"Linux","release":"7.0","arch":"x86_64","start":"2026-10-04T11:00:00Z"}
+{"type":"run","schema":1,"id":"run-b","tool":"tigris","version":"3.2.4","host":"box","os":"Linux","release":"7.0","arch":"x86_64","start":"2026-10-04T11:00:00Z"}
 {"type":"finding","level":"FAIL","id":"lin016f","check":"check_network_config","message":"The system permits source routing from incoming packets"}
 {"type":"finding","level":"WARN","id":"fsys013w","check":"find_files","message":"/etc/odd \"quoted\" caf\u00e9 is a dangling symlink (still)."}
 {"type":"finding","level":"WARN","id":"dev004w","check":"check_devices","message":"/dev/kmsg is world readable"}

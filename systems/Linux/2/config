@@ -110,7 +110,36 @@ LXDISTRIBUTION="unknown"
 [ -f /etc/immunix-release ] && LXDISTRIBUTION="inmunix"
 [ -f /etc/mandrake-release ] && LXDISTRIBUTION="mandrake"
 [ -f /etc/turbolinux-release ] && LXDISTRIBUTION="turbolinux"
+# /etc/os-release names the distribution (ID) and the ones it descends from
+# (ID_LIKE), which is how Ubuntu, Mint and Pop!_OS are Debian and Rocky,
+# Alma and Fedora are Red Hat. It is read as text, never sourced: this runs
+# as root. Tiger_Os_Release lets the tests point at a file of their own.
+__osrel=${Tiger_Os_Release:-/etc/os-release}
+__sed=`findcmd sed`; __tr=`findcmd tr`      # SED and TR are defined further down
+if [ -r "$__osrel" ] && [ -n "$__sed" ] && [ -n "$__tr" ]; then
+  __osfam=`$__sed -n -e 's/^ID=//p' -e 's/^ID_LIKE=//p' "$__osrel" 2>/dev/null | $__sed -e 's/["'"'"']//g' | $__tr '\n' ' '`
+  case " $__osfam " in
+    *" debian "*|*" ubuntu "*)           LXDISTRIBUTION="debian" ;;
+    *" rhel "*|*" fedora "*|*" centos "*) LXDISTRIBUTION="redhat" ;;
+    *" suse "*|*" opensuse"*)            LXDISTRIBUTION="suse" ;;
+    *" alpine "*)                        LXDISTRIBUTION="alpine" ;;
+    *" arch "*|*" archlinux "*)          LXDISTRIBUTION="arch" ;;
+  esac
+fi
 export LXDISTRIBUTION
+
+# The package manager the integrity checks ask. The distribution says which
+# one to expect; the command being there says whether it is usable. Mint is
+# Debian by ID_LIKE and has dpkg; a container image with the package
+# database stripped out has none, and the checks then say nothing.
+LXPKGMGR=none
+case "$LXDISTRIBUTION" in
+  debian) command -v dpkg >/dev/null 2>&1 && [ -d /var/lib/dpkg/info ] && LXPKGMGR=dpkg ;;
+  redhat|suse) command -v rpm >/dev/null 2>&1 && LXPKGMGR=rpm ;;
+  alpine) command -v apk >/dev/null 2>&1 && LXPKGMGR=apk ;;
+  arch) command -v pacman >/dev/null 2>&1 && LXPKGMGR=pacman ;;
+esac
+export LXPKGMGR
 
 TESTEXEC=-x
 TESTLINK=-L

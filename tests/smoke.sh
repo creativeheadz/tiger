@@ -53,6 +53,12 @@ EOF
 elif [ -z "$jsonl" ]; then
   echo "FAIL no JSON Lines report in log/"; fail=1
 fi
+if [ -n "$jsonl" ]; then
+  sh "$TIGER/tests/schema_check.sh" "$jsonl" > "$W/schema.out" 2>&1; st=$?
+  if [ $st -eq 0 ]; then grep '^ok   .*records validate' "$W/schema.out"
+  elif [ $st -eq 2 ]; then echo "skip JSON schema validation (jsonschema for Python not installed)"
+  else echo "FAIL JSON report does not match the schema:"; grep -v '^ok' "$W/schema.out" | head -8; fail=1; fi
+fi
 if [ -s "$W/stderr" ]; then
   echo "---  stderr"
   sort "$W/stderr" | uniq -c | sort -rn | head -10 | sed 's/^/     /'

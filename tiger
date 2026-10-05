@@ -199,7 +199,7 @@ echo "Tiger security scripts *** $version ***"
     Tiger_Run_Id=`$CAT /proc/sys/kernel/random/uuid 2>/dev/null`
     [ -n "$Tiger_Run_Id" ] || Tiger_Run_Id="${HOSTNAME}-${datestamp}-$$"
     export Tiger_Run_Id
-    echo "{\"type\":\"run\",\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\",\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
+    echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\",\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
   }
 }
 
