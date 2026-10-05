@@ -62,7 +62,7 @@ Settled, so they do not have to be argued again:
 | Compliance mapping   | None yet                                                        | Enterprise (paid) edition only           |
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
-| Tests                | 11 fixture suites, 11 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 12 fixture suites, 11 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
@@ -186,7 +186,7 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   all and `tests/explain_check.sh` fails CI on any gap.
 
 *Engineering.*
-- [x] 11 fixture suites and a CI pipeline of 11 jobs: syntax and
+- [x] 12 fixture suites and a CI pipeline of 11 jobs: syntax and
   ShellCheck, a full run on Ubuntu, the dpkg checks on Debian stable,
   sid and Ubuntu 24.04, and the package checks on five other
   distributions.
@@ -228,11 +228,12 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   seconds (`security.report.HOST.YYMMDD-HH:MM:SS`); the byte sort in
   `tigris-diff` still orders a mix of old and new names by time, and
   `tigercron` was never affected (it rotates numbered `.1`/`.2` files).
-- [ ] `tigerrc-quick` is a full copy of `tigerrc` with one line changed,
+- [x] `tigerrc-quick` is a full copy of `tigerrc` with one line changed,
   because an unset `Tiger_Check_*` means "run". Until profiles can be
-  short overlays, add a test that the two differ only in that line. The
-  legacy variants `tigerrc-all` and `tigerrc-dist` still carry the
-  switches of the retired checks; tidy or drop them.
+  short overlays, `tests/profile_check.sh` fails unless the two differ
+  only in that line.
+- [ ] The legacy variants `tigerrc-all` and `tigerrc-dist` still carry
+  the switches of the retired checks; tidy or drop them.
 
 ## 3.3: modern Linux baseline
 
