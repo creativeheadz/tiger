@@ -16,7 +16,7 @@ and the distributions that ship it, not here.
 
 Tigris runs as root, so a bug in it matters more than most. If you find
 one, do not open a public issue. Report it privately, either through
-[GitHub's private vulnerability reporting](../../security/advisories/new)
+[GitHub's private vulnerability reporting](https://github.com/creativeheadz/tigris/security/advisories/new)
 or by mail to the maintainer at <a.trimbitas@oldforge.tech>. Say what
 happens, how to reproduce it, and what you think the impact is; a
 failing test case is welcome but not required.
