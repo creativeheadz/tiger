@@ -199,7 +199,11 @@ echo "Tiger security scripts *** $version ***"
     Tiger_Run_Id=`$CAT /proc/sys/kernel/random/uuid 2>/dev/null`
     [ -n "$Tiger_Run_Id" ] || Tiger_Run_Id="${HOSTNAME}-${datestamp}-$$"
     export Tiger_Run_Id
-    echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\",\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
+    # Whether the filesystem scan runs: a run without it has no fsys*
+    # findings, which tigris-diff must not read as "resolved"
+    fsscan=true
+    [ "$Tiger_Check_FILESYSTEM" = 'N' ] && fsscan=false
+    echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\",\"filesystem_scan\":$fsscan,\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
   }
 }
 
@@ -222,6 +226,13 @@ export TigerCheckEmbedded
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   delete $Tiger_PasswdFiles
   $GEN_PASSWD_SETS $Tiger_PasswdFiles
+}
+
+# Say so when the scan is off, so that no fsys* findings is not read as a
+# clean file system (the quick profile turns it off)
+[ "$Tiger_Check_FILESYSTEM" = 'N' ] && [ "$Tiger_TESTMODE" != 'Y' ] && {
+  echo "`$TIMECMD`> Filesystem scan not run (Tiger_Check_FILESYSTEM=N in $RCFILE)."
+  echo "# Filesystem scan not run (Tiger_Check_FILESYSTEM=N in $RCFILE): setuid, device, symlink, unowned and odd-name findings (fsys*) are absent because they were not looked for, not because there are none." >> $logtmp
 }
 
 [ "$Tiger_Check_FILESYSTEM" != 'N' ] && {

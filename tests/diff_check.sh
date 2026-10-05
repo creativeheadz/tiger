@@ -68,5 +68,29 @@ else
   grep -q '"type":"diff"' "$W/diff.json" && ok "-j writes a diff object (python3 absent, not parsed)" || bad "-j"
 fi
 
+# A full run against a quick one: the quick run did not scan the file
+# system, so its missing fsys* findings are neither resolved nor new
+cat > "$W/full.jsonl" <<'EOF'
+{"type":"run","schema":1,"id":"full","tool":"tigris","version":"3.3","host":"box","os":"Linux","release":"7.0","arch":"x86_64","config":"tigerrc","filesystem_scan":true,"start":"2026-10-05T10:00:00Z"}
+{"type":"finding","level":"WARN","id":"fsys013w","check":"find_files","message":"/etc/x is a dangling symlink."}
+{"type":"finding","level":"WARN","id":"ssh008w","check":"check_ssh","message":"x11"}
+{"type":"summary","id":"full","end":"2026-10-05T10:02:00Z","counts":{"ALERT":0,"FAIL":0,"WARN":2,"INFO":0,"ERROR":0}}
+EOF
+cat > "$W/quick.jsonl" <<'EOF'
+{"type":"run","schema":1,"id":"quick","tool":"tigris","version":"3.3","host":"box","os":"Linux","release":"7.0","arch":"x86_64","config":"tigerrc-quick","filesystem_scan":false,"start":"2026-10-05T11:00:00Z"}
+{"type":"finding","level":"WARN","id":"ssh008w","check":"check_ssh","message":"x11"}
+{"type":"summary","id":"quick","end":"2026-10-05T11:01:00Z","counts":{"ALERT":0,"FAIL":0,"WARN":1,"INFO":0,"ERROR":0}}
+EOF
+sh "$D" "$W/full.jsonl" "$W/quick.jsonl" > "$W/fq.txt"; st=$?
+grep -q 'fsys013w' "$W/fq.txt" && bad "full -> quick reports the unscanned fsys finding" || ok "full -> quick: the fsys finding is set aside, not resolved"
+[ $st -eq 0 ] && grep -q 'unchanged: 1' "$W/fq.txt" && ok "full -> quick: nothing new, the shared finding unchanged" || bad "full -> quick exit $st or counts"
+grep -q 'note: the second run did not scan the file system' "$W/fq.txt" && ok "the text says which run skipped the scan" || bad "scan note"
+grep -q 'note: the runs used different configurations (tigerrc, tigerrc-quick)' "$W/fq.txt" && ok "the text says the configurations differ" || bad "config note"
+sh "$D" "$W/quick.jsonl" "$W/full.jsonl" > "$W/qf.txt"; st=$?
+[ $st -eq 0 ] && ! grep -q 'fsys013w' "$W/qf.txt" && ok "quick -> full: the fsys finding is not new" || bad "quick -> full exit $st"
+sh "$D" -j "$W/full.jsonl" "$W/quick.jsonl" > "$W/fq.json"
+grep -q '"set_aside":\["fsys"\]' "$W/fq.json" && grep -q '"configs_differ":true' "$W/fq.json" && ok "-j records set_aside and configs_differ" || bad "-j markers: `cat "$W/fq.json"`"
+sh "$D" "$W/full.jsonl" "$W/full.jsonl" | grep -q 'note:' && bad "a run against itself gets a note" || ok "same run, same config: no notes"
+
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- out.txt"; cat "$W/out.txt"; }
 exit $fail

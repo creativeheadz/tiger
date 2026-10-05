@@ -27,6 +27,7 @@ order:
 | `tool`, `version` | `tigris` and the release that produced the file. |
 | `host`, `os`, `release`, `arch` | What was audited. `release` is the kernel on Linux. |
 | `config` | The `tigerrc` the run used, since that decides what was checked. |
+| `filesystem_scan` | `false` when the filesystem scan was switched off (the quick profile). Such a run has no `fsys*` findings because it did not look for them, not because there are none. Absent in reports from before the field existed, which always scanned. |
 | `start` | UTC, `YYYY-MM-DDTHH:MM:SSZ`. |
 
 ### `finding`
@@ -53,6 +54,13 @@ short, and a consumer should treat it as incomplete.
 records), `new` and `resolved` (arrays of `finding` records) and
 `unchanged` (a count). Two findings are the same when `level`, `id` and
 `message` are all equal.
+
+When either run skipped the filesystem scan, all `fsys*` findings are
+left out of both sides, so they show as neither new nor resolved, and the
+object carries `"set_aside":["fsys"]`. When the two runs used different
+`tigerrc` files it carries `"configs_differ":true`: a check switched on in
+only one of them will show its findings as new or resolved, and a
+consumer should say so rather than raise an alarm.
 
 ## Encoding
 
