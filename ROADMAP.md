@@ -170,7 +170,10 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   (`doc/tigris-report.schema.json`), the contract in `doc/json-format.md`,
   and CI validating a real run against it.
 - [x] `tigris-diff`: new, resolved and unchanged between two runs, exit 1
-  on anything new, `-j` for JSON.
+  on anything new, `-j` for JSON. When either run skipped the filesystem
+  scan (the quick profile) its `fsys*` findings are set aside on both
+  sides instead of showing as resolved, and different `tigerrc` files are
+  noted; the run record carries `filesystem_scan` for this.
 - [x] `tigris-accept`: acknowledge a finding with a reason and an expiry;
   out of the text report, marked in the JSON, back when it expires.
 - [x] Every message id on a live Linux path is well-formed and
@@ -188,7 +191,9 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   sid and Ubuntu 24.04, and the package checks on five other
   distributions.
 - [x] The other Unixes moved to the attic tag (364 files).
-- [x] `SECURITY.md`, issue templates and a contributing guide.
+- [x] `SECURITY.md`, issue templates and a contributing guide, with
+  GitHub's private vulnerability reporting switched on so the route the
+  policy names actually works.
 
 ## 3.2.x: maintenance
 
@@ -213,10 +218,19 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   down (`df: /mnt/nas: Host is down`). Anything that asks about every
   mount can stall on it. Audit every call that touches mounts (`df`,
   `mount`, `lsof`, `stat`) and use local-only forms or a timeout.
-- [ ] Calls that pass the level in a variable (`message $level perm001w`)
-  or build the id from one (`ftp007$msgid`) are missed by any scan of
-  the source, so the id counts above are lower bounds. Make them literal
-  so the list of ids can be checked.
+- [ ] `tests/explain_check.sh` covers the id families built from data
+  (`perm…`, `embed…`) but not a *new* id built from a variable: a
+  mutation test confirmed `message WARN yyy$x"w"` passes unnoticed. Close
+  it from the other side: have the smoke test check that every id in a
+  real run's JSON has an explanation.
+- [ ] Two runs in the same minute overwrite each other's report: the
+  file names carry the time only to the minute
+  (`security.report.HOST.YYMMDD-HH:MM`). Add seconds or the run id.
+- [ ] `tigerrc-quick` is a full copy of `tigerrc` with one line changed,
+  because an unset `Tiger_Check_*` means "run". Until profiles can be
+  short overlays, add a test that the two differ only in that line. The
+  legacy variants `tigerrc-all` and `tigerrc-dist` still carry the
+  switches of the retired checks; tidy or drop them.
 
 ## 3.3: modern Linux baseline
 
