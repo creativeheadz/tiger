@@ -38,18 +38,32 @@ on listening processes, however it will provide less info since it
 cannot determine the process (or PID) associated with the open socket
 or the user that runs it.
 %lin005f
-In Debian systems, checksums are stored in /var/lib/dpkg/info/
-if the md5sum of a file differs from the checksum of installed packages
-it might be due to changes made by the system administrator (for
-example, files in /etc) by everyday use of by a possible intruder
-(who might have placed a trojan instead of the checked file)
-Be forewarned, an attacker might have modified this info files
-(they are not protected against this)
+An installed file differs from what the package that provided it
+contains: its content (checksum or size) has changed. Tigris asks the
+package manager's own database: dpkg's md5sums on Debian and Ubuntu,
+rpm -V on Fedora, RHEL, SUSE and their relatives, apk audit on Alpine,
+pacman -Qk on Arch. A change can be harmless (a file edited by hand, a
+prelink or a locale tool) or a trojan put in place of a system binary by
+an intruder; the message names the package so you can reinstall the file
+with the package manager (apt install --reinstall, dnf reinstall,
+apk fix, pacman -S) and see whether the difference goes away. Be
+forewarned that an attacker with root can modify the package database
+too, so a clean result is not proof of a clean system.
 %lin006w
-A file installed by a package no longer exists in the system and
-cannot be checked for. An administrator should not remove files from
-the system, they should be removed uninstalling the packages that
-provided them. This is an unusual behavior.
+The check of installed files against package checksums could not be done
+because this does not look like a Debian system, or dpkg's information is
+not available. On RPM, Alpine and Arch systems the equivalent check is
+reported under the same ids by pkg_integrity.
+%lin006f
+A file installed by a package no longer exists in the system, so it
+cannot be checked. An administrator should not remove files from the
+system by hand: they should be removed by uninstalling the packages that
+provided them. A missing file can be an accident, an overzealous cleanup,
+or an intruder removing a binary that would have exposed them. The
+message names the package; reinstall it with the package manager to
+restore the file. On Arch and Debian-derived minimal images, files the
+administrator has declared absent (pacman's NoExtract, for example) are
+not reported.
 %lin007w
 In the default configuration of many GNU/Linux distributions users can
 reboot the machine pressing Ctrl+Alt+Delete while in console mode. This can
