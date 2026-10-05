@@ -86,11 +86,14 @@ warning that the acceptance expired. The entries live in
 
 ## Where it is going
 
-[ROADMAP.md](ROADMAP.md): a modern Linux baseline, JSON output, a free
-compliance mapping, drift between runs, auditing a mounted image without
-booting it, and later a PowerShell engine for Windows against the same
-spec. Every change is measured for wall time, CPU and memory; it has to
-stay light enough for a Raspberry Pi.
+[ROADMAP.md](ROADMAP.md) has the decisions, the status, what has shipped
+and what is next. Already here: package integrity on five package
+managers, a versioned JSON report, and drift between runs. Ahead:
+profiles (a quick run that skips big data disks), a free compliance
+mapping, auditing a mounted image without booting it, and later a
+PowerShell engine for Windows against the same spec. Every change is
+measured for wall time, CPU and memory; it has to stay light enough for a
+Raspberry Pi.
 
 ## Licence
 
