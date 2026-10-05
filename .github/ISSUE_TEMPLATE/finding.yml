@@ -1,0 +1,42 @@
+name: Wrong or missing finding
+description: Tigris reported something it should not have, or missed something it should have
+labels: [bug]
+body:
+  - type: textarea
+    id: finding
+    attributes:
+      label: The finding
+      description: The exact report line, including the id in brackets
+      placeholder: "--WARN-- [lin005f] File `/usr/bin/foo' has been modified..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+      description: Why this line is wrong on your system, with the evidence
+      placeholder: "The file is unchanged; `debsums` agrees. It is a symlink to..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Tigris version
+      description: Commit hash if running from master
+      placeholder: "3.2.4, or master @ ..."
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Distribution and kernel, from /etc/os-release and uname -r
+      placeholder: "Linux Mint 22.3, kernel 6.8.0-52-generic"
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Profile or tigerrc changes, if any
+      placeholder: "Default tigerrc / tigerrc-quick / ..."

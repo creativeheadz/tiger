@@ -1,0 +1,32 @@
+name: Bug
+description: A crash, an error, or anything else that is not a wrong finding
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The command, the error, and what you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: Steps, starting from a clean checkout if you can
+  - type: input
+    id: version
+    attributes:
+      label: Tigris version
+      description: Commit hash if running from master
+      placeholder: "3.2.4, or master @ ..."
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Distribution and kernel, from /etc/os-release and uname -r
+      placeholder: "Linux Mint 22.3, kernel 6.8.0-52-generic"
+    validations:
+      required: true
