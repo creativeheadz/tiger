@@ -149,6 +149,10 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
 # The following scripts have been added to provide new checks 
 # specific to the Debian system, written by Javier Fernandez-Sanguino
 #
+[ "$Tiger_Check_PKGINTEGRITY" != 'N' ] && {
+  $SYSTEMDIR/pkg_integrity
+}
+
 if [ "$LXDISTRIBUTION" = "debian" ]; then
 
 # The following checks, for the moment, work only for Debian but

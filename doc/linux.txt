@@ -317,3 +317,12 @@ check for pending updates could not be done.
 %ptch005e
 The patch check needs root to refresh the package lists; run Tiger as
 root for a reliable result.
+%lin038w
+A file installed by a package has a different mode or owner than the
+package set. The check asks the package manager (rpm -V, apk audit,
+pacman -Qk), so it covers RPM, Alpine and Arch systems; the dpkg checks
+compare content only. A binary that has become world-writable, or
+changed owner, can be replaced by whoever it now belongs to. Restore it
+with the package manager's own tool (rpm --setperms PACKAGE, apk fix
+PACKAGE, pacman -S PACKAGE) or, if the change is intended, accept the
+finding with tigris-accept.

@@ -115,6 +115,7 @@ LXDISTRIBUTION="unknown"
 # Alma and Fedora are Red Hat. It is read as text, never sourced: this runs
 # as root. Tiger_Os_Release lets the tests point at a file of their own.
 __osrel=${Tiger_Os_Release:-/etc/os-release}
+TESTEXEC=-x     # findcmd tests with it, and it is only set again further down
 __sed=`findcmd sed`; __tr=`findcmd tr`      # SED and TR are defined further down
 if [ -r "$__osrel" ] && [ -n "$__sed" ] && [ -n "$__tr" ]; then
   __osfam=`$__sed -n -e 's/^ID=//p' -e 's/^ID_LIKE=//p' "$__osrel" 2>/dev/null | $__sed -e 's/["'"'"']//g' | $__tr '\n' ' '`
@@ -312,11 +313,11 @@ export NTPCONF
 YPCAT=`findcmd ypcat`
 
 YP=
-($PS aux | $GREP ypbind | $SGREP -v $GREP) && YP=Y
+[ -n "$PS" ] && ($PS aux | $GREP ypbind | $SGREP -v $GREP) && YP=Y
 export YP
 
 YPSERVER="NO"
-($PS aux | $GREP ypserv | $SGREP -v $GREP) && YPSERVER="YES"
+[ -n "$PS" ] && ($PS aux | $GREP ypserv | $SGREP -v $GREP) && YPSERVER="YES"
 
 # To check databases
 GETENT=`findcmd getent`

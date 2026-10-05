@@ -73,6 +73,25 @@ jobs:
         run: sudo apt-get install -y -qq python3-jsonschema
       - run: sudo sh tests/smoke.sh
 
+  package-managers:
+    name: Package integrity (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: fedora:latest
+          - image: rockylinux:9
+          - image: alpine:latest
+          - image: archlinux:latest
+          - image: opensuse/tumbleweed:latest
+            # a stripped base image: no awk, no find, no tar
+            prep: zypper -q install -y gawk tar findutils
+    steps:
+      - uses: actions/checkout@v4
+      - name: Plant problems and check they are found
+        run: docker run --rm -v "$PWD:/tiger:ro" ${{ matrix.image }} sh -c '${{ matrix.prep || 'true' }}; sh /tiger/tests/pkg_checks.sh'
+
   debian-checks:
     name: Debian checks (${{ matrix.image }})
     runs-on: ubuntu-latest

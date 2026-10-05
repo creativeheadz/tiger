@@ -74,8 +74,10 @@ What the system looks like in 2026, not 2003.
 
 **Package integrity on every package manager.** This is Tiger's
 traditional strength.
-- [ ] rpm (`rpm -Va`), apk (`apk audit`) and pacman (`pacman -Qkk`),
-      alongside dpkg.
+- [x] rpm (`rpm -Va`), apk (`apk audit`) and pacman (`pacman -Qkk`),
+      alongside dpkg (`pkg_integrity`; same finding ids as the Debian
+      checks, so one id means one thing on every distribution; tested in
+      Fedora, Rocky 9, openSUSE, Alpine and Arch containers in CI).
 - [ ] Compare every SUID/SGID binary, and every file in system directories,
       against what the package manager says should be there.
 

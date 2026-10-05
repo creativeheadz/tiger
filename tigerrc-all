@@ -62,7 +62,8 @@ Tiger_Check_OS=Y                # Fast
 # - Linux, HPUX and Solaris specific
 Tiger_Check_NETWORKCONFIG=Y
 Tiger_Check_SYSCTL=Y
-Tiger_Check_SYSTEMD=Y     # Fast
+Tiger_Check_SYSTEMD=Y
+Tiger_Check_PKGINTEGRITY=Y     # Fast
 # - HPUX specific
 Tiger_Check_TRUSTED=Y
 # 

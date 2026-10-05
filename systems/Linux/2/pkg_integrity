@@ -1,0 +1,235 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# pkg_integrity: installed files against what the package manager says
+#                was installed, for RPM, apk and pacman systems. The dpkg
+#                equivalent is deb_checkmd5sums and deb_nopackfiles.
+#
+# 10/05/2026 atrimbitas - Initial version. The finding ids are the ones the
+#                Debian checks use: lin005f (content differs), lin006f
+#                (file missing), lin001w (file in a binary directory that
+#                no package owns); lin038w is new (mode or owner differs).
+#                The same finding therefore has the same id whatever the
+#                distribution. Each manager's own verifier does the work:
+#                  rpm     rpm -Va --nomtime
+#                  apk     apk audit --system --full --check-permissions
+#                  pacman  pacman -Qkk
+#                and their output is reduced to "CLASS path package" lines
+#                that one reporting loop turns into messages. Configuration
+#                files are not reported, as the Debian check does not
+#                report conffiles: administrators edit them.
+#
+# References:
+#   man rpm (VERIFY OPTIONS), man apk-audit, man pacman (-k)
+#
+#-----------------------------------------------------------------------------
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK SED SORT FIND GREP EGREP || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+# dpkg systems have the deb_* checks, and a system with no usable package
+# manager has nothing to compare against
+case "$LXPKGMGR" in
+  rpm|apk|pacman) ;;
+  *) exit 0 ;;
+esac
+
+haveallcmds AWK SED SORT FIND GREP EGREP || exit 1
+haveallfiles BASEDIR WORKDIR || exit 1
+
+echo
+echo "# Checking installed files against the $LXPKGMGR database..."
+
+raw=$WORKDIR/pkgint.raw.$$
+events=$WORKDIR/pkgint.events.$$
+owned=$WORKDIR/pkgint.owned.$$
+found=$WORKDIR/pkgint.found.$$
+safe_temp $raw $events $owned $found
+trap 'delete $raw $events $owned $found ; exit 1' 1 2 3 15
+
+# Directories whose files should all belong to a package: the binary
+# directories, leaving out any that is a link to another (merged /usr)
+dirlist=
+for d in /bin /sbin /usr/bin /usr/sbin
+do
+  [ -d "$d" ] && [ ! -L "$d" ] && dirlist="$dirlist $d"
+done
+
+# What is not worth a finding: documentation, help and locale data (the
+# dpkg check skips them too, and a minimal image often leaves them out, so
+# the directory itself is "missing"), and the runtime directories a package
+# declares but the system creates fresh at every boot
+skip='^(/usr/share/(doc|help|man|icons|pixmaps|fonts|i18n|locale|mime|games)|/run|/var/run|/var/lock|/tmp|/var/tmp)(/|$)'
+
+case "$LXPKGMGR" in
+  rpm)
+    # S size, M mode, 5 digest, D device, L link, U user, G group, T mtime.
+    # An optional file-type letter follows (c config, d doc, g ghost,
+    # l licence, r readme); only plain files are reported. A deleted file
+    # is "missing" in place of the letters.
+    rpm -Va --nomtime 2>/dev/null |
+    $AWK '
+      { attr = $1
+        type = ($2 ~ /^[cdglr]$/ && NF >= 3) ? $2 : ""    # before $0 is cut down
+        sub(/^[^ ]+ +([cdglr] )?/, ""); path = $0
+        if (type != "" || path !~ /^\//) next
+        if (attr == "missing") cls = "MISSING"
+        else if (substr(attr, 1, 1) == "S" || substr(attr, 3, 1) == "5" || substr(attr, 5, 1) == "L") cls = "MOD"
+        else if (substr(attr, 2, 1) == "M" || substr(attr, 6, 1) == "U" || substr(attr, 7, 1) == "G") cls = "PERM"
+        else next
+        print cls "\t" path "\t" }' > $events
+    if [ -n "$dirlist" ]; then
+      rpm -qla 2>/dev/null | $SORT -u > $owned
+      $FIND $dirlist -type f 2>/dev/null | $SORT -u > $found
+      $GREP -vxF -f $owned $found | $AWK '{ print "UNOWNED\t" $0 "\t" }' >> $events
+    fi
+    ;;
+  apk)
+    # U modified, X deleted, M permissions, A added; --full is what reports
+    # added files, and busybox applet symlinks are not strays
+    apk audit --system --full --check-permissions --ignore-busybox-symlinks 2>/dev/null |
+    $AWK '
+      { cls = ""; path = substr($0, 3)
+        if ($1 == "U") cls = "MOD"
+        else if ($1 == "X") cls = "MISSING"
+        else if ($1 == "M") cls = "PERM"
+        else if ($1 == "A") cls = "UNOWNED"
+        if (cls == "") next
+        # apk treats /etc as configuration: edits there are expected
+        if (cls != "UNOWNED" && path ~ /^etc\//) next
+        if (cls == "UNOWNED" && path !~ /^(usr\/)?s?bin\//) next
+        print cls "\t/" path "\t" }' > $events
+    ;;
+  pacman)
+    # warning: PACKAGE: /path (Reason), one line per reason; backup files
+    # (configuration) are reported under another heading and are left alone
+    # pacman writes its warnings to standard error
+    pacman -Qkk 2>&1 |
+    $SED -n 's/^warning: \([^:]*\): \(\/.*\) (\([^()]*\))$/\1\t\2\t\3/p' |
+    $AWK -F'\t' '
+      { reason = $3
+        if (reason == "No such file or directory") cls = "MISSING"
+        else if (reason ~ /checksum mismatch$/ || reason == "Size mismatch") cls = "MOD"
+        else if (reason == "Permissions mismatch" || reason == "UID mismatch" || reason == "GID mismatch") cls = "PERM"
+        else next
+        print cls "\t" $2 "\t" $1 }' > $events
+    if [ -n "$dirlist" ]; then
+      pacman -Qlq 2>/dev/null | $SORT -u > $owned
+      $FIND $dirlist -type f 2>/dev/null | $SORT -u > $found
+      $GREP -vxF -f $owned $found | $AWK '{ print "UNOWNED\t" $0 "\t" }' >> $events
+    fi
+    ;;
+esac
+
+# pacman lets an administrator declare files that are meant to be absent
+# (NoExtract: man pages, locales, docs in a slimmed image) or meant to
+# differ (NoUpgrade). They are shell globs relative to /, first match wins,
+# and a leading ! means "except". An absent file the administrator has
+# declared so is not missing, and the same for a changed one.
+declared=
+if [ "$LXPKGMGR" = pacman ] && [ -r /etc/pacman.conf ]; then
+  declared=`$SED -n -e 's/^No\(Extract\|Upgrade\)[[:space:]]*=[[:space:]]*//p' /etc/pacman.conf`
+fi
+pacman_declared()
+{
+  # The database stores a directory as "usr/share/x/" and the verifier
+  # prints it without the slash; the patterns are written for the former
+  for __rel in "${1#/}" "${1#/}/"
+  do
+    set -f
+    for __p in $declared
+    do
+      case "$__p" in
+        '!'*) case "$__rel" in ${__p#!}) set +f; return 1 ;; esac ;;
+        *)    case "$__rel" in $__p) set +f; return 0 ;; esac ;;
+      esac
+    done
+    set +f
+  done
+  return 1
+}
+
+# The package a file came from, for the managers whose verifier does not say
+owner_of()
+{
+  case "$LXPKGMGR" in
+    rpm)    rpm -qf --qf '%{NAME}\n' "$1" 2>/dev/null | $SED 1q ;;
+    apk)    apk info -W "$1" 2>/dev/null | $SED -e 's/^.* is owned by //' -e 1q ;;
+    pacman) pacman -Qo "$1" 2>/dev/null | $SED -e 's/^.* is owned by //' -e 's/ [^ ]*$//' -e 1q ;;
+  esac
+}
+
+$SORT -u $events |
+$AWK -F'\t' -v skip="$skip" '$2 !~ skip { print }' |
+while IFS='	' read class path pkg
+do
+  # Directory modes are not what this is about: an image's / and /srv/ftp
+  # rarely match the package, and nobody exploits that
+  [ "$class" = PERM ] && [ -d "$path" ] && continue
+  [ "$class" != UNOWNED ] && [ -n "$declared" ] && pacman_declared "$path" && continue
+  [ -z "$pkg" ] && [ "$class" != UNOWNED ] && pkg=`owner_of "$path"`
+  case "$class" in
+    MOD)     message FAIL lin005f "" "Installed file \`$path' checksum differs from installed package '${pkg:-unknown}'." ;;
+    MISSING) message FAIL lin006f "" "Cannot check file \"$path\" provided by \"${pkg:-unknown}\" since it does not exist" ;;
+    PERM)    message WARN lin038w "" "Installed file \`$path' of package '${pkg:-unknown}' has a different mode or owner than the package set." ;;
+    UNOWNED) message WARN lin001w "" "File \`$path' does not belong to any package." ;;
+  esac
+done
+
+delete $raw $events $owned $found
+exit 0

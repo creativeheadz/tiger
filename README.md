@@ -41,6 +41,12 @@ To install system-wide instead:
     ./configure
     make install
 
+Installed files are checked against the package manager on Debian and
+Ubuntu (dpkg), Fedora, RHEL and its relatives, and openSUSE (rpm), Alpine
+(apk) and Arch (pacman). A modified file, a missing one, a changed mode
+and a stray file in a binary directory are reported with the same ids on
+all of them.
+
 On Debian and Ubuntu, `apt install tiger` gives the original TIGER from
 the archive, not this fork.
 
