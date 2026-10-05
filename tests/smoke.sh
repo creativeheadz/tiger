@@ -3,8 +3,8 @@
 # tests/smoke.sh - a full Tiger run from a root-owned copy of this tree
 #
 # Checks that tiger exits 0, writes a report, runs every check it was asked
-# to (no misc024e/misc025e/misc005e), and prints how long it took and what
-# it found. Run as root.
+# to (no misc024e/misc025e/misc005e), that every id in the JSON has an
+# explanation, and prints how long it took and what it found. Run as root.
 #
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 
@@ -52,6 +52,41 @@ assert recs[-1]["counts"]["WARN"] == sum(1 for r in finds if r["level"] == "WARN
 EOF
 elif [ -z "$jsonl" ]; then
   echo "FAIL no JSON Lines report in log/"; fail=1
+fi
+# Runtime side of the every-id-explained rule: the source scan in
+# tests/explain_check.sh cannot see ids built from variables, but a real
+# run shows them. The index below is fresh from this copy's doc/*.txt
+# (built at the top of this script), so the repository is untouched.
+if [ -n "$jsonl" ]; then
+  if command -v python3 >/dev/null; then
+    python3 - "$jsonl" "$W/doc/explain.idx" <<'EOF' > "$W/ids.out" 2>&1; st=$?
+import json, sys
+explained = set()
+with open(sys.argv[2], encoding="ascii") as fh:
+    for line in fh:
+        line = line.split()
+        if line:
+            explained.add(line[0])
+emitted = set()
+with open(sys.argv[1], encoding="ascii") as fh:
+    for line in fh:
+        line = line.strip()
+        if not line:
+            continue
+        rec = json.loads(line)
+        if rec["type"] == "finding":
+            emitted.add(rec["id"])
+missing = sorted(emitted - explained)
+if missing:
+    print("\n".join(missing))
+    sys.exit(1)
+print("ok   every finding id in the JSON has an explanation (%d ids)" % len(emitted))
+EOF
+    if [ $st -eq 0 ]; then cat "$W/ids.out"
+    else echo "FAIL finding ids without an explanation:"; sed 's/^/     /' "$W/ids.out"; fail=1; fi
+  else
+    echo "skip id-explanation check (python3 not installed)"
+  fi
 fi
 if [ -n "$jsonl" ]; then
   sh "$TIGER/tests/schema_check.sh" "$jsonl" > "$W/schema.out" 2>&1; st=$?

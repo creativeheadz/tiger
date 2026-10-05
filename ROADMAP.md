@@ -218,11 +218,11 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   down (`df: /mnt/nas: Host is down`). Anything that asks about every
   mount can stall on it. Audit every call that touches mounts (`df`,
   `mount`, `lsof`, `stat`) and use local-only forms or a timeout.
-- [ ] `tests/explain_check.sh` covers the id families built from data
+- [x] `tests/explain_check.sh` covers the id families built from data
   (`perm…`, `embed…`) but not a *new* id built from a variable: a
-  mutation test confirmed `message WARN yyy$x"w"` passes unnoticed. Close
-  it from the other side: have the smoke test check that every id in a
-  real run's JSON has an explanation.
+  mutation test confirmed `message WARN yyy$x"w"` passes unnoticed.
+  Closed from the other side: the smoke test now checks that every id
+  in a real run's JSON has an explanation (28 ids on Hera).
 - [ ] Two runs in the same minute overwrite each other's report: the
   file names carry the time only to the minute
   (`security.report.HOST.YYMMDD-HH:MM`). Add seconds or the run id.
