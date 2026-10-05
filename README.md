@@ -1,5 +1,25 @@
 # Tigris
 
+[![CI](https://github.com/creativeheadz/tigris/actions/workflows/ci.yml/badge.svg)](https://github.com/creativeheadz/tigris/actions/workflows/ci.yml)
+[![Licence: GPL-2.0-or-later](https://img.shields.io/badge/Licence-GPL--2.0--or--later-blue.svg)](COPYING)
+
+<pre>
+      ##    ##                               ##
+     ##########                              ##
+     ###########                             ##
+  ###############                          ##
+   ############################################
+    ################# ##### ##### ###########
+    #######################################
+     ####################################
+     ######   #####    ######  ########
+     #####    #####    #####   #####
+     #####    #####    #####   #####
+     #####    #####    #####   #####
+     ######   ######   ######  ######
+ ______________________________________________
+</pre>
+
 Tigris is a security auditor for Linux: a set of shell scripts that check
 accounts and passwords, file permissions, network configuration, cron,
 installed packages against the package manager, signs of intrusion and
@@ -31,6 +51,10 @@ report is written to
 `log/`. To look up what a message code in it means, build the message
 index once with `util/genmsgidx doc/*.txt`, then run, for example,
 `./tigexp lin005f`. Choose which checks run, and how, in `tigerrc`.
+In a hurry, run the quick profile instead: everything except the
+filesystem scan, about a minute where the full run takes three:
+
+    sudo ./tigris -c tigerrc-quick
 
 Tigris needs no compiler. If you have one, `make && make -C c install`
 builds a few small C helpers into `bin/`, which Tigris then prefers to
@@ -88,8 +112,8 @@ warning that the acceptance expired. The entries live in
 
 [ROADMAP.md](ROADMAP.md) has the decisions, the status, what has shipped
 and what is next. Already here: package integrity on five package
-managers, a versioned JSON report, and drift between runs. Ahead:
-profiles (a quick run that skips big data disks), a free compliance
+managers, a versioned JSON report, drift between runs, and a quick
+profile that skips the filesystem scan. Ahead: a free compliance
 mapping, auditing a mounted image without booting it, and later a
 PowerShell engine for Windows against the same spec. Every change is
 measured for wall time, CPU and memory; it has to stay light enough for a
