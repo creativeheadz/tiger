@@ -285,11 +285,6 @@ aidepid=
   run_script check_passwdformat >> $logtmp
 }
 
-[ "$Tiger_Check_PASSWD_NIS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking NIS settings..."
-  run_script check_nisplus >> $logtmp
-}
-
 [ "$Tiger_Check_GROUP" != 'N' ] && {
   echo "`$TIMECMD`> Checking group files..."
   run_script check_group >> $logtmp
@@ -298,16 +293,6 @@ aidepid=
 [ "$Tiger_Check_ACCOUNTS" != 'N' ] && {
   echo "`$TIMECMD`> Checking user accounts..."
   run_script check_accounts >> $logtmp
-}
-
-[ "$Tiger_Check_RHOSTS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking .rhosts files..."
-  run_script check_rhosts >> $logtmp
-}
-
-[ "$Tiger_Check_NETRC" != 'N' ] && {
-  echo "`$TIMECMD`> Checking .netrc files..."
-  run_script check_netrc >> $logtmp
 }
 
 # Note: TARA calls this script with Tiger_Check_ROOT so we keep it
@@ -323,11 +308,6 @@ aidepid=
   run_script check_path >> $logtmp
 }
 
-[ "$Tiger_Check_ANONFTP" != 'N' ] && {
-  echo "`$TIMECMD`> Checking anonymous ftp setup..."
-  run_script check_anonftp >> $logtmp
-}
-
 [ "$Tiger_Check_ALIASES" != 'N' ] && {
   echo "`$TIMECMD`> Checking mail aliases..."
   run_script check_aliases >> $logtmp
@@ -336,24 +316,6 @@ aidepid=
 [ "$Tiger_Check_CRON" != 'N' ] && {
   echo "`$TIMECMD`> Checking cron entries..."
   run_script check_crontabs >> $logtmp
-}
-
-[ "$Tiger_Check_INETD" != 'N' ] && {
-  # Temporary definition until all the config files (and gen_inetd
-  # scripts) are updated.
-  [ -z "$INETDCONF" ] && INETDCONF="/etc/inetd.conf"
-  [ -z "$XINETDCONF" ] && XINETDCONF="/etc/xinetd.conf"
-
-  [ -n "$INETDCONF" ] && [ -f "$INETDCONF" ] && {
-    echo "`$TIMECMD`> Checking 'inetd' configuration..."
-    run_script check_inetd >> $logtmp
-    echo "`$TIMECMD`> Checking 'tcpd' configuration..."
-    run_script check_tcpd >> $logtmp
-  }
-  [ -n "$XINETDCONF" ] && [ -f "$XINETDCONF" ] && {
-    echo "`$TIMECMD`> Checking 'xinetd' configuration..."
-    run_script check_xinetd >> $logtmp
-  }
 }
 
 [ "$Tiger_Check_SERVICES" != 'N' ] && {
@@ -454,11 +416,6 @@ aidepid=
   run_script check_sendmail >> $logtmp
 }
 
-[ "$Tiger_Check_PRINTCAP" != 'N' ] && {
-  echo "`$TIMECMD`> Checking the printers control file..."
-  run_script check_printcap >> $logtmp
-}
-
 [ "$Tiger_Check_EXRC" != 'N' ] && {
   echo "`$TIMECMD`> Checking for exrc files..."
   run_script check_exrc >> $logtmp
@@ -470,16 +427,6 @@ aidepid=
 #  echo "`$TIMECMD`> Checking for network configuration..."
 #  run_script check_network >> $logtmp
 #}
-
-[ "$Tiger_Check_FTPUSERS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking ftpusers configuration..."
-  run_script check_ftpusers >> $logtmp
-}
-
-[ "$Tiger_Check_OMNIBACK" != 'N' ] && {
-  echo "`$TIMECMD`> Checking omniback configuration..."
-  run_script check_omniback >> $logtmp
-}
 
 [ "$Tiger_Check_NTP" != 'N' ] && {
   echo "`$TIMECMD`> Checking NTP configuration..."

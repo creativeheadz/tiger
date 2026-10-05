@@ -176,9 +176,6 @@ with cron, rhosts, .forward, and valid shells.
 .B check_aliases
 Performs a check for mail aliases and improper configuration.
 .TP
-.B check_anonftp
-Determines if the anonymous FTP service is properly configured.
-.TP
 .B check_cron
 Validates the cron entries in the system.
 .TP
@@ -193,19 +190,8 @@ access is properly restricted.
 Checks the UNIX groups available in the system, looking for conflicts
 and improper entries.
 .TP
-.B check_inetd
-Checks the inetd configuration file: compares against services 
-definition, valid directory paths, non-existent binaries and active
-services.
-.TP
 .B check_known
 Looks for known intrusion signs including backdoors and mail spools.
-.TP
-.B check_netrc
-Checks if users's netrc files are insecurely configured.
-.TP
-.B check_nisplus
-Looks for wrong configuration in the NIS+ entries.
 .TP
 .B check_passwd
 Checks the UNIX users available in the system, looking for conflicts
@@ -217,13 +203,6 @@ used by scripts in order to determine insecure definitions.
 .TP
 .B check_perms
 Check filepermissions and inconsistencies.
-.TP
-.B check_printcap
-Analyses the configuration for the printer control file.
-.TP
-.B check_rhosts
-Checks rhosts files in order to see if user's configuration leaves the
-system open to attack.
 .TP
 .B check_sendmail
 Checks sendmail configuration files.
@@ -257,10 +236,6 @@ system. This might be an indication of intrusion (a user executing
 processes and then deleting its files) or of unpatched servers
 (which, if not restarted use old library files and are still 
 vulnerable).
-.TP
-.B check_ftpusers
-Analyses the system's /etc/ftpusers and determines if the administrative
-users are in that file.
 .TP
 .B check_issue
 Checks the /etc/issue and /etc/issue.net file to determine if they
@@ -321,15 +296,8 @@ Check which services are configured in the system (usually in
 /etc/services) versus the ones that should be configured (in the
 provided services file)
 .TP
-.B check_tcpd
-Tests for the existence of tcp\-wrappers and changes in their configuration
-it also determines which services are running wrapped in tcp\-wrappers.
-.TP
 .B check_umask
 Check for umask setting in configuration files.
-.TP
-.B check_xinetd
-Checks which xinetd services are enabled or disabled.
 .TP
 .B crack_run
 Runs a local installation of the \fBCrack\fR program which can be used
@@ -438,7 +406,6 @@ checks for the GNU/Linux
 operating systems
 .RB ( check_listeningprocs )
 and some specific for Debian
-.RB ( deb_checkadvisories ,
-.B deb_checkmd5sums
+.RB ( deb_checkmd5sums,
 and
 .BR deb_nopackfiles ).

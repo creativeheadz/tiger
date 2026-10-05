@@ -26,8 +26,9 @@ NEW:
 	other distributions if package manager provides this info)
  systems/Linux/2/deb_checkmd5sums  - Checks for md5sums of installed files
 	using the database installed in /var/lib/dpkg/info/ (Debian specific)
- systems/Linux/2/deb_checkadvisories  - Checks for installed packages vs.
-	Debian advisories in order to determine if an upgrade is needed. [DEPRECATED]
+ systems/Linux/2/deb_checkadvisories  - Removed in Tigris 3.3: the static
+	advisory list dated from the early 2000s and the check has not run
+	since 2005.
  debian/ - directory including all package related files  for the Debian 
  	GNU/Linux distribution
 

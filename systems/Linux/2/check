@@ -114,10 +114,6 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   $SYSTEMDIR/check_lilo 
 }
 
-[ "$Tiger_Check_INITTAB" != 'N' ] && {
-#  echo "`$TIMECMD`> Checking inittab definitions..."
-  $SYSTEMDIR/check_inittab
-}
 
 [ "$Tiger_Check_RCUMASK" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking umask definitions..."

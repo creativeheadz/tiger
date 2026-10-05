@@ -163,9 +163,6 @@ SED=`findcmd sed`
 SORT=`findcmd sort`
 COMM=`findcmd comm`
 TAIL=`findcmd tail`
-TCPD=`findcmd tcpd`
-HOSTALLOW=/etc/hosts.allow
-HOSTDENY=/etc/hosts.deny
 IFCONFIG=`findcmd ifconfig`
 IP=`findcmd ip`
 NETSTAT=`findcmd netstat`
@@ -238,7 +235,7 @@ export SORT COMM TAIL MV TR JOIN GROUPSS FILECMD UNIQ BASENAME HEAD
 export CHMOD CHOWN LN PASTE LSOF MD5SUM CUT COLUMN CMP
 export SNEFRU MD5 REALPATH PWCK GRPCK CHAGE MESG DIFF WC
 export PWD DPKG RPM AUTORPM APT ID EXPAND LASTLOG TEST TEE 
-export TCPD HOSTALLOW HOSTDENY IFCONFIG IP IPTABLES NETSTAT
+export IFCONFIG IP IPTABLES NETSTAT
 
 
 UNAME=`findcmd uname`
@@ -295,10 +292,9 @@ then
 fi
 # TODO: Check if all distributions use this configuration file
 
-# Inet and xinet configuration files
+# Inetd configuration file (used by check_known's backdoor test)
 INETDCONF="/etc/inetd.conf"
-XINETDCONF="/etc/xinetd.conf"
-export INETDCONF XINETDCONF
+export INETDCONF
 
 
 # For omniback server configuration
@@ -390,7 +386,6 @@ GEN_SERVICES_SETS gen_services
 GET_MOUNTS gen_mounts
 SIGNATURE_FILE signatures
 SERVICESFILE services
-INETDFILE inetd
 ISSUEFILE issue
 ISSUENETFILE issue.net
 FILE_ACL file_access_list

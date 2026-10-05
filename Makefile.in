@@ -100,7 +100,6 @@ BINARIES=./tiger \
 # otherwise sometimes a check might be 'forgotten'
 SCRIPTS=./scripts/check_accounts \
 	./scripts/check_aliases \
-	./scripts/check_anonftp \
 	./scripts/check_apache \
 	./scripts/check_crontabs \
 	./scripts/check_devices \
@@ -108,24 +107,17 @@ SCRIPTS=./scripts/check_accounts \
 	./scripts/check_exports \
 	./scripts/check_exrc \
 	./scripts/check_finddeleted \
-	./scripts/check_ftpusers \
 	./scripts/check_group \
-	./scripts/check_inetd \
 	./scripts/check_issue \
 	./scripts/check_known \
 	./scripts/check_listeningprocs \
 	./scripts/check_logfiles \
-	./scripts/check_netrc \
 	./scripts/check_network \
-	./scripts/check_nisplus \
 	./scripts/check_ntp \
-	./scripts/check_omniback \
 	./scripts/check_passwd \
 	./scripts/check_passwdformat \
 	./scripts/check_path \
 	./scripts/check_perms \
-	./scripts/check_printcap \
-	./scripts/check_rhosts \
 	./scripts/check_root \
 	./scripts/check_rootdir \
 	./scripts/check_rootkit \
@@ -135,9 +127,7 @@ SCRIPTS=./scripts/check_accounts \
 	./scripts/check_signatures \
 	./scripts/check_ssh \
 	./scripts/check_system \
-	./scripts/check_tcpd \
 	./scripts/check_umask \
-	./scripts/check_xinetd \
 	./scripts/crack_run \
 	./scripts/tripwire_run \
 	./scripts/aide_run \

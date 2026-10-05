@@ -18,11 +18,8 @@ TigerNoBuild=Y			# C files are corrupted (ouch.)
 Tiger_Check_PASSWD=Y		# Fast
 Tiger_Check_PASSWD_FORMAT=N     # Fast - not needed if on systems with pwck
 Tiger_Check_PASSWD_SHADOW=Y	# Time varies on # of users
-Tiger_Check_PASSWD_NIS=N	# Time varies on # of users
 Tiger_Check_GROUP=Y		# Fast
 Tiger_Check_ACCOUNTS=Y		# Time varies on # of users
-Tiger_Check_RHOSTS=Y		# Time varies on # of users
-Tiger_Check_NETRC=Y		# Time varies on # of users
 Tiger_Check_ALIASES=Y		# Fast
 Tiger_Check_CRON=Y		# Fast
 Tiger_Check_EXPORTS=Y		# Fast
@@ -50,14 +47,9 @@ Tiger_Check_ROOTKIT=Y		# Slow if chkrootkit is available
 
 # The following checks might depend on the services installed in the
 # system, these need to be adjusted as required per system
-Tiger_Check_INETD=Y		# Fast for inetd, Varies on xinetd
 Tiger_Check_APACHE=N		# Fast
 Tiger_Check_SSH=Y		# Fast
 Tiger_Check_SENDMAIL=N		# Fast
-Tiger_Check_PRINTCAP=Y		# Fast, possibly not needed in systems that use CUPS
-Tiger_Check_ANONFTP=Y		# Fast
-Tiger_Check_FTPUSERS=Y		# Fast
-Tiger_Check_OMNIBACK=N  	# Fast
 Tiger_Check_NTP=Y 		# Fast
 
 # OS specific checks
@@ -68,7 +60,6 @@ Tiger_Check_PATCH=N             # Depends on your network connection
 				# (if no timeout is fixed it might stall)
 Tiger_Check_SINGLE=Y            # Fast
 Tiger_Check_BOOT=Y              # Fast
-Tiger_Check_INITTAB=Y           # Fast
 Tiger_Check_RCUMASK=Y           # Fast
 Tiger_Check_NEVERLOG=Y          # Fast
 Tiger_Check_OS=Y                # Fast
@@ -361,18 +352,9 @@ Tiger_Output_JSON=Y
 #
 # List of dot files commonly found in user home directories.  These
 # will be checked by check_accounts for proper access permissions.
-# 
-# Note that .rhosts and .netrc need not appear here, as they will
-# be checked by scan_rhosts or scan_netrc.
 #
 USERDOTFILES=".alias .kshrc .cshrc .profile .login .mailrc .exrc .emacs .forward .tcshrc .zshenv .zshrc .zlogin .zprofile .rcrc .bashrc .bash_profile .inputrc .xinitrc .fvwm2rc .Xsession .Xclients .less"
 #
-# Rhost sites which are expected to be in the .rhosts files.
-# Anything that doesn't match will be reported.  The patterns
-# are simple patterns as used in Bourne Shell 'case' statement. 
-#
-#RHOST_SITES='*.tamu.edu|jupiter'
-
 # What uid's should not give warnings about valid shells 
 # (trusted or default users)
 # Debian GNU/Linux: default is 999, users are generated over 1000

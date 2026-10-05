@@ -24,10 +24,9 @@
 #
 #-----------------------------------------------------------------------------
 #
-# TODO: 
+# TODO:
 # - This script has to generate also proper sets for xinetd, notice
-# that some checks (check_tcpd, check_rootkit) depend on this and they
-# use the inetd format:
+# that check_known depends on this and it uses the inetd format:
 # <service_name> <sock_type> <proto> <flags> <user> <server_path> <args>
 # This scripts needs to read in all the inetd configuration files 
 # (usually under /etc/xinetd.d/) and generate a new file, one line
