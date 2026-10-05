@@ -232,8 +232,10 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   because an unset `Tiger_Check_*` means "run". Until profiles can be
   short overlays, `tests/profile_check.sh` fails unless the two differ
   only in that line.
-- [ ] The legacy variants `tigerrc-all` and `tigerrc-dist` still carry
-  the switches of the retired checks; tidy or drop them.
+- [x] The legacy variants `tigerrc-all` and `tigerrc-dist` carried
+  the switches of the retired checks; dropped, since nothing installs,
+  reads or documents them (the only generator was the dead manual
+  `make distribution` target, whose recipe went with them).
 
 ## 3.3: modern Linux baseline
 
