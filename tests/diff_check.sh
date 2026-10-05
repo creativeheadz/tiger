@@ -92,5 +92,29 @@ sh "$D" -j "$W/full.jsonl" "$W/quick.jsonl" > "$W/fq.json"
 grep -q '"set_aside":\["fsys"\]' "$W/fq.json" && grep -q '"configs_differ":true' "$W/fq.json" && ok "-j records set_aside and configs_differ" || bad "-j markers: `cat "$W/fq.json"`"
 sh "$D" "$W/full.jsonl" "$W/full.jsonl" | grep -q 'note:' && bad "a run against itself gets a note" || ok "same run, same config: no notes"
 
+# Old minute-resolution names next to new ones with seconds: the byte
+# sort still puts them in time order (an old-style name sorts first
+# within its minute, as if its unknown seconds were :00), so the auto
+# lookup picks the two newest.
+mkdir -p "$W/mix/log"
+cat > "$W/mix/log/security.report.box.261004-10:00.jsonl" <<'EOF'
+{"type":"run","schema":1,"id":"mix-old","tool":"tigris","version":"3.3","host":"box","os":"Linux","release":"7.0","arch":"x86_64","start":"2026-10-04T10:00:00Z"}
+{"type":"finding","level":"WARN","id":"ssh008w","check":"check_ssh","message":"old style minute stamp"}
+{"type":"summary","id":"mix-old","end":"2026-10-04T10:00:30Z","counts":{"ALERT":0,"FAIL":0,"WARN":1,"INFO":0,"ERROR":0}}
+EOF
+cat > "$W/mix/log/security.report.box.261004-10:00:30.jsonl" <<'EOF'
+{"type":"run","schema":1,"id":"mix-mid","tool":"tigris","version":"3.3","host":"box","os":"Linux","release":"7.0","arch":"x86_64","start":"2026-10-04T10:00:30Z"}
+{"type":"finding","level":"WARN","id":"ssh009w","check":"check_ssh","message":"same minute with seconds"}
+{"type":"summary","id":"mix-mid","end":"2026-10-04T10:00:40Z","counts":{"ALERT":0,"FAIL":0,"WARN":1,"INFO":0,"ERROR":0}}
+EOF
+cat > "$W/mix/log/security.report.box.261004-10:01:05.jsonl" <<'EOF'
+{"type":"run","schema":1,"id":"mix-new","tool":"tigris","version":"3.3","host":"box","os":"Linux","release":"7.0","arch":"x86_64","start":"2026-10-04T10:01:05Z"}
+{"type":"finding","level":"WARN","id":"ssh012w","check":"check_ssh","message":"next minute with seconds"}
+{"type":"summary","id":"mix-new","end":"2026-10-04T10:01:10Z","counts":{"ALERT":0,"FAIL":0,"WARN":1,"INFO":0,"ERROR":0}}
+EOF
+( cd "$W/mix" && sh "$D" ) > "$W/mix.txt"
+grep -q 'Tigris diff: box 2026-10-04T10:00:30Z -> box 2026-10-04T10:01:05Z' "$W/mix.txt" && ok "mixed old and new names: the two newest are picked" || bad "mixed lookup: `head -1 "$W/mix.txt"`"
+grep -q -- '- WARN  ssh009w' "$W/mix.txt" && grep -q '+ WARN  ssh012w' "$W/mix.txt" && ! grep -q 'ssh008w' "$W/mix.txt" && ok "mixed lookup compares the right pair" || bad "mixed pair"
+
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- out.txt"; cat "$W/out.txt"; }
 exit $fail

@@ -223,9 +223,11 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   mutation test confirmed `message WARN yyy$x"w"` passes unnoticed.
   Closed from the other side: the smoke test now checks that every id
   in a real run's JSON has an explanation (28 ids on Hera).
-- [ ] Two runs in the same minute overwrite each other's report: the
-  file names carry the time only to the minute
-  (`security.report.HOST.YYMMDD-HH:MM`). Add seconds or the run id.
+- [x] Two runs in the same minute overwrite each other's report: the
+  file names carried the time only to the minute. They now carry
+  seconds (`security.report.HOST.YYMMDD-HH:MM:SS`); the byte sort in
+  `tigris-diff` still orders a mix of old and new names by time, and
+  `tigercron` was never affected (it rotates numbered `.1`/`.2` files).
 - [ ] `tigerrc-quick` is a full copy of `tigerrc` with one line changed,
   because an unset `Tiger_Check_*` means "run". Until profiles can be
   short overlays, add a test that the two differ only in that line. The

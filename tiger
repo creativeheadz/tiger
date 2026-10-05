@@ -166,7 +166,10 @@ version="$TIGERVERSION"
 echo "Tiger security scripts *** $version ***"
 
 [ "$Tiger_TESTMODE" != 'Y' ] && {
-  datestamp="`$DATECMD`-`$TIMECMD`"
+  # Seconds in the stamp, so two runs started in the same minute get
+  # different report names instead of overwriting each other. The
+  # progress lines on screen keep $TIMECMD (HH:MM) as they are.
+  datestamp="`$DATECMD`-`$TIMECMD`:`$DATE +%S`"
 
   logtmp="$LOGDIR/security.report.${HOSTNAME}.tmp.$$"
   logfile="$LOGDIR/security.report.${HOSTNAME}.$datestamp"
