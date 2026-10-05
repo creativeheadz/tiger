@@ -55,14 +55,14 @@ Settled, so they do not have to be argued again:
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
-| Checks               | 59 check scripts, 282 finding ids (264 explained)               | ~470 test ids in 42 categories           |
+| Checks               | 46 check scripts, 308 finding ids, every one explained          | ~470 test ids in 42 categories           |
 | Platforms            | Linux: Debian/Ubuntu, Fedora/RHEL/SUSE, Alpine, Arch            | Linux, macOS, BSD, Solaris, AIX          |
 | Machine output       | JSON Lines with a versioned schema, next to the text report     | `report.dat` (key=value)                 |
-| Explanations         | `tigexp ID` (264 of 282 written; most predate 2008)             | Suggestions linked to the CISOfy website |
+| Explanations         | `tigexp ID` (all 308 written, most predate 2008; 22 this week)  | Suggestions linked to the CISOfy website |
 | Compliance mapping   | None yet                                                        | Enterprise (paid) edition only           |
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
-| Tests                | 10 fixture suites, 11 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 11 fixture suites, 11 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
@@ -73,7 +73,7 @@ root disk plus a 1.9 TB data disk, 2.4k packages), full run as root:
 
 | | 3.2.4 as released | master, 5 Oct 2026 |
 |---|---|---|
-| Report | 49,651 lines; 24 checks refused to run | 236 lines, the false positives found so far removed |
+| Report | 49,651 lines; 24 checks refused to run | 222 lines, the false positives found so far removed |
 | Wall time | 7:16 | 1:55 to 3:21, depending on disk load |
 | Peak memory | 159 MB | 34 MB |
 
@@ -139,6 +139,14 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
 - [x] `egrep`, `tempfile` and `which` are gone; `util/realpath` replaces
   the C helper when it is not built; distribution detection reads
   `/etc/os-release`.
+- [x] The dead-service checks retired and deleted: inetd, xinetd and
+  tcpd, rhosts and `.netrc`, anonymous FTP and ftpusers, printcap,
+  OmniBack, NIS+, inittab and the static Debian advisory list
+  (17 files). The boot check stays: despite its name it covers GRUB 2.
+  So does `check_known`'s inetd backdoor test, which costs nothing when
+  there is no inetd.
+- [x] `tigerrc-quick`: everything except the filesystem scan, about a
+  minute where the full run takes three (62 s on Hera, 175 lines).
 
 *New checks.*
 - [x] `check_sysctl`: kernel pointer and log restriction, Yama, ASLR,
@@ -165,15 +173,22 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   on anything new, `-j` for JSON.
 - [x] `tigris-accept`: acknowledge a finding with a reason and an expiry;
   out of the text report, marked in the JSON, back when it expires.
-- [x] Every message id on a live Linux path is well-formed (22 were not;
-  four NIS+ ones remain in a check that is due to be retired).
+- [x] Every message id on a live Linux path is well-formed and
+  explained: 308 emitted, 308 with entries, the count complete for the
+  first time. 22 explanations written this week (apache, aide, NTP,
+  permissions, root, rootkit, suid/sgid, crack, PATH); three
+  placeholder ids replaced with real ones (`tigxxxx` to `tig001e`,
+  `suidxxx` to `suid002`, `miscxxxx` to `pass022w`); the NIS+ check
+  that held the last four malformed ids retired. `tigexp` serves them
+  all and `tests/explain_check.sh` fails CI on any gap.
 
 *Engineering.*
-- [x] 10 fixture suites and a CI pipeline of 11 jobs: syntax and
+- [x] 11 fixture suites and a CI pipeline of 11 jobs: syntax and
   ShellCheck, a full run on Ubuntu, the dpkg checks on Debian stable,
   sid and Ubuntu 24.04, and the package checks on five other
   distributions.
 - [x] The other Unixes moved to the attic tag (364 files).
+- [x] `SECURITY.md`, issue templates and a contributing guide.
 
 ## 3.2.x: maintenance
 
@@ -183,12 +198,17 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   is advisory: Tiger's `[ $TESTEXEC file ]` idiom, where the test
   operator is a variable, cannot be parsed. Fix the real bugs it finds
   and make it blocking.
-- [ ] `SECURITY.md`, issue templates and a contributing guide.
-- [ ] **Every finding id has an explanation, enforced.** 18 do not yet:
-  apache `apa001w` to `apa006w`, `aide003i`, `inet022f`, `inet024f`,
-  `inet025f`, `netw042f` to `netw044f`, `root004w`, `rootkit009a`,
-  `sgid001a`, `suid001a`, `xnet002f`. Write them and add a CI test that
-  fails on an id with no entry.
+- [x] `SECURITY.md`, issue templates and a contributing guide.
+- [x] **Every finding id has an explanation, enforced.** The earlier
+  count of 18 was a lower bound from a plain grep. The complete
+  enumeration (literals, `pathmsg` arguments, the `file_access_list`
+  and `signatures` data, `check_embed`'s suffix) found 25 gaps on
+  master: 20 are now written, and five went away with the retired
+  checks (tcpd's three, `xnet002f`, `bcm203x`). Two more entries cover
+  new ids for placeholder findings the old grep could not see
+  (`tig001e`, `pass022w`), and `apa003w` from the old list was never
+  emitted by anything. `tests/explain_check.sh` fails CI on any id
+  with no entry, and on any malformed id.
 - [ ] **Survive a dead network mount.** On 5 October the NAS mount was
   down (`df: /mnt/nas: Host is down`). Anything that asks about every
   mount can stall on it. Audit every call that touches mounts (`df`,
@@ -207,14 +227,17 @@ already in; the gate is what is left.
 
 **Clear out the old**
 - [x] Other Unixes to the attic.
-- [ ] Retire, or switch off by default, the checks for things that are
-  gone from a current Linux: inetd and xinetd, rhosts and `.netrc`,
-  anonymous FTP and ftpusers, printcap, OmniBack, NIS+, LILO and
-  inittab, the static Debian advisory list from the early 2000s.
+- [x] Retire the checks for things that are gone from a current Linux:
+  inetd, xinetd and tcpd, rhosts and `.netrc`, anonymous FTP and
+  ftpusers, printcap, OmniBack, NIS+, inittab and the static Debian
+  advisory list from the early 2000s. Two corrections to the plan:
+  tcpd went with inetd (it cannot run without it, and FAILs noise on
+  any system without tcpwrappers), and the "LILO" check stayed because
+  it is the GRUB 2 boot check.
 
 **Profiles** (also the answer to "lean")
-- [ ] `quick`: leaves the filesystem scan out, or restricts it to system
-  directories. About a minute on a machine whose full run takes three.
+- [x] `quick`: leaves the filesystem scan out. 62 s on Hera, where the
+  full run takes about three minutes on a busy disk.
 - [ ] `server`, `desktop` and `container`, each a short tigerrc selecting
   the checks and the prune list that make sense for that kind of machine.
 - [ ] A non-root mode that reports "skipped: needs root" for the checks
