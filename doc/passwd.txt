@@ -89,3 +89,15 @@ unless your policy is deliberately to rely on length and no rotation.
 The account's password hash is in /etc/passwd rather than /etc/shadow,
 so every user can read it and crack it offline. Run pwconv to move all
 hashes into the shadow file.
+%pass022w
+The password file contains '+' entries, the old NIS escape, while the
+name service is not in 'compat' mode. Outside compat mode those lines
+are meaningless at best; at worst they widen access in ways nobody
+asked for. Remove the '+' lines, or switch the passwd source to compat
+in /etc/nsswitch.conf if NIS netgroups are really in use.
+%crk001w
+The Crack password guesser ran against the password file and guessed
+somebody's password; the login ids follow the message. A guessable
+password falls to the first dictionary an attacker tries. Make each
+listed account pick a strong password, and consider a password-quality
+check so weak ones cannot be set again.

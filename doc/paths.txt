@@ -51,6 +51,20 @@ The indicated directory is in `root's PATH, but is not owned by 'root'.
 This can allow Trojan horse programs to be placed into any executables
 in this directory.  The ownership of the directory should be changed
 to `root'.
+%path006
+A directory on a user's PATH is not owned by that user. Another account
+can then replace the programs in it with Trojan horses that run under
+the user's identity the next time they type the command name. Give the
+directory to the user whose PATH names it, or take it out of the PATH.
+(The suffixed entries path006w and path007w above predate the current
+call and describe the two findings the other way round; they are kept
+so old reports still explain.)
+%path007
+A directory on a user's PATH can be written by its group or by any
+user. Whoever can write the directory can drop in a Trojan horse under
+the name of a command the user runs. Remove the write permission, or
+take the directory out of the PATH. As with path006, the old suffixed
+entries are kept for old reports.
 %path008i
 The indicated setuid program is in root's PATH, but is not owned by
 root.  Since it is setuid to a user other than root, there usually is

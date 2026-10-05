@@ -160,7 +160,7 @@ haveallcmds FILECMD LS SGREP STRINGS && {
       }
     }
     getpermit "$file" |
-    pathmsg . suidxxx "$file" . "Setuid file" ""
+    pathmsg . suid002 "$file" . "Setuid file" ""
   done < $inputfile
   
   echo

@@ -175,7 +175,7 @@ do
 	    fi
 	   
 	   [ "$source" = "files" ] && $GREP '^+' $WORKDIR/etc_passwd.$$ && {
-	     echo "--WARN-- [miscxxxx] The '+' key in the /etc/passwd file should only be used in nsswitch 'compat' mode."
+	     echo "--WARN-- [pass022w] The '+' key in the /etc/passwd file should only be used in nsswitch 'compat' mode."
 	   }
 
 	    [ "$source" = "compat" ] && [ -n "$YPCAT" ] && {

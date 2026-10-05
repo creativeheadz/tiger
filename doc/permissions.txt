@@ -117,6 +117,12 @@ is a security vulnerability.  Unfortunately, on SunOS 4 systems, the
 SunView and OpenWindows 'cmdtool' and 'shelltool' programs do not
 function correctly if it is not.  If you are not using these tools,
 then you should set the permissions to 644.
+%perm018w
+The root directory '/' is not owned by root, or its group is not the
+expected one. The top of the filesystem sets the tone for everything
+below it: the wrong owner there can rename, replace or re-permission
+system directories. Restore it with chown root:root /. (The ALERT-era
+entry perm018a below is kept so old reports still explain.)
 %perm018a
 The root directory should be protected from changes by non-root users.
 If the directory is writable by non-root users, unauthorized access
@@ -125,6 +131,14 @@ or privileges can be obtained.
 The /etc directory should be owned by root and should not be writable
 by group or world.  As shipped, SunOS 4 systems have the /etc directory
 owned by the user `bin'.  This is *incorrect*.
+%perm019w
+The /etc directory is not owned by root, or its group is not the
+expected one. Almost every security decision on the system lives in a
+file under /etc, so the wrong owner there can rewrite passwords,
+sudoers, SSH keys and service definitions. Restore it with
+chown root:root /etc, and check for files under it that changed hands
+at the same time. (The ALERT-era entry perm019a above is kept so old
+reports still explain.)
 %perm020w
 The indicated disk device file is world readable, writable or both.  This
 allows the file access controls to be bypassed.  The world permissions

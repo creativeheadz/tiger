@@ -10,3 +10,10 @@ The indicated /etc/ftpusers file allows remote root ftp logins.  The entry
 The root user should not have the message capability turned on.  This
 could lead to inadvertent modification of files with the root user is
 logged in.
+%root004w
+The graphical login manager, xdm or an old gdm, is configured to let
+root log in at the console (allowRootLogin, AllowRoot or
+AllowRemoteRoot set to true). A graphical session runs far more code
+as root than a shell does, and every bit of it is trusted with the
+machine. Turn the setting off and log in as an ordinary user, using su
+or sudo for the few things that need root.

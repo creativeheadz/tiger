@@ -109,7 +109,7 @@ umask 077
 
 [ ! -n "$ctrlfile" ] && ctrlfile=$TigerConfigDir/cronrc
 [ ! -r "$ctrlfile" ]  &&  {
-	    message ERROR tigxxxx "" "Cannot read \`$ctrlfile', tigercron cannot proceed."
+	    message ERROR tig001e "" "Cannot read \`$ctrlfile', tigercron cannot proceed."
 	    exit 1
 }
 
@@ -218,7 +218,7 @@ do
 #	  elif [ -f $script ]; then
 #	    $script
 #	  else
-#	    message ERROR tigxxxx "" "Not found (and cannot run) $script as requested in tigercron file, `$ctrlfile'."
+#	    message ERROR tig001e "" "Not found (and cannot run) $script as requested in tigercron file, `$ctrlfile'."
 #	  fi
 	} > $outprefix.$$.tmp
 	if [ -s $outprefix.$$.tmp ]; then

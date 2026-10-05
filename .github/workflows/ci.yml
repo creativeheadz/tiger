@@ -39,6 +39,8 @@ jobs:
         run: sh tests/accept_check.sh
       - name: JSON schema
         run: sh tests/schema_check.sh
+      - name: Every finding id explained
+        run: sh tests/explain_check.sh
       - name: ShellCheck (errors)
         # Tiger tests "[ $TESTEXEC file ]" with TESTEXEC=-x or -f, which
         # ShellCheck cannot parse; those files are reported but do not fail

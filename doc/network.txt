@@ -68,3 +68,22 @@ local FTP server. If the local FTP server is enabled and a restricted user
 can access it remotely this might lead to a security compromise of the
 system. It is recommended for restricted users to be added into
 /etc/ftpusers if you have a FTP server installed.
+%netw042f
+The NTP daemon is running but its configuration names no remote time
+server, so the clock is never corrected. A drifting clock breaks log
+correlation, Kerberos, DNSSEC and certificate checks. Add at least one
+"server" line pointing at a trustworthy source, for example the
+distribution's NTP pool, and restart the daemon.
+%netw043f
+The NTP daemon is running but its configuration restricts none of its
+remote servers, so any of them may reconfigure it. A rogue or
+compromised server can then shift the clock or turn the daemon into an
+amplifier for others. Add a "restrict" line for every server (and a
+"default ignore" style default where the daemon supports it) and
+restart it.
+%netw044f
+The NTP daemon is configured as a broadcast, manycast or multicast
+client, so it takes the time from whoever answers on the network
+instead of from named servers. Any machine on the segment can feed it
+a false clock. Point the configuration at explicit servers with
+"server" lines instead, and turn the broadcast client off.

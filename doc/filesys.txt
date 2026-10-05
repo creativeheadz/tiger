@@ -123,3 +123,22 @@ administrative account. A setuid program runs with its owner's
 privileges, so this gives whoever can run it that user's identity, and
 the owner can change the program at will. Setuid files should be owned
 by root or another administrative account, or not be setuid.
+%suid001a
+A setuid file elsewhere on the disk has the same contents as a known
+system binary. Somebody copied a privileged program to an unexpected
+place, which is what an intruder does to keep a back door after the
+original is cleaned, or what a careless build leaves behind. Compare
+the two files, find out who put the copy there, and remove it unless
+there is a documented reason for it to exist.
+%suid002
+A setuid file can be written by its group or by any user. Whoever can
+write the file can replace it with a program of their own choosing,
+which then runs with the file owner's privileges. Remove the write
+permission with chmod, or take the setuid bit off if the program does
+not need it.
+%sgid001a
+A setgid file elsewhere on the disk has the same contents as a known
+system binary. As with its setuid twin above, a copied privileged
+program in an unexpected place is either a back door or a leftover.
+Compare the two files, find out who put the copy there, and remove it
+unless there is a documented reason for it to exist.

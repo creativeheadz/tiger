@@ -36,3 +36,11 @@ If the installation of a rootkit is confirmed you are encouraged
 to power off the system and follow the steps outlined by
 Steps for Recovering from a UNIX or NT System Compromise
 (http://www.cert.org/tech_tips/root_compromise.html)
+%rootkit009a
+Chkrootkit examined a file and returned its INFECTED verdict: the file
+matches a known rootkit signature rather than merely looking odd. This
+is a stronger statement than a suspicious directory or a possible
+installation. Treat the machine as compromised: take it off the
+network, power it off, and rebuild it from trusted media, following the
+CERT recovery steps quoted above. Do not try to clean the file in
+place; a rootkit that owns the system decides what your tools see.

@@ -5,6 +5,11 @@ Aide configuration files can make use of variable substitution in a way Tiger
 cannot make use of in the current Tiger version. Please supply a custom
 configuration file using Tiger_Run_AIDE_CFG_OVERRIDE and/or make sure 
 no variable substitution is used in the Aide configuration file.
+%aide003i
+Aide finished a run and found differences; this line carries the
+summary counts ("Total number of ...") from its report. It is context
+for the aide003w, aide004w and aide005w findings that follow it, which
+name the changed, removed and added files one by one.
 %aide003wsum
 Aide detected changes in filesystem integrity. This line is only the summary.
 %aide003w

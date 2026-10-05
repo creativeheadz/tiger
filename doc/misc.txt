@@ -270,3 +270,9 @@ for login sessions is whatever the shell start-up files or PAM provide, if
 anything. Set UMASK 022 (or 027 where users should not read each other's
 files) in /etc/login.defs; with pam_umask in the PAM session stack that
 value applies to every login.
+%tig001e
+Tigercron, the cron driver, cannot read its control file (cronrc), so no
+scheduled check can run. The file is missing, or its permissions keep
+the cron user out. Restore cronrc from the distribution or a backup,
+make it readable by root and writable by nobody else, and the next
+scheduled run will proceed.

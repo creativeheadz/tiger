@@ -1,0 +1,40 @@
+%apa001w
+The Apache server is listening on every address of the machine instead
+of one named address (a Listen directive without an IP, or no Listen
+restriction at all). On a machine with more than one interface this
+serves the site where it was never meant to be served. The same id at
+INFO level confirms the server does listen only on one address and
+port. Give each Listen directive an explicit address, for example
+"Listen 192.0.2.10:80", and restart the server.
+%apa002w
+The Directory block for the filesystem root ('/') places no limit on
+access, or its Options are anything but None. Every file the server
+user can read becomes servable unless a deeper block forbids it, and a
+loose '/' block is the usual way a misconfiguration turns into a full
+filesystem disclosure. Deny first and open only what the site needs:
+"<Directory /> Require all denied </Directory>" with Options None.
+%apa003i
+A Directory block allows symbolic links to be followed only when the
+link and its target share an owner (SymLinksIfOwnerMatch). This is the
+safer form of symlink following: a user who can write to the served
+tree cannot point a link at /etc/passwd unless they already own that
+file. No action needed; the message records that the option is set.
+%apa004w
+A Directory block sets FollowSymLinks, so the server follows any
+symbolic link under it. Anyone who can create a link in the served
+tree, through an upload, a shared directory or another account on the
+machine, can expose files outside it, such as /etc/passwd. Remove
+FollowSymLinks, or at least replace it with SymLinksIfOwnerMatch, and
+check the tree for links that should not be there.
+%apa005w
+A Directory block sets ExecCGI, so files the server can execute run as
+programs. Combined with an upload path or a writable directory this
+lets an attacker run code as the server user. Take ExecCGI off every
+directory except the one cgi-bin the site actually uses, and make sure
+that directory is writable only by root.
+%apa006w
+A Directory block sets Indexes, so a visitor who asks for a directory
+without an index file gets a listing of everything in it. Listings
+advertise backups, draft pages, archives and anything else left lying
+around. Remove Indexes from every directory that does not need
+browsing, or add an index file where it does.
