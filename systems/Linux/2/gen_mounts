@@ -81,6 +81,8 @@
 #                                   Added code to check the filesystems valid in the current kernel, this
 #                                   should prevent future false positivies when new filesystems are added to the kernel
 # Linux/2/gen_mounts - 07/02/2018 - Added fuse.clamfs (Ubuntu bug 1204527) and fuse.javafs (Ubuntu bug 1305057) 
+# Linux/2/gen_mounts - 06/10/2026 - Leave out a filesystem that does not answer within Tiger_Mount_Timeout (con011c)
+#                                 - Added nsfs as non-local (one con010c per container otherwise)
 #                                   filesystems
 #------------------------------------------------------------------------------------------------------------------
 #
@@ -227,6 +229,7 @@ localfs()
                                                 # https://www.kernel.org/doc/Documentation/filesystems/nfs/
   [ "$1" = "nfs4" ] && LOCAL=1
   [ "$1" = "nfsd" ] && LOCAL=1
+  [ "$1" = "nsfs" ] && LOCAL=1                  # Namespace handles (Docker, ip netns): one inode, nothing to scan
   [ "$1" = "ncpfs" ] && LOCAL=1                 # Netware Control Procolo, see
                                                 # https://www.kernel.org/doc/Documentation/filesystems/ncpfs.txt
   [ "$1" = "fuse.sshfs" ] && LOCAL=1            # Remote SSH mounted filesystem through fuse
@@ -367,6 +370,35 @@ localfs()
 [ -z "$BASENAME" ] && BASENAME=`command -v basename`
 [ -z "$EGREP" ] && EGREP="`command -v grep` -E"
 
+#
+# mount_alive PATH: 0 unless the filesystem under PATH does not answer.
+#
+# A hard NFS or CIFS mount whose server is down blocks every program that
+# touches a path under it, and the check that touched it would never
+# finish. df -P asks the filesystem itself (statfs) and runs under a kill
+# timeout (Tiger_Mount_Timeout, seconds); only the kill means "dead". A
+# path that does not exist, or a df that cannot run, is left for the
+# caller's own tests. Without a timeout command there is no probe, as
+# before. A parent directory found dead is remembered, so a hundred home
+# directories on one dead server cost one timeout, not a hundred.
+# Tiger_Mount_Probe_Cmd replaces df for the tests.
+# (The same function as in initdefs; this script runs on its own.)
+#
+mount_alive()
+{
+  [ -n "$TIMEOUT" ] || return 0
+  __probe=${Tiger_Mount_Probe_Cmd:-$DF}
+  [ -n "$__probe" ] || return 0
+  __dir=${1%/*}
+  [ -n "$__dir" ] || __dir=/
+  case "|$__dead_dirs|" in *"|$__dir|"*) return 1 ;; esac
+  $TIMEOUT -s KILL "${Tiger_Mount_Timeout:-5}" "$__probe" -P "$1" >/dev/null 2>&1
+  case $? in
+    124|137) __dead_dirs="$__dead_dirs|$__dir"; return 1 ;;
+  esac
+  return 0
+}
+
 $GETFS  |
 while read line
 do
@@ -374,6 +406,7 @@ do
   PRINT=1
   fs=`echo $line | sed -e 's/ on.*$//'`
   mtpoint=`echo $line | sed -e 's/^.* on //' | sed -e 's/ type.*$//'`
+  rawmtpoint=$mtpoint
   # Indent spaces in case we found any in the mount point
   mtpoint=`echo $mtpoint | sed -e 's/\([[:space:]]\)/\\\\\1/g'`
   fstype=`echo $line | sed -e 's/.* type \(.*\) (.*/\1/'`
@@ -389,6 +422,14 @@ do
   # TODO: warn in continuing?
   [ "$CHKRO" = "rw" ] && { ronly "$opts" && PRINT=0; }
   [ "$LOCAL_ONLY" = "local" ] && { localfs "$fstype" "$fs" || PRINT=0; }
+  # A local filesystem that does not answer (a hung FUSE mount, a disk
+  # that has gone away) would stall the scan: leave it out and say so
+  [ "$PRINT" = "1" ] && [ "$LOCAL_ONLY" = "local" ] && {
+    mount_alive "$rawmtpoint" || {
+      echo "--CONFIG-- [con011c] Filesystem '$rawmtpoint' ($fstype) did not answer within ${Tiger_Mount_Timeout:-5} seconds and is left out of the scan" >&2
+      PRINT=0
+    }
+  }
   [ "$PRINT" = "1" ] && {
     dir=`dirname $fs`
     file=`$BASENAME $fs`

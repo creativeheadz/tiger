@@ -116,6 +116,7 @@ COLUMN column
 COMM comm
 CUT cut
 DATE date
+DF df
 DIFF diff
 EGREP egrep
 EXPAND expand
@@ -156,6 +157,7 @@ TAIL tail
 TCPD tcpd
 TEE tee
 TEST test
+TIMEOUT timeout
 TR tr
 UNAME uname
 UNIQ uniq

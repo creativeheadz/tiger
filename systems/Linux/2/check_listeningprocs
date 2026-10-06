@@ -106,7 +106,7 @@ if [ -x "$LSOF" ]
 then
 	$AWK '
 	BEGIN {
-		cmd = "$LSOF -FpPcnLt -nPi"
+		cmd = "$LSOF -b -w -FpPcnLt -nPi"
 
 		while ((cmd | getline field) > 0){
 			fieldtype = substr(field,1,1)

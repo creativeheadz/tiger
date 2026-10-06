@@ -214,10 +214,21 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   (`tig001e`, `pass022w`), and `apa003w` from the old list was never
   emitted by anything. `tests/explain_check.sh` fails CI on any id
   with no entry, and on any malformed id.
-- [ ] **Survive a dead network mount.** On 5 October the NAS mount was
-  down (`df: /mnt/nas: Host is down`). Anything that asks about every
-  mount can stall on it. Audit every call that touches mounts (`df`,
-  `mount`, `lsof`, `stat`) and use local-only forms or a timeout.
+- [x] **Survive a dead network mount.** On 5 October the NAS mount was
+  down (`df: /mnt/nas: Host is down`). The audit: the scan was already
+  safe, it starts only from local filesystem types and stays on each
+  with `-xdev`. What could hang was `lsof` in the deleted-files and
+  listening-process checks, which stats every open file, and the
+  account and PATH checks, which stat every home directory. `lsof` now
+  runs with `-b` (no blocking kernel calls; the output the checks read
+  is the same, and it is faster). Every home directory, and every mount
+  point before the scan, is asked first with `df -P` under a kill
+  timeout (`Tiger_Mount_Timeout`, 5 s, needs a `timeout` command); one
+  that does not answer is reported (`acc025w`, `path010w`, `con011c`)
+  and left alone, and homes under the same parent are not asked again.
+  A symlink elsewhere whose target is under a dead mount can still
+  stall the scan's dangling-link test; that needs the server back.
+  `tests/mounts_check.sh` feeds a probe that hangs.
 - [x] `tests/explain_check.sh` covers the id families built from data
   (`perm…`, `embed…`) but not a *new* id built from a variable: a
   mutation test confirmed `message WARN yyy$x"w"` passes unnoticed.

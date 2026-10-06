@@ -311,6 +311,12 @@ check_user()
   user="$1"
   dir="$2"
 
+  # A home on a filesystem that does not answer would hang here
+  mount_alive "$dir" || {
+    message WARN path010w "" "Login ID $user home directory ($dir) is on a filesystem that did not answer within ${Tiger_Mount_Timeout:-5} seconds; its PATH was not checked."
+    return
+  }
+
   [ -s $dir/.profile ] && parse_bsh $user $dir .profile
   [ -s $dir/.cshrc ] && parse_csh $user $dir .cshrc
   [ -s $dir/.login ] && parse_csh $user $dir .login

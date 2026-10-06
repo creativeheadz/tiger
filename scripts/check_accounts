@@ -210,6 +210,14 @@ check_users()
   IFS=:
   while read user home host shell uid hash
   do
+     # A home on a filesystem that does not answer (a hard NFS or CIFS
+     # mount whose server is down) would hang every test below. Ask
+     # first, say so once, and move on.
+     mount_alive "$home" || {
+       message WARN acc025w "" "Login ID $user home directory ($home) is on a filesystem that did not answer within ${Tiger_Mount_Timeout:-5} seconds; its checks were skipped."
+       continue
+     }
+
      # Perform checks on "disabled" accounts (i.e. accounts without
      # a valid password).
      case $hash in

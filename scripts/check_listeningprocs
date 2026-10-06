@@ -154,7 +154,7 @@ check_socket()
 	esac
 }
 
-$LSOF -n > $WORKDIR/procs.$$
+$LSOF -b -w -n > $WORKDIR/procs.$$
 $CAT $WORKDIR/procs.$$ | $GREP "IPv" | 
 	$GREP -v "\->" |
 	$AWK '{printf("%s %s %s %s\n", $1, $3, $7, $8)}' >> $WORKDIR/openprocs.$$

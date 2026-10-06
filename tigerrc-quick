@@ -357,6 +357,17 @@ Tiger_FSScan_DetailDirs='/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/l
 #
 Tiger_Sysctl_Root=''
 #
+# Seconds to wait for a filesystem to answer before a check leaves it
+# alone. A hard NFS or CIFS mount whose server is down blocks every
+# program that touches it; the filesystem scan, the account checks and
+# the PATH checks ask first (df -P under a kill timeout) and report what
+# they skipped (con011c, acc025w, path010w). Needs a 'timeout' command
+# (coreutils or busybox); without one there is no limit, as before.
+# Tiger_Mount_Probe_Cmd replaces df; the tests point it at a script.
+#
+Tiger_Mount_Timeout=5
+Tiger_Mount_Probe_Cmd=''
+#
 # Write the findings as JSON Lines as well, one object per finding, in a
 # .jsonl file next to the text report. A run record comes first and a
 # summary with counts last. INFO findings are always included there.

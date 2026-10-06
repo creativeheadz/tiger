@@ -248,6 +248,8 @@ FIND=`findcmd find`
 FINDXDEV=-xdev
 FMT=`findcmd fmt`
 GETFS=`findcmd mount`
+DF=`findcmd df`
+TIMEOUT=`findcmd timeout`
 CC=`findcmd cc || findcmd gcc`
 PS=`findcmd ps`
 DATE=`findcmd date`
@@ -257,6 +259,7 @@ TIMECMD="$DATE +%H:%M"
 
 export UNAME HOSTNAME EXPR STRINGS FIND FINDXDEV GETHOSTNAME
 export FMT GETFS CC PS DATE DATECMD TIMECMD 
+export DF TIMEOUT
 
 WAIT=wait
 

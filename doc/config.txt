@@ -66,6 +66,12 @@ or adapt it to your system locally:
  - Tiger_FSScan_WarnUnknown : If set to 'N' this message will not be presented
    (this prevents it from being emailed when some of the Tiger scripts are run
     through cron)
+%con011c
+The filesystem is of a local type but did not answer a df request
+within Tiger_Mount_Timeout seconds, so the filesystem scan leaves it out
+rather than hang on it. This is what a hung FUSE mount or a disk that has
+gone away looks like. Unmount it, or make it answer, and run again. Raise
+Tiger_Mount_Timeout if the filesystem is merely slow.
 %init001e
 The indicated variable, which should specifies the pathname to a command,
 does not have a value. This message should not appear on platforms

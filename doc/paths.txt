@@ -76,3 +76,9 @@ never used by root, then this is not a problem.
 %path009w
 An initial setting of the PATH variable should be setup in the default
 locations for shell login programs (/etc/profile, /etc/csh.login, etc.).
+%path010w
+The user's home directory is on a filesystem that did not answer
+within Tiger_Mount_Timeout seconds (a hard NFS or CIFS mount whose
+server is down). The shell initialisation files there were not read,
+so this user's PATH was not checked. Bring the server back, or unmount
+the share, and run again.

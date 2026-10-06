@@ -540,6 +540,34 @@ cleanup()
 #
 # Given a temporary file determines if it exists
 # if it does bails out since it shouldn't be there
+#
+# mount_alive PATH: 0 unless the filesystem under PATH does not answer.
+#
+# A hard NFS or CIFS mount whose server is down blocks every program that
+# touches a path under it, and the check that touched it would never
+# finish. df -P asks the filesystem itself (statfs) and runs under a kill
+# timeout (Tiger_Mount_Timeout, seconds); only the kill means "dead". A
+# path that does not exist, or a df that cannot run, is left for the
+# caller's own tests. Without a timeout command there is no probe, as
+# before. A parent directory found dead is remembered, so a hundred home
+# directories on one dead server cost one timeout, not a hundred.
+# Tiger_Mount_Probe_Cmd replaces df for the tests.
+#
+mount_alive()
+{
+  [ -n "$TIMEOUT" ] || return 0
+  __probe=${Tiger_Mount_Probe_Cmd:-$DF}
+  [ -n "$__probe" ] || return 0
+  __dir=${1%/*}
+  [ -n "$__dir" ] || __dir=/
+  case "|$__dead_dirs|" in *"|$__dir|"*) return 1 ;; esac
+  $TIMEOUT -s KILL "${Tiger_Mount_Timeout:-5}" "$__probe" -P "$1" >/dev/null 2>&1
+  case $? in
+    124|137) __dead_dirs="$__dead_dirs|$__dir"; return 1 ;;
+  esac
+  return 0
+}
+
 safe_temp()
 {
   for __tmpfile
