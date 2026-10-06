@@ -367,7 +367,7 @@ pamenvpath=
 }
 
 {
-  if [ "$TIGER_Check_PATHALL" = 'Y' ]; then
+  if [ "$Tiger_Check_PATHALL" = 'Y' ]; then
     haveallcmds GEN_PASSWD_SETS &&
     haveallvars HOSTNAME && {
       {
