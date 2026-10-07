@@ -218,6 +218,14 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
 - [x] `tigris-diff` marks a new finding that is already accepted and
   does not count it for its exit status.
 - [x] ShellCheck blocks the build (see 3.2.x).
+- [x] `check_listeningprocs`: sockets on ports in the kernel's ephemeral
+  range are one finding per process, protocol and address, with the
+  ports in the detail. Browsers and Syncthing hold UDP sockets on ports
+  that change every run; with the port in the message, the first real
+  `--since` run on Hera reported 9 of them as new. Also: a root
+  listener on every interface was reported as a WARN and again as an
+  INFO (`&& message || message`, and `message()` returns non-zero).
+  `tests/listening_check.sh` feeds `lsof -F` fixtures (`Tiger_LSOF_Cmd`).
 
 ## 3.2.x: maintenance
 

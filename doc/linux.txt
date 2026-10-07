@@ -7,6 +7,13 @@ place for this files.
 Installed processes listening on Internet interfaces must be
 tightly controlled since they are the "open doors" to the 
 outside.
+
+A process with sockets on ports in the kernel's ephemeral range
+(/proc/sys/net/ipv4/ip_local_port_range, usually 32768-60999) is reported
+once for each protocol and address as "listening on ephemeral ports",
+with the ports themselves in the detail. Those ports are usually chosen
+by the kernel and change from run to run, so naming them in the message
+would make the finding look new every time.
 %lin003w
 Processes that have not been run by a valid user are listening on interfaces
 open to external networks. This processes might have been run by a valid user
@@ -15,6 +22,13 @@ and changed uids or might be rogue processes.
 The list of valid users is defined in Tiger's configuration file (tigerrc)
 variable 'Tiger_Listening_ValidUsers'. An incorrect definition there might
 also lead to invalid reports and false positives.
+
+Sockets on ports in the kernel's ephemeral range are reported once per
+process, protocol and address, as for lin002i: browsers and
+synchronisation clients such as Syncthing keep UDP sockets open on ports
+the kernel picks, which change from run to run. To stop seeing one, add
+the process to 'Tiger_Listening_ValidProcs', or accept the finding with
+tigris-accept.
 
 To fix this issue, review the value of the configuration variable and
 the user the process is associated to. Confirm if the process is

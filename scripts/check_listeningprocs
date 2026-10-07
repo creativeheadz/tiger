@@ -140,9 +140,11 @@ check_socket()
 	*)
 		case $user in
 		$okprocessuser) 
-		[ "$address" = "every" -a "$Tiger_Listening_Every" != "N" ] && \
-		message WARN lin002i "" "The process \`$proc' is listening on socket $socket ($type) on $address interface." || \
-		message INFO lin002i "" "The process \`$proc' is listening on socket $socket ($type) on $address interface." 
+		if [ "$address" = "every" -a "$Tiger_Listening_Every" != "N" ]; then
+		  message WARN lin002i "" "The process \`$proc' is listening on socket $socket ($type) on $address interface."
+		else
+		  message INFO lin002i "" "The process \`$proc' is listening on socket $socket ($type) on $address interface."
+		fi
 		;;
 		*) 
 		[ "$address" != "loopback" ]  && {

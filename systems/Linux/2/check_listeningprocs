@@ -17,6 +17,16 @@
 #
 # check_listeningprocs - 08/23/2001
 #
+# 10/07/2026 atrimbitas  Sockets on ports in the kernel's ephemeral range
+#                 (ip_local_port_range) are reported once per process,
+#                 user, protocol and address, with the ports in the
+#                 detail: browsers and Syncthing hold UDP sockets on
+#                 ports that change every run, and with the port in the
+#                 message each run's findings looked new to tigris-diff
+#                 and --since. The lin002i WARN for a listener on every
+#                 interface no longer comes with an INFO copy (&& || on
+#                 message(), which can return non-zero). Tiger_LSOF_Cmd
+#                 lets the tests feed lsof -F fixtures.
 # 07/05/2006 jfs  Try not to botch when udp6 services are being read
 #                 (Debian Bug #375165)
 # 05/15/2005 jfs  Proper check for processes in loopback (Debian Bug #307695)
@@ -93,20 +103,32 @@ done
 echo
 echo "# Checking listening processes "
 
-haveallcmds GREP EGREP CUT AWK SORT UNIQ || exit 1
-haveallcmds LSOF || haveallcmds NETSTAT || exit 1
+haveallcmds CAT GREP EGREP CUT AWK SED SORT UNIQ || exit 1
+[ -n "$Tiger_LSOF_Cmd" ] || haveallcmds LSOF || haveallcmds NETSTAT || exit 1
 
 okprocessusers=${Tiger_Listening_ValidUsers-"root"}
 okprocess=${Tiger_Listening_ValidProcs-""}
 export okprocess okprocessusers
 
-[ ! -x "$LSOF" ] && message INFO lin004i "" "Using $NETSTAT instead of lsof, information regarding processes will be more limited"
+# Tiger_LSOF_Cmd replaces the lsof call, so the tests can feed it a fixture
+lsof_cmd=${Tiger_LSOF_Cmd:-"$LSOF -b -w -FpPcnLt -nPi"}
 
-if [ -x "$LSOF" ] 
+# The kernel's ephemeral port range. A socket in it was most likely given
+# its port by the kernel (browsers, Syncthing and other clients keep UDP
+# sockets open on such ports), so the port changes from run to run. Those
+# are reported once per process, user, protocol and address, with the
+# ports in the detail rather than the message, so that a finding means
+# the same thing in two runs and --since does not call it new each time.
+set -- `$CAT "${Tiger_Sysctl_Root:-}/proc/sys/net/ipv4/ip_local_port_range" 2>/dev/null`
+eph_lo=$1 eph_hi=$2
+case "$eph_lo$eph_hi" in ''|*[!0-9]*) eph_lo=32768 eph_hi=60999 ;; esac
+
+[ ! -x "$LSOF" ] && [ -z "$Tiger_LSOF_Cmd" ] && message INFO lin004i "" "Using $NETSTAT instead of lsof, information regarding processes will be more limited"
+
+if [ -x "$LSOF" ] || [ -n "$Tiger_LSOF_Cmd" ]
 then
-	$AWK '
+	$AWK -v cmd="$lsof_cmd" '
 	BEGIN {
-		cmd = "$LSOF -b -w -FpPcnLt -nPi"
 
 		while ((cmd | getline field) > 0){
 			fieldtype = substr(field,1,1)
@@ -153,11 +175,36 @@ else
 		echo $user $type $local "`echo $proc | $CUT -f 2 -d /`"
 	done
 fi |
-# sort on process and remove duplicates
-$SORT -k 4 | $UNIQ |
-while read user type asocket proc
+# remove duplicates, fold the ephemeral ports of one process, user,
+# protocol and address into one line (the ports in the fourth field, "-"
+# when there are none), and sort on process
+$SORT -u |
+$AWK -v lo="$eph_lo" -v hi="$eph_hi" '
+{
+	# the process name is the rest of the line: it may hold spaces
+	rest = $0; sub(/^[^ ]* [^ ]* [^ ]* */, "", rest)
+	n = split($3, a, ":"); port = a[n]
+	if (port ~ /^[0-9]+$/ && port + 0 >= lo + 0 && port + 0 <= hi + 0) {
+		head = $1 " " $2 " " substr($3, 1, length($3) - length(port)) "ephemeral"
+		g = head " " rest
+		if (!(g in ports)) { order[++ng] = g; heads[g] = head; names[g] = rest }
+		ports[g] = ports[g] (ports[g] == "" ? "" : ",") port
+	} else
+		print $1, $2, $3, "-", rest
+}
+END { for (i = 1; i <= ng; i++) print heads[order[i]], ports[order[i]], names[order[i]] }' |
+$SORT -k 5 |
+while read user type asocket ports proc
 do
 	socket=`echo $asocket |  $CUT -f 2 -d :`
+	if [ "$socket" = "ephemeral" ]; then
+		socktext="ephemeral ports"
+		case "$ports" in *,*) trail="Ports" ;; *) trail="Port" ;; esac
+		trail="$trail `echo $ports | $SED 's/,/, /g'`; the kernel gives out $eph_lo-$eph_hi, so they change from run to run."
+	else
+		socktext="socket $socket"
+		trail=""
+	fi
 	address=`echo $asocket | $CUT -f 1 -d :`
 # Should address = 127.0.0.1 be considered harmful?
 # TODO: This could be an option
@@ -181,12 +228,16 @@ do
 	*) echo \"no\" ;; esac"`
 	if [ "$isokprocess" = "no" ] ; then
 		if [ "$isokuser" = "yes" ] ; then
-			[ "$address" = "every" -a "$Tiger_Listening_Every" != "N" ] && \
-				message WARN lin002i "" "The process \`$proc' is listening on socket $socket ($type) on $address interface." || \
-				message INFO lin002i "" "The process \`$proc' is listening on socket $socket ($type) on $address interface." 
+			# an if, not && ||: message() can return non-zero, and
+			# the INFO line would then follow every WARN
+			if [ "$address" = "every" -a "$Tiger_Listening_Every" != "N" ]; then
+				message WARN lin002i "$trail" "The process \`$proc' is listening on $socktext ($type) on $address interface."
+			else
+				message INFO lin002i "$trail" "The process \`$proc' is listening on $socktext ($type) on $address interface."
+			fi
 		else
 			[ "$address" != "loopback" ]  && {
-				message WARN lin003w "" "The process \`$proc' is listening on socket $socket ($type on $address interface) is run by $user."
+				message WARN lin003w "$trail" "The process \`$proc' is listening on $socktext ($type on $address interface) is run by $user."
 			} 
 		fi # of if okuser
 	fi # of if okprocess

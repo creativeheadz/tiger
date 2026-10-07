@@ -47,6 +47,8 @@ jobs:
         run: sh tests/mounts_check.sh
       - name: Exit status, -q and --since
         run: sh tests/exit_check.sh
+      - name: check_listeningprocs against lsof fixtures
+        run: sh tests/listening_check.sh
       - name: ShellCheck (errors)
         run: |
           shellcheck --version | head -2
