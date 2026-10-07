@@ -83,6 +83,11 @@
           "pattern": "^[a-z0-9_-]+$",
           "description": "The profile applied on top of the tigerrc (--profile), when there was one: quick, server, desktop, container, or a site's own. Absent in reports older than the field, and when none was."
         },
+        "root": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The directory audited instead of the running system (--root): a mounted disk, an image's root filesystem. Absent when the running system was audited."
+        },
         "start": {
           "$ref": "#/$defs/timestamp"
         },
@@ -159,7 +164,7 @@
       }
     },
     "skip": {
-      "description": "A check that was not run because it needs root and Tigris was not running as root (its header says '# Tigris: needs root'). The text report has a '# Skipped NAME' line for it, and the run's exit status counts it as a check that could not run (2).",
+      "description": "A check that was not run: it needs root and Tigris was not running as root (its header says '# Tigris: needs root'), or the audit is of an offline root (--root) and the check reads the running system or cannot read an offline root yet. The text report has a '# Skipped NAME' line for it; the exit status counts only the first kind as a check that could not run (2).",
       "type": "object",
       "required": [
         "type",
@@ -176,7 +181,12 @@
           "description": "The script that was not run."
         },
         "reason": {
-          "const": "needs root"
+          "enum": [
+            "needs root",
+            "live system",
+            "not offline yet"
+          ],
+          "description": "needs root: the check cannot give a true answer without root; live system: it reads the running system, and this audit is of an offline root (--root); not offline yet: it cannot read an offline root yet."
         }
       }
     },

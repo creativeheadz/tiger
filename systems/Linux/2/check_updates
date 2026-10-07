@@ -38,6 +38,17 @@
 #                 Tiger_Sysctl_Root prefixes the files; Tiger_Updates_Manager
 #                 and the Tiger_*_Cmd settings below replace the commands,
 #                 for the tests.
+# 10/07/2026 atrimbitas - An offline root (--root): the package manager is
+#                 pointed at its databases and configuration (dnf
+#                 --installroot, zypper --root; apt through APT_CONFIG, so
+#                 that the root's apt.conf.d is read and not this host's,
+#                 with this host's dpkg and apt's own solver named on the
+#                 command line, which the root's configuration cannot
+#                 override, and no cache or log written into the root),
+#                 its files are read through rootfile, and the reboot is
+#                 not asked about: nothing is running.
+#
+# Tigris: offline
 #
 #-----------------------------------------------------------------------------
 #
@@ -117,13 +128,10 @@ echo
 echo "# Checking security updates ($mgr)..."
 
 # timer_on NAME: is NAME.timer enabled: its link in timers.target.wants,
-# pointing at a unit that is there (the link's target is read under root)
+# pointing at a unit that is there
 timer_on()
 {
-  __l="$root/etc/systemd/system/timers.target.wants/$1.timer"
-  [ -L "$__l" ] || return 1
-  __t=`readlink "$__l"`
-  case "$__t" in /*) [ -e "$root$__t" ] ;; *) [ -e "$__l" ] ;; esac
+  [ -f "`rootfile /etc/systemd/system/timers.target.wants/$1.timer`" ]
 }
 
 # list: the first ten words of stdin, and how many more
@@ -135,7 +143,7 @@ list()
 #
 # A reboot that would put installed updates to use
 #
-if [ "$container" = N ]; then
+if [ "$container" = N ] && [ -z "$TIGRIS_ROOT" ]; then
   running=`$CAT "$root/proc/sys/kernel/osrelease" 2>/dev/null`
   why=
   if [ -f "$root/run/reboot-required" ]; then
@@ -156,40 +164,78 @@ fi
 #
 # Security updates waiting, from what the package manager has cached
 #
-pending= unknown= age=
+pending= unknown= age= aptconf= aptopts= tooldir= errf=
+trap '[ -n "$aptconf" ] && delete $aptconf; [ -n "$errf" ] && delete $errf; [ -n "$tooldir" ] && rm -rf "$tooldir"; exit 1' 1 2 3 15
 case "$mgr" in
   apt)
+    lists=`rootfile /var/lib/apt/lists`
     cmd=${Tiger_Apt_Simulate_Cmd:-}
     [ -z "$cmd" ] && a=`findtool apt-get` && cmd="$a -s -o Debug::NoLocking=1 dist-upgrade"
-    if [ -z "`$LS "$root"/var/lib/apt/lists/ 2>/dev/null | $GREP '_Packages'`" ]; then
+    if [ -n "$TIGRIS_ROOT" ] && [ -z "$Tiger_Apt_Simulate_Cmd" ]; then
+      # Everything apt reads under the root, its architecture (its dpkg's)
+      # rather than this host's, the cache built in memory, no planner log
+      status=`rootfile /var/lib/dpkg/status`
+      arch=`$AWK '/^Package: / { p = $2 } p == "dpkg" && /^Architecture: / { print $2; exit }' "$status" 2>/dev/null`
+      aptconf=$WORKDIR/aptconf.$$
+      safe_temp $aptconf
+      echo "Dir \"$TIGRIS_ROOT/\";" > $aptconf
+      APT_CONFIG=$aptconf
+      export APT_CONFIG
+      aptopts="-o Dir=$TIGRIS_ROOT/ -o Dir::Bin::dpkg=${DPKG:-/usr/bin/dpkg} -o APT::Solver=internal -o APT::Planner=internal -o Dir::Cache::pkgcache= -o Dir::Cache::srcpkgcache= -o Dir::Log::Planner= -o Dir::Log::Solver= -o Debug::NoLocking=1${arch:+ -o APT::Architecture=$arch}"
+      cmd="$a -s $aptopts dist-upgrade"
+    fi
+    if [ -z "`$LS "$lists" 2>/dev/null | $GREP '_Packages'`" ]; then
       unknown="apt has no package lists (apt update has not run, or they were cleaned)"
     else
       pending=`$cmd 2>/dev/null | $AWK '/^Inst / && /-security|Debian-Security/ { print $2 }' | $SORT -u`
       # how old the newest list is, in days
       now=`$DATE +%s`
-      age=`for f in "$root"/var/lib/apt/lists/*Release; do stat -c %Y "$f" 2>/dev/null; done |
+      age=`for f in "$lists"/*Release; do stat -c %Y "$f" 2>/dev/null; done |
         $SORT -n | $AWK -v now="$now" 'END { if (NR) print int((now - $0) / 86400) }'`
     fi
     ;;
   dnf)
     cmd=${Tiger_Dnf_Security_Cmd:-}
-    [ -z "$cmd" ] && d=`findtool dnf` && cmd="$d -C -q updateinfo list --security"
-    if out=`$cmd 2>/dev/null`; then
+    [ -z "$cmd" ] && d=`findtool dnf` && cmd="$d -C -q${TIGRIS_ROOT:+ --installroot=$TIGRIS_ROOT} updateinfo list --security"
+    # dnf5 writes its log where it is told, outside the root; dnf 4 would
+    # put that directory inside the root, so it keeps its own (and cannot
+    # answer when the root is mounted read-only)
+    if [ -n "$TIGRIS_ROOT" ] && [ -z "$Tiger_Dnf_Security_Cmd" ] && $d --version 2>/dev/null | $GREP -q '^dnf5'; then
+      tooldir=$WORKDIR/updtool.$$
+      mkdir -m 700 "$tooldir" && cmd="$cmd --setopt=logdir=$tooldir"
+    fi
+    errf=$WORKDIR/upd.err.$$
+    safe_temp $errf
+    if out=`$cmd 2>$errf`; then
       # dnf 4 and 5 lay it out differently; the package is the field
       # shaped name-version-release.arch
       pending=`echo "$out" | $AWK '{ for (i = 1; i <= NF; i++) if ($i ~ /^[^ ]+-[^-]+-[^-]+\.[a-z0-9_]+$/) print $i }' | $SORT -u`
     else
-      unknown="dnf has no cached metadata to read (dnf makecache has not run)"
+      # dnf's own last word: no cache (makecache has not run), or a
+      # read-only root dnf 4 cannot write its log in
+      why=`$SED -n '/[^[:space:]]/p' $errf | $SED -n '$p'`
+      unknown="dnf could not answer from its cache${why:+ ($why)}"
     fi
+    delete $errf
     ;;
   zypper)
     cmd=${Tiger_Zypper_Security_Cmd:-}
-    [ -z "$cmd" ] && z=`findtool zypper` && cmd="$z --non-interactive --no-refresh --xmlout list-patches --category security"
+    [ -z "$cmd" ] && z=`findtool zypper` && cmd="$z --non-interactive --no-refresh${TIGRIS_ROOT:+ --root $TIGRIS_ROOT} --xmlout list-patches --category security"
+    # libzypp's lock and log, which it would write in the root, kept out
+    if [ -n "$TIGRIS_ROOT" ] && [ -z "$Tiger_Zypper_Security_Cmd" ]; then
+      tooldir=$WORKDIR/updtool.$$
+      mkdir -m 700 "$tooldir" && {
+        ZYPP_LOCKFILE_ROOT=$tooldir ZYPP_LOGFILE=$tooldir/zypper.log
+        export ZYPP_LOCKFILE_ROOT ZYPP_LOGFILE
+      }
+    fi
     if out=`$cmd 2>/dev/null`; then
       pending=`echo "$out" | $GREP '<update ' | $GREP 'category="security"' | $GREP 'status="needed"' |
         $SED -n 's/.* name="\([^"]*\)".*/\1/p' | $SORT -u`
     else
-      unknown="zypper could not read its repositories without refreshing them"
+      # its first error (on a read-only root: the cache it could not build)
+      why=`echo "$out" | $SED -n 's/.*<message type="error">\([^<]*\).*/\1/p' | $SED -n '1s/[[:space:]:]*$//p'`
+      unknown="zypper could not read its repositories without refreshing them${why:+ ($why)}"
     fi
     ;;
 esac
@@ -219,9 +265,11 @@ auto=
 case "$mgr" in
   apt)
     auto=N
-    if [ -x "$root/usr/bin/unattended-upgrade" ] && timer_on apt-daily-upgrade; then
+    if [ -f "`rootfile /usr/bin/unattended-upgrade`" ] && timer_on apt-daily-upgrade; then
       cmd=${Tiger_AptConfig_Cmd:-}
       [ -z "$cmd" ] && c=`findtool apt-config` && cmd="$c dump"
+      # with APT_CONFIG above, the root's apt.conf.d
+      [ -n "$aptopts" ] && [ -z "$Tiger_AptConfig_Cmd" ] && cmd="$c $aptopts dump"
       v=`$cmd 2>/dev/null | $SED -n 's/^APT::Periodic::Unattended-Upgrade "\(.*\)";$/\1/p' | $SED -n '$p'`
       case "$v" in ''|0) ;; *) auto=Y ;; esac
     fi
@@ -233,7 +281,8 @@ case "$mgr" in
     auto=N
     timer_on dnf-automatic-install && auto=Y
     if timer_on dnf-automatic || timer_on dnf5-automatic; then
-      apply=`$CAT "$root/etc/dnf/automatic.conf" "$root/etc/dnf/dnf5-plugins/automatic.conf" 2>/dev/null |
+      # shellcheck disable=SC2046
+      apply=`$CAT $(printf '%s\n' /etc/dnf/automatic.conf /etc/dnf/dnf5-plugins/automatic.conf | rootpaths) 2>/dev/null |
         $SED -n 's/^[[:space:]]*apply_updates[[:space:]]*=[[:space:]]*\([A-Za-z0-9]*\).*/\1/p' | $SED -n '$p'`
       case "$apply" in yes|true|1|on|True|Yes) auto=Y ;; esac
     fi
@@ -242,4 +291,6 @@ case "$mgr" in
 esac
 [ "$auto" = N ] && message WARN upd002w "$fix" "Security updates are not installed automatically: each waits until someone installs it."
 
+[ -n "$aptconf" ] && delete $aptconf
+[ -n "$tooldir" ] && rm -rf "$tooldir"
 exit 0

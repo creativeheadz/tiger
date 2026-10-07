@@ -32,12 +32,21 @@
 #                that one reporting loop turns into messages. Configuration
 #                files are not reported, as the Debian check does not
 #                report conffiles: administrators edit them.
+# 10/07/2026 atrimbitas - An offline root (--root): this host's rpm, apk or
+#                pacman verifies the root's database against its files.
+#                rpm --root works inside it (chroot, so its links resolve
+#                there) and runs no verify scripts, which would be the
+#                root's programs; pacman --sysroot and apk --root read it
+#                in place, pacman naming files by their path on this host
+#                (the root's in front), which is taken off. The rest is
+#                read through rootfile.
 #
 # References:
 #   man rpm (VERIFY OPTIONS), man apk-audit, man pacman (-k)
 #
 # Tigris: needs root
 #   files only root can read would look changed or missing.
+# Tigris: offline
 #
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
@@ -95,8 +104,35 @@ esac
 haveallcmds AWK SED SORT FIND GREP EGREP || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
-echo
-echo "# Checking installed files against the $LXPKGMGR database..."
+R=$TIGRIS_ROOT
+if [ -n "$R" ]; then
+  echo
+  echo "# Checking installed files in $R against its $LXPKGMGR database..."
+else
+  echo
+  echo "# Checking installed files against the $LXPKGMGR database..."
+fi
+
+# The package manager, on this system or on the offline root
+rpm_()
+{
+  if [ -n "$R" ]; then rpm --root "$R" "$@"; else rpm "$@"; fi
+}
+apk_()
+{
+  if [ -n "$R" ]; then apk --root "$R" "$@"; else apk "$@"; fi
+}
+pacman_()
+{
+  if [ -n "$R" ]; then pacman --sysroot "$R" "$@"; else pacman "$@"; fi
+}
+
+# The files under the binary directories, as paths of the audited system
+binfiles()
+{
+  # shellcheck disable=SC2086
+  (cd "${R:-/}" && $FIND $dirlist -type f 2>/dev/null) | $SED 's,^\.,,' | $SORT -u
+}
 
 raw=$WORKDIR/pkgint.raw.$$
 events=$WORKDIR/pkgint.events.$$
@@ -110,7 +146,7 @@ trap 'delete $raw $events $owned $found ; exit 1' 1 2 3 15
 dirlist=
 for d in /bin /sbin /usr/bin /usr/sbin
 do
-  [ -d "$d" ] && [ ! -L "$d" ] && dirlist="$dirlist $d"
+  [ -d "$R$d" ] && [ ! -L "$R$d" ] && [ "`rootfile $d`" = "$R$d" ] && dirlist="$dirlist .$d"
 done
 
 # What is not worth a finding: documentation, help and locale data (the
@@ -125,7 +161,8 @@ case "$LXPKGMGR" in
     # An optional file-type letter follows (c config, d doc, g ghost,
     # l licence, r readme); only plain files are reported. A deleted file
     # is "missing" in place of the letters.
-    rpm -Va --nomtime 2>/dev/null |
+    if [ -n "$R" ]; then noscripts=--noscripts; else noscripts=; fi
+    rpm_ -Va --nomtime $noscripts 2>/dev/null |
     $AWK '
       { attr = $1
         type = ($2 ~ /^[cdglr]$/ && NF >= 3) ? $2 : ""    # before $0 is cut down
@@ -137,15 +174,15 @@ case "$LXPKGMGR" in
         else next
         print cls "\t" path "\t" }' > $events
     if [ -n "$dirlist" ]; then
-      rpm -qla 2>/dev/null | $SORT -u > $owned
-      $FIND $dirlist -type f 2>/dev/null | $SORT -u > $found
+      rpm_ -qla 2>/dev/null | $SORT -u > $owned
+      binfiles > $found
       $GREP -vxF -f $owned $found | $AWK '{ print "UNOWNED\t" $0 "\t" }' >> $events
     fi
     ;;
   apk)
     # U modified, X deleted, M permissions, A added; --full is what reports
     # added files, and busybox applet symlinks are not strays
-    apk audit --system --full --check-permissions --ignore-busybox-symlinks 2>/dev/null |
+    apk_ audit --system --full --check-permissions --ignore-busybox-symlinks 2>/dev/null |
     $AWK '
       { cls = ""; path = substr($0, 3)
         if ($1 == "U") cls = "MOD"
@@ -162,18 +199,19 @@ case "$LXPKGMGR" in
     # warning: PACKAGE: /path (Reason), one line per reason; backup files
     # (configuration) are reported under another heading and are left alone
     # pacman writes its warnings to standard error
-    pacman -Qkk 2>&1 |
+    pacman_ -Qkk 2>&1 |
     $SED -n 's/^warning: \([^:]*\): \(\/.*\) (\([^()]*\))$/\1\t\2\t\3/p' |
-    $AWK -F'\t' '
-      { reason = $3
+    $AWK -F'\t' -v r="$R" '
+      { if (r != "" && index($2, r "/") == 1) $2 = substr($2, length(r) + 1)
+        reason = $3
         if (reason == "No such file or directory") cls = "MISSING"
         else if (reason ~ /checksum mismatch$/ || reason == "Size mismatch") cls = "MOD"
         else if (reason == "Permissions mismatch" || reason == "UID mismatch" || reason == "GID mismatch") cls = "PERM"
         else next
         print cls "\t" $2 "\t" $1 }' > $events
     if [ -n "$dirlist" ]; then
-      pacman -Qlq 2>/dev/null | $SORT -u > $owned
-      $FIND $dirlist -type f 2>/dev/null | $SORT -u > $found
+      pacman_ -Qlq 2>/dev/null | $AWK -v r="$R" 'r != "" && index($0, r "/") == 1 { $0 = substr($0, length(r) + 1) } { print }' | $SORT -u > $owned
+      binfiles > $found
       $GREP -vxF -f $owned $found | $AWK '{ print "UNOWNED\t" $0 "\t" }' >> $events
     fi
     ;;
@@ -185,8 +223,9 @@ esac
 # and a leading ! means "except". An absent file the administrator has
 # declared so is not missing, and the same for a changed one.
 declared=
-if [ "$LXPKGMGR" = pacman ] && [ -r /etc/pacman.conf ]; then
-  declared=`$SED -n -e 's/^No\(Extract\|Upgrade\)[[:space:]]*=[[:space:]]*//p' /etc/pacman.conf`
+pconf=`rootfile /etc/pacman.conf`
+if [ "$LXPKGMGR" = pacman ] && [ -r "$pconf" ]; then
+  declared=`$SED -n -e 's/^No\(Extract\|Upgrade\)[[:space:]]*=[[:space:]]*//p' "$pconf"`
 fi
 pacman_declared()
 {
@@ -211,9 +250,9 @@ pacman_declared()
 owner_of()
 {
   case "$LXPKGMGR" in
-    rpm)    rpm -qf --qf '%{NAME}\n' "$1" 2>/dev/null | $SED 1q ;;
-    apk)    apk info -W "$1" 2>/dev/null | $SED -e 's/^.* is owned by //' -e 1q ;;
-    pacman) pacman -Qo "$1" 2>/dev/null | $SED -e 's/^.* is owned by //' -e 's/ [^ ]*$//' -e 1q ;;
+    rpm)    rpm_ -qf --qf '%{NAME}\n' "$1" 2>/dev/null | $SED 1q ;;
+    apk)    apk_ info -W "$1" 2>/dev/null | $SED -e 's/^.* is owned by //' -e 1q ;;
+    pacman) pacman_ -Qo "$R$1" 2>/dev/null | $SED -e 's/^.* is owned by //' -e 's/ [^ ]*$//' -e 1q ;;
   esac
 }
 
@@ -223,7 +262,7 @@ while IFS='	' read class path pkg
 do
   # Directory modes are not what this is about: an image's / and /srv/ftp
   # rarely match the package, and nobody exploits that
-  [ "$class" = PERM ] && [ -d "$path" ] && continue
+  [ "$class" = PERM ] && [ -d "`rootfile "$path"`" ] && continue
   [ "$class" != UNOWNED ] && [ -n "$declared" ] && pacman_declared "$path" && continue
   [ -z "$pkg" ] && [ "$class" != UNOWNED ] && pkg=`owner_of "$path"`
   case "$class" in

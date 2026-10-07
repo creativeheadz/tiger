@@ -33,6 +33,9 @@
 # Tigris: needs root
 #   AppArmor's list of profiles is root's to read.
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the profiles loaded in the running kernel.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

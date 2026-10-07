@@ -7,7 +7,9 @@
 # override (dpkg-statoverride, without --update) that a binary does not
 # match, then runs deb_checkmd5sums, deb_nopackfiles and deb_statoverride
 # from a root-owned copy of this tree and checks that exactly those four
-# are reported.
+# are reported. Then it copies the container's root, changes and all, into
+# a directory and runs the three on that as an offline root (TIGRIS_ROOT,
+# as tigris --root sets it): the report must be the same.
 #
 # Exit 0 when every assertion holds, 1 otherwise, 2 when it cannot run.
 #
@@ -31,12 +33,17 @@ echo x > /usr/sbin/zz-tiger-stray
 dpkg-statoverride --add root root 0700 /usr/bin/cmp
 
 cd "$W"
-for check in deb_checkmd5sums deb_nopackfiles deb_statoverride
-do
-  TIGERHOMEDIR=$W sh systems/Linux/2/$check
-done 2>&1 |
-# Join the lines Tiger wraps, so a path is on the same line as its code
-awk '/^--/ { if (l != "") print l; l = $0; next } { sub(/^ +/, " "); l = l $0 } END { if (l != "") print l }' > "$W/report"
+run()
+{
+  for check in deb_checkmd5sums deb_nopackfiles deb_statoverride
+  do
+    TIGERHOMEDIR=$W sh systems/Linux/2/$check
+  done 2>&1 |
+  # Join the lines Tiger wraps, so a path is on the same line as its code
+  awk '/^--/ { if (l != "") print l; l = $0; next } /^[ \t]/ { sub(/^[ \t]+/, " "); l = l $0; next } { if (l != "") print l; l = "" } END { if (l != "") print l }' |
+  grep -v '^--CONFIG--' | sort
+}
+run > "$W/report"
 
 fail=0
 expect()
@@ -67,6 +74,26 @@ else
   echo "FAIL $others unexpected unowned files:"
   grep 'lin001w' "$W/report" | grep -v 'zz-tiger-stray\|policy-rc.d' | head -5
   fail=1
+fi
+
+# The same system as an offline root: this container's files copied into a
+# directory, with empty /proc, /sys and /dev as a mounted image has
+IMG=/tigris-img
+rm -rf "$IMG"; mkdir -p "$IMG"
+tar -C / --exclude=./proc --exclude=./sys --exclude=./dev --exclude=.$IMG --exclude=.$W --exclude=./tiger -cf - . 2>/dev/null | tar -C "$IMG" -xpf -
+mkdir -p "$IMG/proc" "$IMG/sys" "$IMG/dev"
+# A packaged binary replaced by an absolute link to the same file elsewhere
+# in the root: followed inside the root its sums match; followed on this
+# host, where there is no /opt/zz-tiger-diff, it would be missing
+mkdir -p "$IMG/opt"
+mv "$IMG/usr/bin/diff" "$IMG/opt/zz-tiger-diff"
+ln -s /opt/zz-tiger-diff "$IMG/usr/bin/diff"
+TIGRIS_ROOT=$IMG run > "$W/offline"
+rm -rf "$IMG"
+if [ "`cat "$W/report"`" = "`cat "$W/offline"`" ]; then
+  echo "ok   offline root: the same report, by the root's paths"
+else
+  echo "FAIL offline report differs from the live one (live only, then offline only):"; comm -3 "$W/report" "$W/offline"; fail=1
 fi
 
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- report"; cat "$W/report"; }

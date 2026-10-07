@@ -8,7 +8,9 @@
 # packaged binary, deletes another, changes the mode of a third and adds a
 # stray file to /usr/bin, runs pkg_integrity from a root-owned copy of this
 # tree and checks that exactly those four are reported, with the same
-# message ids the Debian checks use.
+# message ids the Debian checks use. Then it copies the container's root,
+# changes and all, into a directory and audits that as an offline root
+# (TIGRIS_ROOT, as tigris --root sets it): the report must be the same.
 #
 # Exit 0 when every assertion holds, 1 otherwise, 2 when it cannot run.
 #
@@ -87,6 +89,25 @@ else
   echo "FAIL the changes added $added findings, wanted 4:"; cat "$W/report"; fail=1
 fi
 grep -q 'lin005f.*package .unknown' "$W/report" && { echo "FAIL a package name was not found"; fail=1; }
+
+# The same system as an offline root: this container's files copied into a
+# directory, with empty /proc, /sys and /dev as a mounted image has
+IMG=/tigris-img
+rm -rf "$IMG"; mkdir -p "$IMG"
+tar -C / --exclude=./proc --exclude=./sys --exclude=./dev --exclude=.$IMG --exclude=.$W --exclude=./tiger -cf - . 2>/dev/null | tar -C "$IMG" -xpf -
+mkdir -p "$IMG/proc" "$IMG/sys" "$IMG/dev"
+( cd "$W" && TIGRIS_ROOT=$IMG TIGERHOMEDIR=$W sh systems/Linux/2/pkg_integrity 2>&1 ) > "$W/offline.raw"
+TIGRIS_ROOT=$IMG run > "$W/offline"
+rm -rf "$IMG"
+grep -q "^# Checking installed files in $IMG against its $mgr database" "$W/offline.raw" &&
+  echo "ok   offline: the root's database is the one read" || { echo "FAIL offline heading"; head -3 "$W/offline.raw"; fail=1; }
+comm -13 "$W/baseline" "$W/offline" > "$W/offline.report"
+# (Arch and a stripped Alpine have no diff)
+if [ "`grep -c 'lin00[156]\|lin038w' "$W/offline.report"`" -eq 4 ] && [ "`cat "$W/report"`" = "`cat "$W/offline.report"`" ]; then
+  echo "ok   offline: the same four findings, for the root's paths"
+else
+  echo "FAIL offline report differs from the live one (live only, then offline only):"; comm -3 "$W/report" "$W/offline.report"; fail=1
+fi
 
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- report"; cat "$W/report"; }
 exit $fail

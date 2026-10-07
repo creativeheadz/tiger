@@ -61,6 +61,9 @@
 # Tigris: needs root
 #   only root sees which process holds another user's socket.
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the sockets of the running processes.
+#
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
 

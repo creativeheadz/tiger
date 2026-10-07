@@ -17,6 +17,12 @@
 #
 # Linux/deb_checkmd5sums - 24/08/2001
 #
+# 10/07/2026 - atrimbitas - One md5sum run over every package's sums, instead
+#       of one per package, and the paths taken through rootpaths: auditing
+#       an offline root (--root) the files are read there, its links
+#       followed inside it, and reported by the path dpkg knows them by.
+#       Its dpkg database is the one read, and its diversions are listed
+#       with dpkg-divert --admindir.
 # 10/04/2026 - atrimbitas - Read md5sum's output as 'STATUS file' so file names
 #       with spaces work and FAILED is no longer taken for the file name
 #       (Benjamin S. in Debian bug #505906). Recognise current md5sum
@@ -69,13 +75,12 @@
 #       used the infomation from locale puge
 #
 # TODO:
-# - Consider using a single file instead of calling MD5sum
-#   each time.
 # - Add an option to Tiger so some directories might be excluded from this
 #   check.
 #
 # Tigris: needs root
 #   files only root can read would look changed or missing.
+# Tigris: offline
 #
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
@@ -129,13 +134,19 @@ echo "# Checking md5sums of installed files"
 
 haveallcmds MD5SUM CAT CUT SED GREP EGREP BASENAME AWK SORT || exit 1
 
-DIVERSIONS="/var/lib/dpkg/diversions"
+# dpkg's database, this system's or the offline root's
+admindir=`rootfile /var/lib/dpkg`
+info=$admindir/info
+DIVERSIONS=$admindir/diversions
 
-if [ -d /var/lib/dpkg/info ] 
+if [ -d "$info" ]
 then
-ls /var/lib/dpkg/info/*.md5sums | 
-while read md5file; do
-    [ -f $md5file ] && [ ! -L $md5file  ] && {
+sums=$WORKDIR/md5.sums.$$
+where=$WORKDIR/md5.where.$$
+results=$WORKDIR/md5.results.$$
+safe_temp $sums $where $results
+trap 'delete $sums $where $results ; exit 1' 1 2 3 15
+
 # Note: We  do not check things in some /usr/share/ directories to speed things up
 # TODO
 # - This could be user defined, as some systems might have more files in 
@@ -149,49 +160,72 @@ while read md5file; do
 # files per directory by using the following:
 # { ls -d /usr/share/* |while read dir; do [ -d "$dir" ] && { echo -n "$dir:" ; find "$dir" -type f  | wc -l  ; } ; done ; } | awk -F : '{print $2" "$1;}' | sort -n |less
 #
-	$CAT "$md5file" |
-	$EGREP -v "usr/share/(doc|help|man|icons|pixmaps|fonts|i18n|locale|mime|games)/" |
-	$GREP -v " dev/" |
-	$GREP -v " lib/udev/devices/" |
-	$SED -e "s/^\(.*\)  \(.*\)/\1  \/\2/" |
-	$MD5SUM -c 2>&1 | $SED -n -e "s/^\(.*\): FAILED open or read$/ERR \1/p" \
-	    -e "s/^\(.*\): FAILED$/DIFF \1/p" \
-	    -e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/p" \
-	    -e "s/^.*md5sum: can't open \(.*\)/ERR \1/p" | {
-		while read err file
-		do
-			package=`$BASENAME "$md5file" ".md5sums"`
-#                        echo "DEBUG: Checking file $file of $package ($err)" >&2
-			case $err in
-			DIFF)
-				# don't check diverted now
-				[ -z "`$GREP -sxF \"$file\" $DIVERSIONS`" ] &&
-				# and conffiles should not be checked either
-				[ -z "`$GREP -sxF \"$file\" /var/lib/dpkg/info/$package.conffiles`" ] &&
- 				[ -n "`$GREP -sxF \"$file\" /var/lib/dpkg/info/$package.list`" ] &&
-					message FAIL lin005f "" "Installed file \`$file' checksum differs from installed package '$package'."
+# Every package's sums, "package<TAB>md5<TAB>/path"
+for md5file in "$info"/*.md5sums
+do
+	[ -f "$md5file" ] && [ ! -L "$md5file" ] && echo "$md5file"
+done |
+xargs $AWK '
+	{ pkg = FILENAME; sub(/.*\//, "", pkg); sub(/\.md5sums$/, "", pkg)
+	  i = index($0, "  "); if (!i) next
+	  p = "/" substr($0, i + 2)
+	  if (p ~ /^\/usr\/share\/(doc|help|man|icons|pixmaps|fonts|i18n|locale|mime|games)\// || p ~ /^\/(dev|lib\/udev\/devices)\//) next
+	  print pkg "\t" substr($0, 1, i - 1) "\t" p }' > $sums 2>/dev/null
+
+# Where each file is: the path itself, or inside the offline root (empty
+# when its links loop)
+$CUT -f3 $sums | rootpaths > $where
+
+# md5sum's verdicts, "ERR file" or "DIFF file", for the files where they are
+$AWK -F'\t' 'NR == FNR { w[FNR] = $0; next } w[FNR] != "" { print $2 "  " w[FNR] }' $where $sums |
+$MD5SUM -c 2>&1 | $SED -n -e "s/^\(.*\): FAILED open or read$/ERR \1/p" \
+	-e "s/^\(.*\): FAILED$/DIFF \1/p" \
+	-e "s/^.*md5sum: MD5 check failed for '\(.*\)'/DIFF \1/p" \
+	-e "s/^.*md5sum: can't open \(.*\)/ERR \1/p" > $results
+
+# Each verdict for the package and the path dpkg knows the file by:
+# "ERR|DIFF<TAB>package<TAB>/path<TAB>where it is"
+$AWK -F'\t' '
+	FILENAME == ARGV[1] { w[FNR] = $0; next }
+	FILENAME == ARGV[2] {
+		if (w[FNR] == "") print "ERR\t" $1 "\t" $3 "\t"
+		else at[w[FNR]] = at[w[FNR]] $1 "\t" $3 "\t" w[FNR] "\n"
+		next }
+	{ st = $0; sub(/ .*/, "", st); f = substr($0, length(st) + 2)
+	  n = split(at[f], e, "\n"); for (k = 1; k < n; k++) print st "\t" e[k] }' $where $sums $results |
+$SORT -u |
+while IFS='	' read err package file here
+do
+#	echo "DEBUG: Checking file $file of $package ($err)" >&2
+	case $err in
+	DIFF)
+		# don't check diverted now
+		[ -z "`$GREP -sxF \"$file\" $DIVERSIONS`" ] &&
+		# and conffiles should not be checked either
+		[ -z "`$GREP -sxF \"$file\" $info/$package.conffiles`" ] &&
+		[ -n "`$GREP -sxF \"$file\" $info/$package.list`" ] &&
+			message FAIL lin005f "" "Installed file \`$file' checksum differs from installed package '$package'."
 # TODO: Consider including the MD5sum to this message
 # notice that some integrity checkers might do this already too.
-				;;
-			ERR)
+		;;
+	ERR)
 # Check if this package 
- 				if [ ! -e "$file" ] && $GREP -sqxF "$file" /var/lib/dpkg/info/$package.list ; then
+		if [ ! -e "$here" ] && $GREP -sqxF "$file" $info/$package.list ; then
 
-					message FAIL lin006f "" "Cannot check file \"$file\" provided by \"$package\" since it does not exist"
-				fi
-				;;
-			esac
-		done 
-	}
-    }
+			message FAIL lin006f "" "Cannot check file \"$file\" provided by \"$package\" since it does not exist"
+		fi
+		;;
+	esac
 done
+delete $sums $where $results
+
 # check diversions
 if [ -x /usr/bin/dpkg-divert ]; then
 divlist=$WORKDIR/divert.list.$$
 divpat=$WORKDIR/divert.pat.$$
 divowners=$WORKDIR/divert.owners.$$
 safe_temp $divlist $divpat $divowners
-/usr/bin/dpkg-divert --list |
+/usr/bin/dpkg-divert --admindir "$admindir" --list |
 # extract the file diverted, the backup file and the diverter package
 $SED -e 's/diversion of \(\/.*\) to \(\/.*\) by \(.*\)$/\1;\2;\3/' \
      -e 's/local diversion of \(\/.*\) to \(\/.*\)$/\1;\2;LOCAL/' > $divlist
@@ -201,8 +235,8 @@ $SED -e 's/diversion of \(\/.*\) to \(\/.*\) by \(.*\)$/\1;\2;\3/' \
 # file may be recorded under /bin or /usr/bin, so look for both forms.
 $CUT -d';' -f1 $divlist |
 $SED -e 'p' -e 's,^/usr/,/,; t' -e 's,^/,/usr/,' | $SORT -u > $divpat
-$GREP -xF -f $divpat /var/lib/dpkg/info/*.list 2>/dev/null |
-$SED 's,^/var/lib/dpkg/info/\(.*\)\.list:, \1 ,' > $divowners
+$GREP -xF -f $divpat "$info"/*.list 2>/dev/null |
+$SED "s|^$info/\(.*\)\.list:| \1 |" > $divowners
 {
   saveIFS=$IFS
   IFS=";"
@@ -223,12 +257,13 @@ $SED 's,^/var/lib/dpkg/info/\(.*\)\.list:, \1 ,' > $divowners
       else
         currentfile=$tofile
       fi
-      [ -f "/var/lib/dpkg/info/$2.md5sums" ] && {
-        md5pck=`$GREP "$(echo "$file\$"|$CUT -c2-)" /var/lib/dpkg/info/$2.md5sums | $CUT -f 1 -d " "`
+      [ -f "$info/$2.md5sums" ] && {
+        md5pck=`$GREP "$(echo "$file\$"|$CUT -c2-)" "$info/$2.md5sums" | $CUT -f 1 -d " "`
         [ -n "$md5pck" ] && {
-          if [ -f "$currentfile" ]
+          here=`rootfile "$currentfile"`
+          if [ -f "$here" ]
           then
-            md5sum=`$MD5SUM "$currentfile" | $CUT -f 1 -d " "`
+            md5sum=`$MD5SUM "$here" | $CUT -f 1 -d " "`
             [ "$md5pck" != "$md5sum" ] &&
               message FAIL lin005f "" "Installed file \`$currentfile' checksum differs from installed packages."
           else

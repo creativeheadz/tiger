@@ -1,0 +1,18 @@
+Id: con014e
+Severity: ERROR
+Category: tigris
+Check: config
+
+The directory given with --root is not the root of a system Tigris can
+audit: it does not exist, has no etc directory, or its path has
+characters other than letters, digits and / . _ + @ : , = - (a space, a
+quote), which the checks would split or misread. --root audits a
+system that is not running, a disk image mounted somewhere, a container
+image unpacked, a backup, from outside it: the checks read its files
+under that directory, follow its symbolic links inside it, and ask the
+host's own package tools about its databases (dpkg --admindir, rpm
+--root). Nothing from the audited system is run. The run stops before
+any check, so that a mistyped path does not quietly audit the host
+itself. Checks that read the running system (processes, listening
+ports, the firewall, the kernel's settings) are skipped and listed in
+the report as such.

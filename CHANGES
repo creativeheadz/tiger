@@ -1,6 +1,43 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
+Changes since 3.4.0 (unreleased)
+--------------------------------
+
+- tigris --root DIR audits a system that is not running: a disk mounted
+  from another machine, a container image unpacked into a directory, a
+  VM snapshot. Its files are read under DIR through util/rootpath, which
+  follows its symbolic links inside it (an absolute link in an image
+  does not lead to the host's files, and .. stops at DIR), and the
+  host's package tools are pointed at its databases: dpkg --admindir,
+  apt through APT_CONFIG (its apt.conf.d, not the host's, with the
+  host's dpkg named on the command line and no cache or log written),
+  rpm --root (chrooted, without verify scripts), dnf --installroot,
+  zypper --root, apk --root, pacman --sysroot. Nothing from the image
+  is run. A check marks itself "# Tigris: offline" when it can read an
+  offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
+  deb_statoverride, check_updates (without the reboot question) and
+  check_pam. Those marked "# Tigris: live system" (processes, sockets,
+  the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
+  reason, and the rest as "not offline yet"; each skip is in the report
+  and in the JSON, and neither counts against the exit status. The run
+  record carries the root, so tigris-diff counts it as part of the
+  configuration. A --root without an etc directory, or with characters
+  the checks would misread (a space, a quote), stops the run (con014e).
+  tests/deb_checks.sh (Debian, Ubuntu) and tests/pkg_checks.sh (Fedora,
+  Rocky 9, openSUSE Tumbleweed, Alpine, Arch) now also audit a copy of
+  the container's root, and the package checks must report the same of
+  the copy as of the system; tests/offline_check.sh covers the rest.
+  Mounted read-only, dnf 4 and zypper cannot answer (they must write
+  into the root) and upd004i quotes them.
+
+- deb_checkmd5sums checks every package with one md5sum run instead of
+  one per package: on the reference machine 17.5 s instead of 20.5,
+  and 3.3 s of system time instead of 14, with the same findings.
+
+- upd004i quotes dnf's or zypper's own error instead of guessing that
+  the cache is empty.
+
 Changes (v 3.4.0)
 --------------------
 

@@ -164,6 +164,14 @@ echo "       -c name"
 echo "              Specify  an  alternate  name for the tigerrc control"
 echo "              file.  The default is '$RCFILE'."
 echo ""
+echo "       --root dir"
+echo "              Audit the system under dir, not the running one: a"
+echo "              mounted disk, a container image's root filesystem, a"
+echo "              VM snapshot. Files are read under dir with the"
+echo "              host's own tools, and nothing under dir is run. Checks"
+echo "              that need the running system, or cannot read an"
+echo "              offline root yet, say they were skipped."
+echo ""
 echo "       -p name, --profile name"
 echo "              Apply a profile on top of the tigerrc: its settings"
 echo "              replace the tigerrc's. Profiles are files in the"
@@ -273,6 +281,8 @@ checkfile()
   export Tiger_TESTMODE TigerCleanup HTML
   SINCE_RUN=
   PROFILE=
+  # --root, or tigris run with TIGRIS_ROOT set (the tests run checks so)
+  TIGRIS_ROOT=${TIGRIS_ROOT:-}
   doversion=0
   
   while [ $# != 0 ]
@@ -285,6 +295,9 @@ checkfile()
      -w) WORKDIR=$2; shift;;
      -b) BINDIR=$2; shift;;
      -c) RCFILE=$2; shift;;
+     --root)
+        [ $# -ge 2 ] || { echo "--ERROR-- [con014e] --root needs the directory to audit."; exit 1; }
+        TIGRIS_ROOT=$2; shift;;
      -p|--profile)
         [ $# -ge 2 ] || { echo "--ERROR-- [con013e] $1 needs the name of a profile: quick, server, desktop, container."; exit 1; }
         PROFILE=$2; shift;;
@@ -305,6 +318,24 @@ checkfile()
     esac
     shift;
   done
+
+  # --root: the directory audited instead of the running system, as an
+  # absolute path; / is the running system after all
+  [ -n "$TIGRIS_ROOT" ] && {
+    if [ ! -d "$TIGRIS_ROOT/etc" ]; then
+      echo "--ERROR-- [con014e] $TIGRIS_ROOT is not the root of a system to audit: it has no etc directory."
+      exit 1
+    fi
+    TIGRIS_ROOT=`cd "$TIGRIS_ROOT" && pwd -P`
+    # The checks pass it to commands unquoted, and apt reads it quoted
+    case "$TIGRIS_ROOT" in
+      *[!A-Za-z0-9/._+@:,=-]*)
+        echo "--ERROR-- [con014e] $TIGRIS_ROOT is not a path --root can take: only letters, digits and / . _ + @ : , = - (mount or link the system somewhere that is)."
+        exit 1 ;;
+    esac
+    [ "$TIGRIS_ROOT" = / ] && TIGRIS_ROOT=
+  }
+  export TIGRIS_ROOT
 
   TIGERVERSION="`/bin/cat $TIGERHOMEDIR/version.h 2>/dev/null`"
   [ ! -n "$TIGERVERSION" ] && TIGERVERSION="undetermined"

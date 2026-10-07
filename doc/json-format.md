@@ -28,6 +28,7 @@ order:
 | `host`, `os`, `release`, `arch` | What was audited. `release` is the kernel on Linux. |
 | `config` | The `tigerrc` the run used, since that decides what was checked. |
 | `profile` | Optional. The profile applied on top of it (`--profile`): `quick`, `server`, `desktop`, `container`, or a site's own. A diff between runs with different configs or profiles says `configs_differ`. |
+| `root` | Optional. The directory audited instead of the running system (`--root`): a mounted disk, an image's root filesystem, a VM snapshot. A diff between runs of different roots says `configs_differ`. |
 | `filesystem_scan` | `false` when the filesystem scan was switched off (the quick profile). Such a run has no `fsys*` findings because it did not look for them, not because there are none. Absent in reports from before the field existed, which always scanned. |
 | `start` | UTC, `YYYY-MM-DDTHH:MM:SSZ`. |
 
@@ -47,12 +48,20 @@ order:
 
 ### `skip`
 
-A check that was not run: `check` (the script) and `reason`, today always
-`needs root`. A check whose header says `# Tigris: needs root` cannot give
-a true answer without root (it would report what it could not read as
-missing or changed), so a run by another user skips it rather than
-guess. The text report has a `# Skipped NAME` line for it, and the exit
-status counts it as a check that could not run (2).
+A check that was not run: `check` (the script) and `reason`:
+
+- `needs root`: the check's header says `# Tigris: needs root`, and Tigris
+  was not running as root. It cannot give a true answer without root (it
+  would report what it could not read as missing or changed), so it is
+  skipped rather than guess, and the exit status counts it as a check
+  that could not run (2).
+- `live system`: the audit is of an offline root (`--root`), and the
+  check reads the running system (its processes, kernel or firmware).
+- `not offline yet`: the audit is of an offline root, and the check
+  cannot read one yet. Only checks whose header says `# Tigris: offline`
+  read everything under the root.
+
+The text report has a `# Skipped NAME` line for each.
 
 ```
 {"type":"skip","check":"check_sudo","reason":"needs root"}

@@ -64,6 +64,24 @@ what only servers run) and `container` (for an image or a container,
 without the host's kernel, boot, firewall and disks). A profile of your
 own goes in a `profiles/` directory beside your `tigerrc`.
 
+To audit a system that is not running (a disk mounted from another
+machine, a container image unpacked into a directory, a VM snapshot),
+name its root:
+
+    sudo ./tigris --root /mnt/image
+
+Its files are read in that directory, its symbolic links followed
+inside it (an absolute link in the image does not lead to this
+machine's files), and this machine's dpkg, apt, rpm, dnf, zypper, apk
+or pacman are pointed at its package databases. Nothing in the image is
+run. Checks that read a running system (processes, listening ports, the
+firewall, kernel settings) are skipped, and so, for now, are the checks
+that cannot read an offline root yet; the report lists each one with
+the reason. The checks that can: package integrity, updates waiting,
+PAM, and dpkg's mode overrides. Tigris writes nothing into the root,
+but the package tools may write their logs and caches there as they
+would on that system; mount it read-only if it must stay unchanged.
+
 Tigris needs no compiler. If you have one, `make && make -C c install`
 builds a few small C helpers into `bin/`, which Tigris then prefers to
 its shell equivalents.

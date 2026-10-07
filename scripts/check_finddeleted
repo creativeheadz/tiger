@@ -45,6 +45,9 @@
 # Tigris: needs root
 #   only root sees the open files of other users' processes.
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the open files of the running processes.
+#
 #-----------------------------------------------------------------------------
 #
 # TODO:

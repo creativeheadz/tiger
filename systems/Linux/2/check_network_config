@@ -34,6 +34,9 @@
 # http://www.linuxsecurity.com/articles/network_security_article-4528.html
 # http://linux.oreillynet.com/pub/a/linux/2000/11/16/LinuxAdmin.html
 # 
+# Tigris: live system
+#   Under --root it is skipped: it reads the running kernel's network settings (/proc).
+#
 #-----------------------------------------------------------------------------
 # TODO
 # 

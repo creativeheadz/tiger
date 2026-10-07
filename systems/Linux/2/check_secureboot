@@ -33,6 +33,9 @@
 #   https://uefi.org/specs/UEFI/2.10/32_Secure_Boot_and_Driver_Signing.html
 #   man 7 kernel_lockdown
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the firmware and the running kernel.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

@@ -27,6 +27,9 @@
 # 04/15/2005 - jfs - Capture arguments in an extra value, use fname first
 #               and then check against comm
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the running processes.
+#
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
 

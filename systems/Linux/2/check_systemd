@@ -30,6 +30,9 @@
 # References:
 #   man systemd-analyze (security), man systemd.exec (sandboxing options)
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the running services, scored by systemd-analyze.
+#
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
 

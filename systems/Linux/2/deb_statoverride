@@ -27,6 +27,11 @@
 #                 the files. An entry whose file is gone is left alone.
 #                 Tiger_Deb_StatOverride_Cmd replaces the dpkg-statoverride
 #                 call, so the tests can feed a list of their own.
+# 10/07/2026 atrimbitas - An offline root (--root): its own list, through
+#                 --admindir, its files through rootfile, and the names of
+#                 their owners from its passwd and group files.
+#
+# Tigris: offline
 #
 #-----------------------------------------------------------------------------
 #
@@ -66,7 +71,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds SED || exit 1
+  haveallcmds AWK SED || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
 
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -75,7 +80,7 @@ done
 
 #------------------------------------------------------------------------
 
-haveallcmds SED || exit 1
+haveallcmds AWK SED || exit 1
 
 so_cmd=${Tiger_Deb_StatOverride_Cmd:-}
 if [ -z "$so_cmd" ]; then
@@ -83,6 +88,7 @@ if [ -z "$so_cmd" ]; then
   so=${DPKG%/*}/dpkg-statoverride
   [ -n "$DPKG" ] && [ -x "$so" ] || exit 0
   so_cmd="$so --list"
+  [ -n "$TIGRIS_ROOT" ] && so_cmd="$so --admindir `rootfile /var/lib/dpkg` --list"
 fi
 stat=
 for d in /usr/bin /bin
@@ -94,15 +100,26 @@ done
 echo
 echo "# Checking files against dpkg's mode and owner overrides (dpkg-statoverride)..."
 
+# An offline root's owners are named by its own passwd and group files
+pwfile= grfile=
+[ -n "$TIGRIS_ROOT" ] && pwfile=`rootfile /etc/passwd` grfile=`rootfile /etc/group`
+idname()
+{
+  __n=`$AWK -F: -v n="$2" '$3 == n { print $1; exit }' "$1" 2>/dev/null`
+  echo "${__n:-$2}"
+}
+
 # Each entry is "user group mode path"; a user or group written "#N" is a
 # number. The path is the rest of the line.
 $so_cmd 2>/dev/null |
 while read user group mode path
 do
   [ -n "$path" ] || continue
-  set -- `$stat -c '%u %g %a %U %G' "$path" 2>/dev/null`
+  here=`rootfile "$path"`
+  set -- `$stat -c '%u %g %a %U %G' "$here" 2>/dev/null`
   [ $# -eq 5 ] || continue
   uid=$1 gid=$2 have=$3 uname=$4 gname=$5
+  [ -n "$pwfile" ] && uname=`idname "$pwfile" $uid` gname=`idname "$grfile" $gid`
   want=`echo "$mode" | $SED 's/^0*//'`
   [ -n "$want" ] || want=0
   ok=Y

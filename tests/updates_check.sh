@@ -151,7 +151,7 @@ has '[upd002w]' && ok "dnf-automatic.timer with apply_updates = no only download
 mkdir -p "$W/fed/etc/dnf/dnf5-plugins"; printf '[commands]\napply_updates = yes\n' > "$W/fed/etc/dnf/dnf5-plugins/automatic.conf"
 go fed dnf "`dnf dnfnocache rpmnone`"
 [ "`count upd002w`" = 0 ] && ok "dnf5's automatic.conf with apply_updates = yes: automatic" || { bad "apply yes"; cat "$W/out"; }
-has '[upd004i] Security updates waiting cannot be counted: dnf has no cached metadata' && [ "`count upd001w`" = 0 ] &&
+has "[upd004i] Security updates waiting cannot be counted: dnf could not answer from its cache (Error: Cache-only enabled but no cache for 'fedora')." && [ "`count upd001w`" = 0 ] &&
   ok "dnf without a cache: upd004i; rpm without kernel-core: no reboot guessed" || { bad "dnf no cache"; cat "$W/out"; }
 tree suse 6.4.0-150600.23.25-default
 go suse zypper "Tiger_Zypper_Security_Cmd='sh $W/zypper'"

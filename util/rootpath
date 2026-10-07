@@ -1,0 +1,94 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# rootpath ROOT [TABLE]: for each path on standard input, a path inside the
+#                 audited system ROOT (as /etc/pam.d/login), print where it
+#                 is on this host, resolving symbolic links the way that
+#                 system would: an absolute target starts again from ROOT,
+#                 and .. stops at ROOT. Nothing outside ROOT is ever named,
+#                 so a link in an image cannot make Tigris read the host's
+#                 own files. A path that loops prints an empty line.
+#
+# 10/07/2026 atrimbitas - Initial version, for tigris --root. Following the
+#                 links with the host's own tools would treat an absolute
+#                 target (/etc/shadow) as the host's, and a relative one
+#                 could climb out with ../..; chroot would mean running the
+#                 audited system's binaries. Instead every link under ROOT
+#                 is listed once (find -printf, or readlink after busybox's
+#                 find) into TABLE, kept for the rest of the run when one is
+#                 named, and one awk walks each path through it.
+#
+#-----------------------------------------------------------------------------
+#
+root=${1:?usage: rootpath ROOT [TABLE] < paths}
+root=${root%/}
+# / is this system: its paths are where they are
+[ -n "$root" ] || exec cat
+table=$2
+AWK=${AWK:-awk}
+
+# The links under ROOT, "/path<TAB>target", listed once when TABLE is named.
+# /proc, /sys, /dev and /run of a root are what a running system mounts
+# there, not what it holds. busybox find has no -printf.
+links()
+{
+  if find / -maxdepth 0 -printf '' 2>/dev/null; then
+    find "$root" \( -path "$root/proc" -o -path "$root/sys" -o -path "$root/dev" -o -path "$root/run" \) -prune \
+      -o -type l -printf '/%P\t%l\n' 2>/dev/null
+  else
+    find "$root" \( -path "$root/proc" -o -path "$root/sys" -o -path "$root/dev" -o -path "$root/run" \) -prune \
+      -o -type l -print 2>/dev/null |
+    while IFS= read -r l
+    do
+      printf '%s\t%s\n' "${l#"$root"}" "`readlink "$l"`"
+    done
+  fi
+}
+if [ -n "$table" ] && [ ! -s "$table" ]; then
+  { echo "#links"; links; } > "$table" || exit 2
+fi
+
+{
+  if [ -n "$table" ]; then cat "$table"; else links; fi
+  echo "#paths"
+  cat
+} | $AWK -F'\t' -v root="$root" '
+  # resolve P (absolute, inside the root) to the path it names there
+  function resolve(p,   cur, rest, i, comp, cand, t, links) {
+    cur = ""; rest = p; links = 0
+    while (1) {
+      sub(/^\/+/, "", rest)
+      if (rest == "") break
+      i = index(rest, "/")
+      if (i) { comp = substr(rest, 1, i - 1); rest = substr(rest, i) } else { comp = rest; rest = "" }
+      if (comp == ".") continue
+      if (comp == "..") { sub(/\/[^\/]*$/, "", cur); continue }
+      cand = cur "/" comp
+      if (cand in link) {
+        if (++links > 40) return ""
+        t = link[cand]
+        if (substr(t, 1, 1) == "/") cur = ""
+        rest = t (rest == "" ? "" : "/" rest)
+      } else
+        cur = cand
+    }
+    return root (cur == "" ? "/" : cur)
+  }
+  !paths && $0 == "#links" { next }
+  !paths && $0 == "#paths" { paths = 1; next }
+  !paths { link[$1] = $2; next }
+  { print resolve($0) }'

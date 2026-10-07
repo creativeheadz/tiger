@@ -17,6 +17,9 @@
 #
 # check_system - 06/15/93
 #
+# Tigris: offline
+#   Under --root it runs: it only starts the system-specific checks, which decide for themselves.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

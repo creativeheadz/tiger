@@ -117,7 +117,8 @@ function jtext(rec, key,    s, out, c, i, n) {
 function take(rec, which,    key, level) {
   if (index(rec, "\"type\":\"finding\"") == 0) {
     if (index(rec, "\"type\":\"run\"") > 0) run[which] = rec
-    # a check skipped in either run (it needs root) is left out of both
+    # a check skipped in either run (it needs root, or reads only a running
+    # system) is left out of both
     if (index(rec, "\"type\":\"skip\"") > 0 && !(jraw(rec, "check") in skipped)) skipped[jraw(rec, "check")] = ++nskipped
     return
   }
@@ -150,8 +151,8 @@ END {
   }
   # a profile on top of the tigerrc counts as part of the configuration
   for (r = 1; r <= 2; r++) {
-    c = jtext(run[r], "config"); p = jtext(run[r], "profile")
-    cfg[r] = c "|" p; show[r] = (c == "" ? "?" : c) (p == "" ? "" : " with profile " p)
+    c = jtext(run[r], "config"); p = jtext(run[r], "profile"); o = jtext(run[r], "root")
+    cfg[r] = c "|" p "|" o; show[r] = (c == "" ? "?" : c) (p == "" ? "" : " with profile " p) (o == "" ? "" : " of " o)
   }
   config1 = cfg[1]; config2 = cfg[2]
   if (nskipped) {
@@ -185,7 +186,7 @@ END {
     if (config1 != config2)
       printf "  note: the runs used different configurations (%s, %s); a check on in only one of them shows its findings as new or resolved\n", show[1], show[2]
     if (nskipped) {
-      printf "  note: skipped in a run that was not root, so left out of both sides:"
+      printf "  note: skipped in either run (not root, or a check that cannot read an offline root), so left out of both sides:"
       for (i = 1; i <= nskipped; i++) printf "%s %s", (i > 1 ? "," : ""), skipname[i]
       printf "\n"
     }

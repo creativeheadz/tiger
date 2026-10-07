@@ -36,6 +36,9 @@
 # Tigris: needs root
 #   auditctl lists the rules for root only.
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the running auditd and journald.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

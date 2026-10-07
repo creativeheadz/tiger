@@ -10,3 +10,10 @@ cached metadata, or zypper could not read its repositories without
 refreshing them. Tigris does not refresh them itself, since that
 needs the network. 'apt update', 'dnf makecache' or 'zypper refresh'
 fill the cache, and the next run counts.
+
+Auditing an offline root (--root) that is mounted read-only, dnf 4
+cannot write its log there and zypper cannot rebuild its cache, so they
+do not answer; the message quotes what they said. A writable copy of
+the root lets them answer, writing their logs and caches into it as
+they would on that system (dnf 5's log, and zypper's lock and log, are
+kept out of it).

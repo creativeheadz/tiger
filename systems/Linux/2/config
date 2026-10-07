@@ -103,18 +103,20 @@ findcmd()
 
 # First of all, determine our distribution (might affect tests
 # below)
+# Auditing an offline root (--root), it is that system's distribution.
 LXDISTRIBUTION="unknown"
-[ -f /etc/redhat-release ] && LXDISTRIBUTION="redhat"
-[ -f /etc/debian_version ] && LXDISTRIBUTION="debian"
-[ -f /etc/SuSE-release ] && LXDISTRIBUTION="redhat"
-[ -f /etc/immunix-release ] && LXDISTRIBUTION="inmunix"
-[ -f /etc/mandrake-release ] && LXDISTRIBUTION="mandrake"
-[ -f /etc/turbolinux-release ] && LXDISTRIBUTION="turbolinux"
+[ -f "$TIGRIS_ROOT/etc/redhat-release" ] && LXDISTRIBUTION="redhat"
+[ -f "$TIGRIS_ROOT/etc/debian_version" ] && LXDISTRIBUTION="debian"
+[ -f "$TIGRIS_ROOT/etc/SuSE-release" ] && LXDISTRIBUTION="redhat"
+[ -f "$TIGRIS_ROOT/etc/immunix-release" ] && LXDISTRIBUTION="inmunix"
+[ -f "$TIGRIS_ROOT/etc/mandrake-release" ] && LXDISTRIBUTION="mandrake"
+[ -f "$TIGRIS_ROOT/etc/turbolinux-release" ] && LXDISTRIBUTION="turbolinux"
 # /etc/os-release names the distribution (ID) and the ones it descends from
 # (ID_LIKE), which is how Ubuntu, Mint and Pop!_OS are Debian and Rocky,
 # Alma and Fedora are Red Hat. It is read as text, never sourced: this runs
 # as root. Tiger_Os_Release lets the tests point at a file of their own.
-__osrel=${Tiger_Os_Release:-/etc/os-release}
+__osrel=${Tiger_Os_Release:-$TIGRIS_ROOT/etc/os-release}
+[ -r "$__osrel" ] || [ -n "$Tiger_Os_Release" ] || __osrel=$TIGRIS_ROOT/usr/lib/os-release
 TESTEXEC=-x     # findcmd tests with it, and it is only set again further down
 __sed=`findcmd sed`; __tr=`findcmd tr`      # SED and TR are defined further down
 if [ -r "$__osrel" ] && [ -n "$__sed" ] && [ -n "$__tr" ]; then
@@ -133,12 +135,15 @@ export LXDISTRIBUTION
 # one to expect; the command being there says whether it is usable. Mint is
 # Debian by ID_LIKE and has dpkg; a container image with the package
 # database stripped out has none, and the checks then say nothing.
+# Auditing an offline root, the database is that system's and the tool the
+# host's own (nothing under the root is run): both have to be there.
 LXPKGMGR=none
 case "$LXDISTRIBUTION" in
-  debian) command -v dpkg >/dev/null 2>&1 && [ -d /var/lib/dpkg/info ] && LXPKGMGR=dpkg ;;
-  redhat|suse) command -v rpm >/dev/null 2>&1 && LXPKGMGR=rpm ;;
-  alpine) command -v apk >/dev/null 2>&1 && LXPKGMGR=apk ;;
-  arch) command -v pacman >/dev/null 2>&1 && LXPKGMGR=pacman ;;
+  debian) command -v dpkg >/dev/null 2>&1 && [ -d "$TIGRIS_ROOT/var/lib/dpkg/info" ] && LXPKGMGR=dpkg ;;
+  redhat|suse) command -v rpm >/dev/null 2>&1 &&
+    { [ -z "$TIGRIS_ROOT" ] || [ -d "$TIGRIS_ROOT/var/lib/rpm" ] || [ -d "$TIGRIS_ROOT/usr/lib/sysimage/rpm" ]; } && LXPKGMGR=rpm ;;
+  alpine) command -v apk >/dev/null 2>&1 && { [ -z "$TIGRIS_ROOT" ] || [ -f "$TIGRIS_ROOT/lib/apk/db/installed" ]; } && LXPKGMGR=apk ;;
+  arch) command -v pacman >/dev/null 2>&1 && { [ -z "$TIGRIS_ROOT" ] || [ -d "$TIGRIS_ROOT/var/lib/pacman/local" ]; } && LXPKGMGR=pacman ;;
 esac
 export LXPKGMGR
 

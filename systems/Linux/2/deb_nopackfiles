@@ -17,6 +17,9 @@
 #
 # Linux/deb_nopackfiles - 23/08/2001
 # 
+# 10/07/2026 - atrimbitas - Auditing an offline root (--root): its files and
+#              its dpkg database (dpkg --admindir), its directories taken
+#              only where they are directories of its own, not links.
 # 10/04/2026 - atrimbitas - Support merged-/usr systems (Debian bug #1111306).
 #              Test the directory itself for a symlink, since '/bin/' with
 #              a trailing slash resolves the link and /lib then pulled in
@@ -52,6 +55,8 @@
 # dlocate could be faster
 # DLOCATE=`command -v dlocate`
 # DLOCATE=${DLOCATE:-$DPKG}
+#
+# Tigris: offline
 #
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
@@ -91,7 +96,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds FIND GREP || exit 1
+  haveallcmds FIND GREP SED || exit 1
   if [ "$Tiger_DPKG_Optimize" = "N" ]
   then
   	haveallcmds DPKG || exit 1
@@ -107,7 +112,7 @@ done
 echo
 echo "# Checking installed files against packages..."
 
-haveallcmds FIND GREP || exit 1
+haveallcmds FIND GREP SED || exit 1
 if [ "$Tiger_DPKG_Optimize" = "N" ]
 then
 	haveallcmds DPKG || exit 1
@@ -116,6 +121,10 @@ fi
 safe_temp $WORKDIR/dpkg-packages.list $WORKDIR/dpkg-diversions.list
 trap 'delete $WORKDIR/dpkg-packages.list $WORKDIR/dpkg-diversions.list ; exit 1' 1 2 3 15
 
+# The system audited: this one, or the offline root R and its database
+R=$TIGRIS_ROOT
+admindir=`rootfile /var/lib/dpkg`
+
 # NOTE: /usr/lib cannot be added here since quite a lot of packages
 # will compile stuff there on installation which will result in a 
 # tremendous report...
@@ -123,7 +132,7 @@ dirlist="/bin/ /usr/bin/ /sbin/ /usr/sbin/ /lib/ /usr/X11R6/bin"
 okdirs=""
 # Before using dirlist we are going to determine which values are ok
 for dir in $dirlist ; do
-	if [ -d $dir ] && [ ! -L "${dir%/}" ] ; then
+	if [ -d "$R$dir" ] && [ ! -L "$R${dir%/}" ] && [ "`rootfile ${dir%/}`" = "$R${dir%/}" ] ; then
 		if [ -n "$okdirs" ] ; then
 			okdirs="$dir $okdirs" 
 		else
@@ -137,18 +146,25 @@ if [ -z "$dirlist" ]; then
 	exit 1
 fi
 
+# The files under them, by their path on the system audited
+binfiles()
+{
+	# shellcheck disable=SC2086
+	( cd "${R:-/}" && for dir in $dirlist ; do $FIND ".$dir" -type f ; done ) 2>/dev/null | $SED 's,^\.,,'
+}
+
 # We have two options here, use dpkg (non-optimal but on the safe side)
 # or use grep (optimal but not on the safe side)
 if [ "$Tiger_DPKG_Optimize" = "N" ]
 then
-        $FIND $dirlist -type f 2>/dev/null|
+        binfiles |
         # We are not using -maxdepth here, but we could...
         while read file
         do
-                pack=`$DPKG -S $file 2>/dev/null`
+                pack=`$DPKG --admindir="$admindir" -S $file 2>/dev/null`
                 # On merged-/usr systems dpkg may record the file under /bin, /sbin or /lib
                 [ "$pack" = "" ] && [ "${file#/usr/}" != "$file" ] &&
-                pack=`$DPKG -S ${file#/usr} 2>/dev/null`
+                pack=`$DPKG --admindir="$admindir" -S ${file#/usr} 2>/dev/null`
                 [ "$pack" = "" ] && {
                 message WARN lin001w "" "File \`$file' does not belong to any package." 
                 }
@@ -160,12 +176,12 @@ else
 	# may record a file under either path, so rewrite them to /usr
 	usrmerge=
 	for dir in bin sbin lib ; do
-		[ -L /$dir ] && usrmerge="$usrmerge -e s,^/$dir/,/usr/$dir/,"
+		[ -L "$R/$dir" ] && usrmerge="$usrmerge -e s,^/$dir/,/usr/$dir/,"
 	done
-	$FIND /var/lib/dpkg/info -name "*.list" -exec cat {} \; |
+	$FIND "$admindir/info" -name "*.list" -exec cat {} \; |
         $SED -n $usrmerge -e "/^\($seddirlist\)/p" > $WORKDIR/dpkg-packages.list
-	$SED -e '' $usrmerge /var/lib/dpkg/diversions > $WORKDIR/dpkg-diversions.list
-        $FIND $dirlist -type f  2>/dev/null |
+	$SED -e '' $usrmerge "$admindir/diversions" > $WORKDIR/dpkg-diversions.list
+        binfiles |
         # We are not using -maxdepth here, but we could...
         $GREP -x -F -v -f $WORKDIR/dpkg-packages.list |
         # To search for diversions

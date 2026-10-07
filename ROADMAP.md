@@ -580,7 +580,15 @@ what scripts and cron see.
   changed, so cron needs no wrapper: `tigris -q --since last`.
 - [ ] **Offline audit**: `tigris --root /mnt/image` audits a mounted disk,
   a container image's root filesystem or a VM snapshot without booting
-  it. Lynis cannot do this.
+  it. Lynis cannot do this. On master: the option, links resolved inside
+  the root (`util/rootpath`), the host's package tools pointed at the
+  root's databases, skip records saying "live system" or "not offline
+  yet", and six checks that read an offline root (package integrity on
+  dpkg, rpm, apk and pacman; updates waiting; PAM; dpkg's overrides).
+  Still to read one: systemd units (`systemctl --root`), the file
+  system scan, accounts and passwords, cron, SSH's configuration, sudo
+  (`cvtsudoers` on the root's sudoers), the sysctl.d files, storage's
+  fstab and crypttab.
 - [ ] **A transparent summary**: counts by severity and category, and any
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old

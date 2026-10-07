@@ -599,6 +599,65 @@ safe_temp()
   done
 }
 #
+# rootpaths: for each path of the audited system on standard input (as
+# /etc/pam.d/login), where it is on this host. On the running system that
+# is the path itself; auditing an offline root (--root) it is resolved
+# inside the root by util/rootpath, symbolic links followed the way that
+# system would follow them, so that nothing outside the root is read.
+# The tests' Tiger_Sysctl_Root is such a root too.
+# rootfile PATH: the same for one path.
+# rootls DIR: the entries of the audited system's DIR, as its paths.
+rootpaths()
+{
+  if [ -n "$TIGRIS_ROOT$Tiger_Sysctl_Root" ]; then
+    AWK=$AWK sh $BASEDIR/util/rootpath "${TIGRIS_ROOT:-$Tiger_Sysctl_Root}" "$TIGRIS_LINKS"
+  else
+    cat
+  fi
+}
+rootfile()
+{
+  printf '%s\n' "$1" | rootpaths
+}
+rootls()
+{
+  __rdir=`rootfile "$1"`
+  for __rent in "$__rdir"/* "$__rdir"/.[!.]*
+  do
+    [ -e "$__rent" ] || [ -L "$__rent" ] && printf '%s\n' "${1%/}/${__rent##*/}"
+  done
+}
+
+# skip_check SCRIPT: whether a check runs here, from what its header says.
+# When it does not, a "# Skipped" line goes in the report and a skip record
+# in the JSON, and it returns 0.
+#  - Auditing an offline root (--root, TIGRIS_ROOT): only a check that says
+#    "# Tigris: offline" reads everything under that root; one that says
+#    "# Tigris: live system" needs the running system (its processes,
+#    kernel, firmware); any other cannot read an offline root yet.
+#  - Not running as root: a check that says "# Tigris: needs root" cannot
+#    give a true answer (it would report what it could not read as missing
+#    or changed). The exit status counts it as a check that could not run.
+skip_check()
+{
+  __sname=${1##*/}
+  if [ -n "$TIGRIS_ROOT" ] && ! $GREP -q '^# Tigris: offline$' "$1" 2>/dev/null; then
+    if $GREP -q '^# Tigris: live system$' "$1" 2>/dev/null; then
+      __why="live system" __text="it reads the running system, and this audit is of $TIGRIS_ROOT"
+    else
+      __why="not offline yet" __text="it cannot read an offline root yet"
+    fi
+  elif [ "$UUID" != 0 ] && $GREP -q '^# Tigris: needs root$' "$1" 2>/dev/null; then
+    __why="needs root" __text="it needs root, and Tigris is not running as root"
+  else
+    return 1
+  fi
+  echo "# Skipped $__sname: $__text."
+  [ -n "$Tiger_JSON_File" ] && printf '{"type":"skip","check":"%s","reason":"%s"}\n' "$__sname" "$__why" >> "$Tiger_JSON_File"
+  return 0
+}
+
+#
 # Run_script() function
 # This function will run a script first looking for it in the most
 # specific directories (those belonging to a given operating system
@@ -607,21 +666,6 @@ safe_temp()
 # It will also check that the script is owned by the same user running
 # the program and wether or not it is executable.
 #
-# skip_unless_root SCRIPT: a check whose header says "# Tigris: needs root"
-# cannot give a true answer without root (it would report what it could
-# not read as missing or changed). Run by someone else, it is skipped:
-# a line in the report, a skip record in the JSON, and the exit status
-# counts it as a check that could not run. Returns 0 when it skipped it.
-skip_unless_root()
-{
-  [ "$UUID" = 0 ] && return 1
-  $GREP -q '^# Tigris: needs root$' "$1" 2>/dev/null || return 1
-  __sname=${1##*/}
-  echo "# Skipped $__sname: it needs root, and Tigris is not running as root."
-  [ -n "$Tiger_JSON_File" ] && printf '{"type":"skip","check":"%s","reason":"needs root"}\n' "$__sname" >> "$Tiger_JSON_File"
-  return 0
-}
-
 run_script()
 {
   __script_run=""
@@ -646,7 +690,7 @@ run_script()
             if test $TESTEXEC $__script_run; then
 	            # The owner may run it, and so may the same person via sudo
 	            if [ $__script_owner -eq $UUID ] || [ "$__script_owner" = "${SUDO_UID:-}" ]; then
-			skip_unless_root "$__script_run" || $__script_run
+			skip_check "$__script_run" || $__script_run
 		    else
 			message ERROR misc024e "" "The $__script_run script will not be run since it is owned by a user ($__script_owner) different than the one running Tiger ($UUID)"
   			__error=1

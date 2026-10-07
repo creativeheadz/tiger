@@ -148,6 +148,7 @@ MISCFILES=./initdefs \
 	./util/flogit \
 	./util/meta2html \
 	./util/pkgspecial \
+	./util/rootpath \
 	./util/getfs-amd \
 	./util/getfs-automount \
 	./util/getfs-nfs \

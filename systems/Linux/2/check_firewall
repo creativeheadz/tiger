@@ -53,6 +53,9 @@
 # Tigris: needs root
 #   the kernel's ruleset (nft list ruleset) is root's to read.
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the ruleset loaded in the running kernel.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

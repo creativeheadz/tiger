@@ -38,6 +38,9 @@
 #   https://docs.docker.com/engine/security/
 #   man 1 podman-run (--privileged, --pid, --network)
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the running container engines and containers.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

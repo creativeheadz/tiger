@@ -68,7 +68,7 @@ sh "$W/tigris-diff" -j "$W/a.jsonl" "$W/b.jsonl" > "$W/diff.json"
 grep -q '"resolved":\[{"type":"finding","level":"WARN","id":"time001w"' "$W/diff.json" && ! grep -q 'sudo001w' "$W/diff.json" &&
   grep -q '"skipped_checks":\["check_sudo"\]' "$W/diff.json" &&
   ok "tigris-diff: the skipped check's finding is not resolved; the other one is" || { bad "diff"; cat "$W/diff.json"; }
-sh "$W/tigris-diff" "$W/a.jsonl" "$W/b.jsonl" | grep -q 'note: skipped in a run that was not root, so left out of both sides: check_sudo' &&
+sh "$W/tigris-diff" "$W/a.jsonl" "$W/b.jsonl" | grep -q 'note: skipped in either run (not root, or a check that cannot read an offline root), so left out of both sides: check_sudo' &&
   ok "tigris-diff's text says so" || bad "diff text"
 sh "$W/tests/schema_check.sh" "$W/a.jsonl" > /dev/null 2>&1 && sh "$W/tests/schema_check.sh" "$W/b.jsonl" > /dev/null 2>&1 &&
   ok "both hand-made reports validate" || bad "schema of the hand-made reports"

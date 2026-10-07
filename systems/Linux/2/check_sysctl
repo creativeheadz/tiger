@@ -31,6 +31,9 @@
 #   https://www.kernel.org/doc/html/latest/admin-guide/sysctl/fs.html
 #   https://www.kernel.org/doc/html/latest/networking/ip-sysctl.html
 #
+# Tigris: live system
+#   Under --root it is skipped: it reads the running kernel's settings (/proc/sys).
+#
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
 

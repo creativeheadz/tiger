@@ -232,6 +232,10 @@ echo "Tiger security scripts *** $version ***"
   $DATE >> $logtmp
   echo "`$TIMECMD`> Beginning security report for ${HOSTNAME} ($ARCH $OS $REV)." >> $logtmp
   echo "`$TIMECMD`> Beginning security report for ${HOSTNAME}."
+  [ -n "$TIGRIS_ROOT" ] && {
+    echo "# Auditing the system in $TIGRIS_ROOT, which is not running: its files are read from ${HOSTNAME}, with ${HOSTNAME}'s tools, and checks of a running system are skipped." >> $logtmp
+    echo "`$TIMECMD`> Auditing the system in $TIGRIS_ROOT, which is not running."
+  }
   # The same findings as JSON Lines, next to the text report
   [ "$Tiger_Output_JSON" != 'N' ] && {
     Tiger_JSON_File="$LOGDIR/security.report.${HOSTNAME}.$datestamp.jsonl"
@@ -247,6 +251,8 @@ echo "Tiger security scripts *** $version ***"
     # the profile (--profile) applied on top of the tigerrc, when one was
     profile=
     [ -n "$PROFILE" ] && profile=",\"profile\":\"$PROFILE\""
+    # the directory audited instead of the running system (--root)
+    [ -n "$TIGRIS_ROOT" ] && profile="$profile,\"root\":\"`printf '%s' "$TIGRIS_ROOT" | json_escape`\""
     echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\"$profile,\"filesystem_scan\":$fsscan,\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
   }
 }
@@ -279,14 +285,26 @@ export TigerCheckEmbedded
   echo "# Filesystem scan not run (Tiger_Check_FILESYSTEM=N in $RCFILE): setuid, device, symlink, unowned and odd-name findings (fsys*) are absent because they were not looked for, not because there are none." >> $logtmp
 }
 
+# Auditing an offline root: its symbolic links, listed once for every
+# check's rootfile and rootpaths (util/rootpath), before any check runs
+[ -n "$TIGRIS_ROOT" ] && {
+  TIGRIS_LINKS=$WORKDIR/rootlinks.$$
+  TigerCleanup="$TigerCleanup $TIGRIS_LINKS"
+  safe_temp $TIGRIS_LINKS
+  sh $BASEDIR/util/rootpath "$TIGRIS_ROOT" "$TIGRIS_LINKS" < /dev/null
+  export TIGRIS_LINKS
+}
+
 [ "$Tiger_Check_FILESYSTEM" != 'N' ] && {
   if [ "$Tiger_TESTMODE" = 'Y' ]; then
     echo "`$TIMECMD`> Performing file systems scans..."
     run_script find_files >> $logtmp
   else
     echo "`$TIMECMD`> Starting file systems scans in background..."
-    $SCRIPTDIR/find_files > $WORKDIR/fsscan.log$$ 2>/dev/null &
-    fspid=$!
+    skip_check $SCRIPTDIR/find_files >> $logtmp || {
+      $SCRIPTDIR/find_files > $WORKDIR/fsscan.log$$ 2>/dev/null &
+      fspid=$!
+    }
   fi
 }
 
@@ -298,8 +316,10 @@ crackpid=
   else
     crackout=$WORKDIR/crack.out.$$
     echo "`$TIMECMD`> Running Crack (password cracker) in background..."
-    nice -6 $SCRIPTDIR/crack_run > $crackout &
-    crackpid=$!
+    skip_check $SCRIPTDIR/crack_run >> $logtmp || {
+      nice -6 $SCRIPTDIR/crack_run > $crackout &
+      crackpid=$!
+    }
   fi
 }
 
@@ -311,8 +331,10 @@ trippid=
   else
     tripout=$WORKDIR/tripwire.out.$$
     echo "`$TIMECMD`> Running Tripwire in background..."
-    nice -6 $SCRIPTDIR/tripwire_run > $tripout &
-    trippid=$!
+    skip_check $SCRIPTDIR/tripwire_run >> $logtmp || {
+      nice -6 $SCRIPTDIR/tripwire_run > $tripout &
+      trippid=$!
+    }
   fi
 }
 
@@ -324,8 +346,10 @@ aidepid=
   else
     export aideout=$WORKDIR/aide.out.$$
     echo "`$TIMECMD`> Running Aide in background..."
-    nice -6 $SCRIPTDIR/aide_run > $aideout &
-    aidepid=$!
+    skip_check $SCRIPTDIR/aide_run >> $logtmp || {
+      nice -6 $SCRIPTDIR/aide_run > $aideout &
+      aidepid=$!
+    }
   fi
 }
 
@@ -575,9 +599,11 @@ do
   $GREP -e "^--${_lvl%:*}-- " -e "<I>${_lvl%:*}</I>" $logtmp >/dev/null 2>&1 &&
     tiger_status=${_lvl#*:}
 done
-# A check skipped because it needs root (skip_unless_root) could not run
+# A check skipped because it needs root (skip_check) could not run; one
+# that does not apply to an offline root (--root) is not an error
 skipped=`$GREP -c '^# Skipped ' $logtmp 2>/dev/null`
-[ "${skipped:-0}" -gt 0 ] && [ $tiger_status -lt 2 ] && tiger_status=2
+noroot=`$GREP -c '^# Skipped [^:]*: it needs root' $logtmp 2>/dev/null`
+[ "${noroot:-0}" -gt 0 ] && [ $tiger_status -lt 2 ] && tiger_status=2
 
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}."
@@ -617,7 +643,8 @@ skipped=`$GREP -c '^# Skipped ' $logtmp 2>/dev/null`
   [ "$HTML" = "N" ] && {
     echo "Security report is in \`$logfile'."
   }
-  [ "${skipped:-0}" -gt 0 ] && echo "$skipped checks need root and were skipped; run Tigris as root to include them."
+  [ "${noroot:-0}" -gt 0 ] && echo "$noroot checks need root and were skipped; run Tigris as root to include them."
+  [ -n "$TIGRIS_ROOT" ] && [ "$skipped" -gt "${noroot:-0}" ] && echo "`expr $skipped - ${noroot:-0}` checks cannot read an offline root and were skipped; the report lists them."
 
   # --since: what changed since that run. The exit status then counts the
   # new findings only; with -q, nothing is printed unless something
@@ -650,7 +677,7 @@ skipped=`$GREP -c '^# Skipped ' $logtmp 2>/dev/null`
       }'`
       tiger_status=${1:-0}
       # a run with skipped checks is still one where checks could not run
-      [ "${skipped:-0}" -gt 0 ] && [ "$tiger_status" -lt 2 ] && tiger_status=2
+      [ "${noroot:-0}" -gt 0 ] && [ "$tiger_status" -lt 2 ] && tiger_status=2
       [ "$QUIET" != 'Y' ] || [ "${2:-0}" -gt 0 ] || [ "${3:-0}" -gt 0 ] &&
         $BASEDIR/tigris-diff "$since_file" "$Tiger_JSON_File"
     fi
