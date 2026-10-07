@@ -226,7 +226,7 @@ echo "       -R release"
 echo "              Specify  an  alternate  operating system release  "
 echo "              for tiger"
 echo ""
-echo "Report bugs at http://savannah.nongnu.org/projects/tiger"
+echo "Report bugs at https://github.com/creativeheadz/tigris/issues (see man tigris)"
 }
 
 checkfile()

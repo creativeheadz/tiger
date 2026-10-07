@@ -24,7 +24,7 @@ INSTALL=@INSTALL@
 # One page explaining every finding id, from ../meta (see metadata.md)
 all: explanations.html
 
-install:
+install: explanations.html
 	$(INSTALL) -m 0644 *.html ../html/
 
 explanations.html: $(wildcard ../meta/*) ../util/meta2html

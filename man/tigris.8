@@ -1,0 +1,250 @@
+.TH TIGRIS 8 "7 October 2026" "Tigris 3.5.0" "System Administration"
+.SH NAME
+tigris \- security auditor for Linux, in POSIX shell
+.SH SYNOPSIS
+.B tigris
+.RB [ \-q ]
+.RB [ \-p
+.IR profile ]
+.RB [ \-\-root
+.IR dir ]
+.RB [ \-\-since
+.IR run ]
+.RB [ \-c
+.IR tigerrc ]
+.RB [ \-l
+.IR logdir ]
+.RB [ \-e | \-E ]
+.RB [ \-H ]
+.LP
+.B tigris explain
+.IR id " ..."
+.LP
+.B tigris
+.RB [ \-v | \-t | \-h ]
+.SH DESCRIPTION
+.B tigris
+audits a Linux system: accounts and passwords, file permissions and
+setuid files, installed files against the package manager, security
+updates waiting, cron, systemd units, sshd and sudo, PAM, the firewall,
+kernel and network settings, storage, containers, logging and signs of
+intrusion. It writes a text report and, beside it, the same findings as
+JSON Lines. It descends from TIGER (Texas A&M University, 1993) and
+needs no compiler and no interpreter: shell and awk.
+.LP
+Run it as root. Run as an ordinary user, the checks that need root are
+skipped and listed in the report, rather than guessed at.
+.B tigris
+runs check scripts only when they belong to the user running it, or,
+under sudo, to the user who ran sudo.
+.LP
+.B tiger
+is the same command under its old name.
+.SH OPTIONS
+.TP
+.B \-q
+Print nothing while running. The report is still written; with
+.BR \-\-since ,
+what changed is printed.
+.TP
+.BI \-p " name" "\fR, \fP" \-\-profile " name"
+Read the profile
+.I name
+on top of the tigerrc: its settings replace the tigerrc's. Profiles are
+looked for in a
+.I profiles
+directory beside the tigerrc, then in Tigris's own:
+.B quick
+(everything but the file system scan),
+.B server
+(USB storage expected off; every account's PATH; processes using
+deleted files),
+.B desktop
+(without the checks for what only servers run) and
+.B container
+(an image or a container: without the host's kernel, boot, firewall,
+systemd and disks).
+.TP
+.BI \-\-root " dir"
+Audit the system under
+.IR dir ,
+which is not running: a disk mounted from another machine, a container
+image's root filesystem, a VM snapshot. Its files are read under
+.IR dir ,
+its symbolic links followed inside it, its files' owners named from its
+own passwd and group files, and this host's dpkg, apt, rpm, dnf,
+zypper, apk or pacman pointed at its package databases. Nothing under
+.I dir
+is run. Checks that need the running system, and those that cannot
+read an offline root yet, are skipped, and the report lists each with
+the reason. Tigris writes nothing under
+.IR dir ;
+the package tools may write their logs and caches there as they would
+on that system, so mount it read-only if it must stay unchanged.
+.TP
+.BI \-\-since " run"
+Compare this run with an earlier one and print only what is new and
+what was resolved
+.RB ( tigris\-diff ).
+.I run
+is the .jsonl file of an earlier report, or
+.B last
+for the most recent one of this host in the log directory. The exit
+status then counts only the new findings.
+.TP
+.BI \-c " tigerrc"
+Use another control file than
+.IR ./tigerrc .
+.TP
+.BI \-l " logdir"
+Write the reports to
+.I logdir
+instead of
+.IR log/ .
+.TP
+.BI \-w " dir"
+Scratch files go to
+.I dir
+instead of
+.IR run/ .
+.TP
+.BI \-B " dir"
+The directory Tigris is installed in.
+.TP
+.B \-e
+Put each finding's explanation in the report after it.
+.TP
+.B \-E
+Write the explanations to a separate report, each once.
+.TP
+.B \-H
+Write the report as HTML, with links to the explanations.
+.TP
+.B \-G
+Generate the signatures (MD5 hashes and permissions) of the system's
+binaries.
+.TP
+.B \-t
+Test mode: check the configuration, run nothing.
+.TP
+.B \-v
+Print the version.
+.TP
+.B \-h
+Print the usage.
+.SH COMMANDS
+.TP
+.BI "explain " id " ..."
+Say what each finding id means: its severity, category, the checks that
+report it, the compliance controls it is evidence about, and what to do
+about it. The same as
+.BR tigexp (8).
+.SH OUTPUT
+The report is
+.IR logdir/security.report.HOST.DATE ;
+each finding is a line
+.BI \-\- LEVEL \-\- " [" id "] " message
+with the level ALERT, FAIL, WARN, INFO, ERROR or CONFIG, and a
+.B #
+line says what each check is doing and what was skipped.
+.LP
+Beside it,
+.I security.report.HOST.DATE.jsonl
+holds the same findings as JSON Lines: a
+.B run
+record first (with the profile and the root, when there were any), one
+.B finding
+per message with its level, id, check, message, detail, category and
+compliance controls,
+.B skip
+records for the checks that did not run and why, and a
+.B summary
+with the counts last. INFO findings are always there. The format is a
+versioned contract with a JSON Schema; see
+.IR doc/json-format.md .
+.LP
+Each finding maps to the controls it is evidence about in CIS Controls
+v8, NIST SP 800-53 Rev. 5, ISO/IEC 27001:2022 Annex A and UK Cyber
+Essentials
+.RI ( doc/controls.map ).
+A finding is evidence for an assessment, not a verdict on a control.
+.SH EXIT STATUS
+.TP
+.B 0
+Nothing at WARN or above.
+.TP
+.B 1
+The audit did not run: a usage or configuration error.
+.TP
+.B 2
+A check could not run (an ERROR, or a check skipped because it needs
+root), and nothing worse was found.
+.TP
+.BR 3 ", " 4 ", " 5
+The worst finding was a WARN, a FAIL or an ALERT.
+.LP
+With
+.BR \-\-since ,
+only the new findings count. Accepted findings
+.RB ( tigris\-accept )
+do not count.
+.SH FILES
+.TP
+.I tigerrc
+Which checks run, and how.
+.TP
+.I profiles/
+Profiles, read on top of the tigerrc.
+.TP
+.I tigris.accepted
+Accepted findings, next to the tigerrc.
+.TP
+.I meta/
+One file per finding id: its severity, category, checks, controls and
+explanation.
+.TP
+.I log/
+The reports.
+.SH EXAMPLES
+.LP
+A full audit, then one that skips the file system scan:
+.RS
+.nf
+sudo tigris
+sudo tigris \-\-profile quick
+.fi
+.RE
+.LP
+Nightly from cron, mailing only when something changed:
+.RS
+.nf
+tigris \-q \-\-since last
+.fi
+.RE
+.LP
+A container image, without running it:
+.RS
+.nf
+mkdir rootfs
+docker export $(docker create IMAGE) | tar \-C rootfs \-xf \-
+sudo tigris \-\-root rootfs
+.fi
+.RE
+.SH SEE ALSO
+.BR tigris\-diff (8),
+.BR tigris\-accept (8),
+.BR tigexp (8),
+.BR tigercron (8),
+.BR tiger (8)
+.LP
+https://github.com/creativeheadz/tigris
+.SH HISTORY
+TIGER was written at Texas A&M University in 1993 by Douglas Lee
+Schales, David K. Hess and David R. Safford, and maintained on GNU
+Savannah from 2001 to 2019 by Javier Fern\('andez-Sanguino Pe\(~na.
+Tigris is an independent fork of it, started in 2026 and maintained by
+Andrei Trimbitas. The official TIGER is at
+https://savannah.nongnu.org/projects/tiger/.
+.SH BUGS
+Report them at https://github.com/creativeheadz/tigris/issues;
+security issues as SECURITY.md says.

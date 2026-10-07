@@ -4,6 +4,17 @@ August 23rd 2001) see the changelog.Debian file
 Changes since 3.5.0 (unreleased)
 --------------------------------
 
+- Man pages for tigris(8), tigris-diff(8) and tigris-accept(8), installed
+  with the others: every option, --root and --profile and --since among
+  them, the report and its JSON, the exit status, the files.
+
+- make install works without make first: it installed
+  doc/explanations.html before anything had built it, so the README's
+  "./configure; make install" stopped there. CI now installs into a
+  staging directory and looks for every man page.
+
+- tigris -h says to report bugs to this fork's tracker, not TIGER's.
+
 - Open compliance mapping. Every finding maps to the controls it is
   evidence about in CIS Controls v8 (safeguards), NIST SP 800-53 Rev. 5,
   ISO/IEC 27001:2022 Annex A and UK Cyber Essentials (its five themes).

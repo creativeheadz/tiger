@@ -278,6 +278,7 @@ shell equivalents. To install system-wide:
 ```sh
 ./configure
 make install
+man tigris
 ```
 
 Or as a container: `docker build -t tigris .` builds an image with

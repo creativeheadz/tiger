@@ -1,0 +1,83 @@
+.TH TIGRIS\-ACCEPT 8 "7 October 2026" "Tigris 3.5.0" "System Administration"
+.SH NAME
+tigris\-accept \- acknowledge a Tigris finding, with a reason and an expiry
+.SH SYNOPSIS
+.B tigris\-accept
+.I id
+.B \-r
+.I reason
+.RB [ \-u
+.IR YYYY\-MM\-DD ]
+.RB [ \-m
+.IR glob ]
+.RB [ \-f
+.IR file ]
+.LP
+.B tigris\-accept \-l
+.RB [ \-f
+.IR file ]
+.LP
+.B tigris\-accept \-d
+.I id
+.RB [ \-m
+.IR glob ]
+.RB [ \-f
+.IR file ]
+.SH DESCRIPTION
+A finding you have looked at and decided to live with can be accepted.
+An accepted finding is left out of the text report of
+.BR tigris (8)
+(the run says how many were) and stays in the JSON report marked
+accepted, with the reason and the date. It does not count towards the
+exit status. When the date passes, the finding is reported again and
+the run warns that the acceptance has expired (acpt001w).
+.LP
+Without
+.BR \-m ,
+every message with that id is accepted.
+.SH OPTIONS
+.TP
+.BI \-r " reason"
+Why it is accepted. Required when accepting.
+.TP
+.BI \-u " YYYY\-MM\-DD"
+Until when; without it, the acceptance does not expire.
+.TP
+.BI \-m " glob"
+Accept only the messages with that id that match the shell pattern
+.IR glob ,
+for example
+.BR "'docker.service listens on 2283/tcp*'" .
+.TP
+.B \-l
+List the accepted findings.
+.TP
+.BI \-d " id"
+Withdraw an acceptance (with
+.BR \-m ,
+only the one with that pattern).
+.TP
+.BI \-f " file"
+The acceptance file: by default
+.I tigris.accepted
+next to the tigerrc
+.RI ( ./tigris.accepted
+in a source tree,
+.I /etc/tiger/tigris.accepted
+when installed).
+.SH FILES
+.TP
+.I tigris.accepted
+One entry a line, tab-separated: the id, the expiry or \-, the pattern
+or \-, and the reason.
+.SH EXAMPLES
+.RS
+.nf
+tigris\-accept lin015w \-r "Docker needs IP forwarding"
+tigris\-accept sysd001w \-m "docker.service*" \-r "sandboxing tracked in #12" \-u 2027\-01\-31
+tigris\-accept \-l
+.fi
+.RE
+.SH SEE ALSO
+.BR tigris (8),
+.BR tigris\-diff (8)

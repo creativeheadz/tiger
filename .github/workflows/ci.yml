@@ -120,6 +120,13 @@ jobs:
           test -x bin/realpath && test -x bin/snefru
       - name: Findings reference built from meta/
         run: grep -c '<dt id=' doc/explanations.html
+      - name: make install into a staging directory, man pages included
+        run: |
+          make install DESTDIR="$RUNNER_TEMP/dest"
+          for m in tiger tigexp tigercron tigris tigris-diff tigris-accept; do
+            test -f "$RUNNER_TEMP/dest/usr/local/share/man/man8/$m.8" || { echo "no $m.8"; exit 1; }
+          done
+          head -3 "$RUNNER_TEMP/dest/usr/local/share/man/man8/tigris.8"
 
   smoke:
     name: Full run on Ubuntu
