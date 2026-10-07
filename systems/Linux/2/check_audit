@@ -87,7 +87,8 @@ root=${Tiger_Sysctl_Root:-}
 echo
 echo "# Checking the audit trail (auditd, persistent logs)..."
 
-# running NAME...: is a process with one of these names running
+# running NAME...: is a process with one of these names running. The
+# kernel cuts names to 15 characters: systemd-journald is systemd-journal
 running()
 {
   __names=$*
@@ -126,7 +127,7 @@ fi
 #
 # Logs across reboots: journald's Storage=, or a syslog daemon
 #
-if [ -d "$root/run/systemd/journal" ] || running systemd-journald; then
+if [ -d "$root/run/systemd/journal" ] || running systemd-journal; then
   # The drop-ins by file name; one name in /etc hides it in /run and
   # /usr/lib, one in /run hides it in /usr/lib
   dropins=`for d in /usr/lib /usr/local/lib /run /etc

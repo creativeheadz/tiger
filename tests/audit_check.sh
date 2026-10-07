@@ -22,7 +22,7 @@ bad() { echo "FAIL $1"; fail=1; }
 root() {
   r="$W/$1"; shift; mkdir -p "$r/proc" "$r/run/systemd/journal" "$r/etc/systemd"
   n=1
-  for p in systemd systemd-journald "$@"; do mkdir -p "$r/proc/$n"; echo "$p" > "$r/proc/$n/comm"; n=$((n + 1)); done
+  for p in systemd systemd-journal "$@"; do mkdir -p "$r/proc/$n"; echo "$p" > "$r/proc/$n/comm"; n=$((n + 1)); done
 }
 printf '#!/bin/sh\nprintf "%%s\\n" "-w /etc/passwd -p wa -k identity" "-a always,exit -F arch=b64 -S execve -F euid=0 -k rootcmd"\n' > "$W/ac-rules"
 printf '#!/bin/sh\necho "No rules"\n' > "$W/ac-none"
@@ -71,9 +71,15 @@ go drop ac-rules
 printf '[Journal]\nStorage=volatile\n' > "$W/drop/usr/lib/systemd/journald.conf.d/20-later.conf"
 go drop ac-rules
 has 'journald: Storage=volatile' && ok "a later drop-in, by name, wins over /etc's" || { bad "drop-in order"; cat "$W/out"; }
-mkdir -p "$W/nojournald/proc/1"; echo init > "$W/nojournald/proc/1/comm"; echo auditd > "$W/nojournald/proc/1/comm"
+mkdir -p "$W/nojournald/proc/1"; echo auditd > "$W/nojournald/proc/1/comm"
 go nojournald ac-rules
 [ "`count logf008w`" = 0 ] && ok "no journald: nothing said about it" || { bad "no journald"; cat "$W/out"; }
+# journald found by its process alone, as /proc shows it (15 characters)
+mkdir -p "$W/byproc/proc/1" "$W/byproc/proc/2" "$W/byproc/etc/systemd"
+echo auditd > "$W/byproc/proc/1/comm"; echo systemd-journal > "$W/byproc/proc/2/comm"
+printf '[Journal]\nStorage=volatile\n' > "$W/byproc/etc/systemd/journald.conf"
+go byproc ac-rules
+has '[logf008w]' && ok "journald found by its 15-character process name" || { bad "journald by process"; cat "$W/out"; }
 
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail
