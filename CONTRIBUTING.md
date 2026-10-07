@@ -28,9 +28,11 @@ for t in tests/*_check.sh; do sh "$t"; done   # fixtures, no root needed
 sudo sh tests/smoke.sh                        # full run on this machine
 ```
 
-`sh -n` over the tree and ShellCheck run in CI; keep both clean. The
-`[ $TESTEXEC file ]` idiom is a known ShellCheck blind spot: write new
-tests so the analyser can parse them.
+`sh -n` over the tree and ShellCheck (errors) run in CI, and both fail
+the build. Tiger's portable file tests take the operator from a
+variable (`TESTEXEC`, `TESTLINK`); write them as `test $TESTEXEC file`,
+not `[ $TESTEXEC file ]`, which ShellCheck cannot parse and which hides
+every other problem in the file.
 
 ## Commits
 

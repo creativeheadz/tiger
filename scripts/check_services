@@ -173,7 +173,7 @@ checkservices ()
 
 realpath="$REALPATH -d"
 
-[ ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" ] && realpath="echo"
+test ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" && realpath="echo"
 
 {
   haveallcmds GEN_SERVICES_SETS &&

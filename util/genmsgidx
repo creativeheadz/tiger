@@ -51,7 +51,7 @@ findcmd()
   IFS=$SAVEIFS
   for dir
   do
-    [ $TESTEXEC $dir/$CMD ] && {
+    test $TESTEXEC $dir/$CMD && {
       echo $dir/$CMD
       return
     }
@@ -83,7 +83,7 @@ tempfile=`mktemp "$TMPDIR/tiger.XXXXXX" 2>/dev/null`
 [ ! -e $tempfile ] && >$tempfile
 
 # This test is only needed for some old systems that do not support -x
-( [ $TESTEXEC /bin/sh ] ) 2> $tempfile
+( test $TESTEXEC /bin/sh ) 2> $tempfile
 [ -s $tempfile ] && TESTEXEC=-f
 export TESTEXEC
 

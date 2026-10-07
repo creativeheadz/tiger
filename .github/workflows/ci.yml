@@ -46,14 +46,15 @@ jobs:
       - name: A filesystem that does not answer is left alone
         run: sh tests/mounts_check.sh
       - name: ShellCheck (errors)
-        # Tiger tests "[ $TESTEXEC file ]" with TESTEXEC=-x or -f, which
-        # ShellCheck cannot parse; those files are reported but do not fail
-        # the build yet.
-        continue-on-error: true
         run: |
           shellcheck --version | head -2
-          shellcheck -s sh -S error tiger tigexp tigercron config initdefs util/realpath tests/*.sh \
-            $(git ls-files scripts systems/Linux/2 systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$')
+          files=
+          for f in tiger tigexp tigercron config initdefs util/realpath tests/*.sh \
+              $(git ls-files scripts systems/Linux/2 systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$'); do
+            head -1 "$f" | grep -q perl && continue
+            files="$files $f"
+          done
+          shellcheck -s sh -S error $files
 
   build:
     name: Build C helpers and docs

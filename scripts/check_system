@@ -78,7 +78,7 @@ runtable()
   do
     case "$script" in
       /*)
-	if [ $TESTEXEC $script ]; then
+	if test $TESTEXEC $script; then
 	  echo "# Running '$script'..."
 	  $script
 	else
@@ -86,10 +86,10 @@ runtable()
 	fi
         ;;
       *)
-	if [ $TESTEXEC $CONFIG_DIR/$script ]; then
+	if test $TESTEXEC $CONFIG_DIR/$script; then
 	  echo "# Running '$CONFIG_DIR/$script'..."
 	  $CONFIG_DIR/$script
-	elif [ $TESTEXEC $SCRIPTDIR/$script ]; then
+	elif test $TESTEXEC $SCRIPTDIR/$script; then
 	  echo "# Running '$SCRIPTDIR/$script'..."
 	  $SCRIPTDIR/$script
 	else
@@ -102,7 +102,7 @@ runtable()
 
 for dir in $OS/$REL/$REV/$ARCH $OS/$REL/$REV $OS/$REL $OS
 do
-  [ $TESTEXEC $BASEDIR/systems/$dir/check ] && {
+  test $TESTEXEC $BASEDIR/systems/$dir/check && {
     echo "# Performing checks for $dir..."
     $BASEDIR/systems/$dir/check
   }

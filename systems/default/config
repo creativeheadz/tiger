@@ -53,7 +53,7 @@ findcmd()
   IFS=$SAVEIFS
   for dir
   do
-    [ $TESTEXEC $dir/$CMD ] && {
+    test $TESTEXEC $dir/$CMD && {
       echo $dir/$CMD
       return
     }
@@ -61,7 +61,7 @@ findcmd()
 }
 
 TESTEXEC=-x
-( [ $TESTEXEC /bin/sh ] ) 2> $WORKDIR/te.$$
+( test $TESTEXEC /bin/sh ) 2> $WORKDIR/te.$$
 [ -s $WORKDIR/te.$$ ] && TESTEXEC=-f
 export TESTEXEC
 
@@ -215,7 +215,7 @@ for dir in /usr/lib /usr/sbin /etc /usr/etc
 do
   for prog in sendmail sendmail.mx smail
   do
-    [ ! $TESTLINK "$dir/$prog" ] && {
+    test ! $TESTLINK "$dir/$prog" && {
       SENDMAILS="$SENDMAILS $dir/$prog"
     }
   done
@@ -242,7 +242,7 @@ YPCAT=`findcmd ypcat`
 #
 YPSERVER="NO"
 
-(($PS -ef || $PS -aux ) 2>/dev/null |
+( ($PS -ef || $PS -aux) 2>/dev/null |
 $GREP ypserv | $GREP -v -s $GREP) && YPSERVER="YES"
 
 export WAIT YPCAT YPSERVER

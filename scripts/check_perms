@@ -184,11 +184,11 @@ check_file()
     getpermit $file |
     while read filename rowner rgroup rur ruw rux rgr rgw rgx ror row rox rsuid rsgid rstk
     do
-      [ ! $TESTLINK "$filename" ] && [ -f "$filename" -o -d "$filename" ] &&
+      test ! $TESTLINK "$filename" && [ -f "$filename" -o -d "$filename" ] &&
       if [ "$file" = "$filename" ]; then
 	check_file "$filename"
       else
-	$SGREP "^$filename[ 	]" $FILE_ACL 2>/dev/null || 
+	$SGREP "^${filename}[ 	]" $FILE_ACL 2>/dev/null || 
 	check_file "$filename" 
       fi
     done

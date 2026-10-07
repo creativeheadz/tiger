@@ -109,7 +109,7 @@ fi
     foundit=0
     for dir in $REL/$REV/$ARCH $REL/$REV $REL
     do
-      if [ $TESTEXEC $toplevel/$dir/$cmd ]; then
+      if test $TESTEXEC $toplevel/$dir/$cmd; then
 	echo "$cmdvar=$toplevel/$dir/$cmd; export $cmdvar"
 	foundit=1
 	break
@@ -117,7 +117,7 @@ fi
     done
 
     [ $foundit -eq 0 ] &&
-    if [ $setbintype -eq 1 -o ! $TESTEXEC $BINDIR/$cmd ]; then
+    if test $setbintype -eq 1 -o ! $TESTEXEC $BINDIR/$cmd; then
       haveallcmds CC && {
 	eval sources="\$$cmd"
 	objlist=

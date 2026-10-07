@@ -206,10 +206,17 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
 
 - [x] Replace `egrep`, `tempfile` and `which`.
 - [x] CI on GitHub Actions.
-- [~] ShellCheck over `scripts/` and `systems/Linux/`. It runs in CI but
-  is advisory: Tiger's `[ $TESTEXEC file ]` idiom, where the test
-  operator is a variable, cannot be parsed. Fix the real bugs it finds
-  and make it blocking.
+- [x] ShellCheck over `scripts/` and `systems/Linux/`, blocking at the
+  error level. Tiger's `[ $TESTEXEC file ]` idiom, where the test
+  operator is a variable, stopped ShellCheck parsing 11 files at the
+  first use; written as `test $TESTEXEC file` (31 places, the same
+  test), they parse, and the analysis found four real bugs: comment
+  lines in the `ndd` table were never skipped (`[ $dev = \#* ]` cannot
+  glob), a `((` that bash and ksh read as arithmetic, and two
+  `2>&1 >/dev/null` that sent `grep` and `tty` errors into the report.
+  The Perl `check_network` is left out by its shebang. The warning
+  level is reviewed (`set X`, `> file` and `-a`/`-o` idioms, variables
+  set by `config`) but not enforced.
 - [x] `SECURITY.md`, issue templates and a contributing guide.
 - [x] **Every finding id has an explanation, enforced.** The earlier
   count of 18 was a lower bound from a plain grep. The complete

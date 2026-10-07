@@ -192,7 +192,7 @@ check_disabled()
   ([ ! -d "$home/" ] || [ "$host" != "$HOSTNAME" ]) && return
 
   # Check the .forward file.
-  [ -s $home/.forward ] && $GREP -F '|' $home/.forward 2>&1 >/dev/null && 
+  [ -s $home/.forward ] && $GREP -F '|' $home/.forward >/dev/null 2>&1 && 
     message WARN acc003w "" "Login ID $user is disabled, but has a .forward file which executes commands."
 
   # Check the .rhosts file.
@@ -321,7 +321,7 @@ check_users()
      # A secure approach has to be determined for this to work properly.
 
      [ -z "$shell" ] && shell=/bin/sh
-     [ $TESTEXEC $shell ] && [ -n "$uid" ] && [ $uid -gt $Tiger_Accounts_Trust ] && {
+     test $TESTEXEC $shell && [ -n "$uid" ] && [ $uid -gt $Tiger_Accounts_Trust ] && {
        eval "
          case \"$shell\" in
            $shcase)

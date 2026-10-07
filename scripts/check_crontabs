@@ -100,7 +100,7 @@ trap 'delete $WORKDIR/cron.in.$$ ; exit 1' 1 2 3 15
  
 
 realpath="$REALPATH -d"
-[ ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" ] && realpath=echo
+test ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" && realpath=echo
 
 lowner=
 

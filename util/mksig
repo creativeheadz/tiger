@@ -67,7 +67,7 @@ haveallof()
 haveallof commands CAT MD5 || exit 1
 haveallof variables BASEDIR TESTLINK WORKDIR
 
-[ ! $TESTEXEC $MD5 ] && {
+test ! $TESTEXEC $MD5 && {
   echo "Don't see MD5 (have you compiled Tiger binaries?)... exiting..."
   exit 1
 }
@@ -95,8 +95,8 @@ echo "Working..."
     indir=
     for dir in $DIRLIST
     do
-      [ ! $TESTLINK $dir ] && {
-	[ -f $dir/$file -a ! $TESTLINK $dir/$file -a $TESTEXEC $dir/$file ] && {
+      test ! $TESTLINK $dir && {
+	test -f $dir/$file -a ! $TESTLINK $dir/$file -a $TESTEXEC $dir/$file && {
 	  indir=$dir
 	  if [ -r $indir/$file ]; then
 	    sig=`$MD5 < $indir/$file`

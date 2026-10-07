@@ -61,7 +61,7 @@ findcmd()
   IFS=$SAVEIFS
   for dir
   do
-    [ $TESTEXEC $dir/$CMD ] && {
+    test $TESTEXEC $dir/$CMD && {
       echo $dir/$CMD
       return
     }
@@ -94,7 +94,7 @@ catcp()
 }
 
 TESTEXEC=-x
-( [ $TESTEXEC /bin/sh ] ) 2> $WORKDIR/te.$$
+( test $TESTEXEC /bin/sh ) 2> $WORKDIR/te.$$
 [ -s $WORKDIR/te.$$ ] && TESTEXEC=-f
 export TESTEXEC
 

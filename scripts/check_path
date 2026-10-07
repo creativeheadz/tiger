@@ -333,7 +333,7 @@ check_user()
 
 realpath="$REALPATH -d"
 
-[ ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" ] && realpath="echo"
+test ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" && realpath="echo"
 
 [ ! -n "$SYSDEFAULTPATH" ] && {
   SYSDEFAULTPATH="/bin:/usr/bin:/usr/sbin"

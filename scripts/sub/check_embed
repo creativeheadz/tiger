@@ -72,7 +72,7 @@ haveallfiles WORKDIR || exit 1
 
 saveifs=$IFS
 realpath="$REALPATH -d"
-[ ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" ] && realpath=echo
+test ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" && realpath=echo
 
 showwhere()
 {
@@ -237,7 +237,7 @@ do
   [ -f $record.new ] && $CAT $record.new > $record
   delete $record.new $WORKDIR/scr.$$
 
-  [ -n "$EXPR" -a $TESTEXEC "$EXPR" ] && depth="`$EXPR $depth + 1`"
+  test -n "$EXPR" -a $TESTEXEC "$EXPR" && depth="`$EXPR $depth + 1`"
 
   [ $depth -gt $maxdepth ] && break
   

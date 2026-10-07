@@ -94,7 +94,7 @@ findcmd()
   IFS=$SAVEIFS
   for dir
   do
-    [ $TESTEXEC $dir/$CMD ] && {
+    test $TESTEXEC $dir/$CMD && {
       echo $dir/$CMD
       return
     }

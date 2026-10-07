@@ -261,7 +261,7 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
     delete $WORKDIR/login.str.$$
   }
 
-  [ -n "$TESTSUID" -a $TESTEXEC "$TESTSUID" ] && {
+  test -n "$TESTSUID" -a $TESTEXEC "$TESTSUID" && {
     $TESTSUID ||
     message ALERT kis007a "" "The setuid(2) system call is compromised."
   }
