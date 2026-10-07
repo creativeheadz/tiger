@@ -1,0 +1,17 @@
+Id: stor004w
+Severity: WARN
+Category: filesystem
+Check: check_storage
+References: cryptsetup(8)
+
+This machine has a battery of its own (a laptop or a tablet), so it
+can be lost or stolen, and some of its local file systems are not
+encrypted (the detail lists them). Whoever has the machine can then
+read everything on those disks, the user's files and any keys and
+passwords stored there, by booting something else or taking the disk
+out. A battery of a connected device (a wireless mouse) does not
+count.
+
+To fix it, encrypt them with LUKS: every distribution's installer
+offers it, and 'cryptsetup reencrypt' converts an existing partition in
+place (after a backup). The boot partition can stay as it is.

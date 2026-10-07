@@ -1,0 +1,16 @@
+Id: stor001w
+Severity: WARN
+Category: filesystem
+Check: check_storage
+References: mount(8), tmpfs(5)
+
+A file system that every user can write to (/tmp, /dev/shm, or /var/tmp
+when it is one of its own) is mounted without nosuid or without nodev.
+nosuid makes the kernel ignore setuid and setgid bits there, and nodev
+makes it refuse to open device files there: without them, a setuid
+program or a device node left in a shared directory (through a hard
+link, an archive unpacked by root, a compromised service) is honoured.
+
+To fix it, add the options in /etc/fstab, or for a tmpfs that systemd
+mounts, in a drop-in for its unit ('systemctl edit tmp.mount',
+Options=...); 'mount -o remount' applies them at once.

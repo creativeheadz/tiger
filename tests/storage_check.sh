@@ -1,0 +1,112 @@
+#!/bin/sh
+#
+# tests/storage_check.sh - check_storage against /proc, /sys and /etc trees
+#
+# Mount tables, swap lists, block devices (dm-crypt under LVM, as
+# /sys/class/block shows them), batteries (a laptop's, and a wireless
+# mouse's, which must not count), core_pattern, limits and modprobe files,
+# all under Tiger_Sysctl_Root.
+#
+TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
+W=`mktemp -d`
+trap 'rm -rf "$W"' 0
+( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
+mkdir -p "$W/run" "$W/log"
+cp "$W/tigerrc" "$W/tigerrc.base"
+fail=0
+ok()  { echo "ok   $1"; }
+bad() { echo "FAIL $1"; fail=1; }
+
+# tree NAME: /proc and /sys skeletons; the mount table on stdin
+tree() {
+  r="$W/$1"; mkdir -p "$r/proc/sys/kernel" "$r/sys/class/block" "$r/sys/class/power_supply" "$r/etc/security/limits.d" "$r/dev/mapper"
+  cat > "$r/proc/mounts"
+  printf 'Filename\tType\tSize\tUsed\tPriority\n' > "$r/proc/swaps"
+  echo '|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h' > "$r/proc/sys/kernel/core_pattern"
+}
+blockdev() { mkdir -p "$W/$1/sys/class/block/$2"; }       # blockdev TREE NAME
+dm() {  # dm TREE NAME UUID [SLAVE]
+  mkdir -p "$W/$1/sys/class/block/$2/dm" "$W/$1/sys/class/block/$2/slaves"; echo "$3" > "$W/$1/sys/class/block/$2/dm/uuid"
+  [ -n "$4" ] && mkdir -p "$W/$1/sys/class/block/$2/slaves/$4"; :
+}
+battery() {  # battery TREE NAME [SCOPE]
+  b="$W/$1/sys/class/power_supply/$2"; mkdir -p "$b"; echo Battery > "$b/type"; [ -n "$3" ] && echo "$3" > "$b/scope"; :
+}
+go() {  # go TREE setting...
+  cp "$W/tigerrc.base" "$W/tigerrc"
+  { echo "Tiger_Sysctl_Root='$W/$1'"; echo "Tiger_Show_INFO_Msgs=Y"; } >> "$W/tigerrc"
+  shift; for s; do echo "$s" >> "$W/tigerrc"; done
+  ( cd "$W" && TIGERHOMEDIR=$W sh ./systems/Linux/2/check_storage ) 2>&1 |
+    awk '/^--/ { if (l != "") print l; l = $0; next } /^ / { sub(/^ +/, " "); l = l $0; next } { if (l != "") print l; l = "" } END { if (l != "") print l }' |
+    tr -s ' ' | grep '^--' | grep -v '^--CONFIG--' > "$W/out"
+}
+has()   { grep -F -q -- "$1" "$W/out"; }
+count() { grep -F -c -- "$1" "$W/out"; }
+
+# Hera: ext4 on NVMe, /dev/shm without noexec, a mouse's battery
+tree hera <<'EOF'
+/dev/nvme0n1p2 / ext4 rw,relatime,errors=remount-ro 0 0
+/dev/nvme0n1p1 /boot/efi vfat rw,relatime 0 0
+/dev/nvme1n1p1 /media/andrei/Data ext4 rw,nosuid,nodev,relatime 0 0
+tmpfs /dev/shm tmpfs rw,nosuid,nodev,inode64 0 0
+/dev/loop3 /snap/core22/2045 squashfs ro,nodev,relatime 0 0
+EOF
+blockdev hera nvme0n1p2; blockdev hera nvme1n1p1; battery hera hidpp_battery_0 Device
+go hera
+has '--INFO-- [stor003i] /tmp is part of the root file system' && has '--INFO-- [stor002i] /dev/shm is mounted without noexec.' &&
+  [ "`count stor001w`" = 0 ] && ok "Hera: /tmp not separate, /dev/shm without noexec (INFO), nosuid and nodev there" || { bad "hera mounts"; cat "$W/out"; }
+has '--INFO-- [stor005i] Some local file systems are not encrypted' && has 'Not encrypted: / (/dev/nvme0n1p2), /media/andrei/Data (/dev/nvme1n1p1).' &&
+  [ "`count stor004w`" = 0 ] && ok "Hera: unencrypted disks INFO, /boot and snaps left out, a mouse's battery is not a laptop's" || { bad "hera crypt"; cat "$W/out"; }
+[ "`count stor007w`" = 0 ] && ok "core dumps to systemd-coredump: nothing" || { bad "coredump pipe"; cat "$W/out"; }
+
+# A laptop: the same disks, its own battery
+cp -r "$W/hera" "$W/laptop"; battery laptop BAT0
+go laptop
+has '--WARN-- [stor004w] This machine runs on a battery' && ok "a laptop's own battery: stor004w" || { bad "laptop"; cat "$W/out"; }
+
+# LVM on LUKS, a tmpfs /tmp without nosuid, a plain swap partition
+tree luks <<'EOF'
+/dev/mapper/vg-root / ext4 rw,relatime 0 0
+tmpfs /tmp tmpfs rw,nodev,noexec 0 0
+tmpfs /dev/shm tmpfs rw,nosuid,nodev,noexec 0 0
+EOF
+ln -s ../dm-1 "$W/luks/dev/mapper/vg-root"; : > "$W/luks/dev/dm-1"
+dm luks dm-1 LVM-abcdef dm-0; dm luks dm-0 CRYPT-LUKS2-0123456789abcdef-luks-root nvme0n1p3; blockdev luks nvme0n1p3; blockdev luks nvme0n1p4
+battery luks BAT0
+printf '/dev/nvme0n1p4 partition 8388604 0 -2\n/dev/zram0 partition 4194300 0 100\n' >> "$W/luks/proc/swaps"
+go luks
+[ "`count stor004w`" = 0 ] && [ "`count stor005i`" = 0 ] &&
+  ok "LVM on LUKS: encrypted, found through the slaves" || { bad "luks"; cat "$W/out"; }
+has '--WARN-- [stor001w] /tmp is mounted without nosuid' && ok "a tmpfs /tmp without nosuid: stor001w" || { bad "tmp nosuid"; cat "$W/out"; }
+has '--WARN-- [stor006w] The root file system is encrypted but swap is not' && has 'Swap: /dev/nvme0n1p4.' && [ "`count stor006w`" = 1 ] &&
+  ok "a plain swap partition under an encrypted root: stor006w; zram left out" || { bad "swap"; cat "$W/out"; }
+printf 'Filename\tType\tSize\tUsed\tPriority\n/swapfile file 2097148 0 -2\n' > "$W/luks/proc/swaps"
+go luks
+[ "`count stor006w`" = 0 ] && ok "a swap file on the encrypted root: nothing" || { bad "swapfile"; cat "$W/out"; }
+
+# Core dumps as files, then limited
+echo core > "$W/hera/proc/sys/kernel/core_pattern"
+go hera
+has '--WARN-- [stor007w] A program that crashes writes its memory to a core file' && ok "core_pattern \"core\", no limit: stor007w" || { bad "core"; cat "$W/out"; }
+echo '*    hard    core    0' > "$W/hera/etc/security/limits.d/10-core.conf"
+go hera
+[ "`count stor007w`" = 0 ] && ok "'* hard core 0' in limits.d: nothing" || { bad "core limit"; cat "$W/out"; }
+
+# USB storage, when the policy says none
+go hera "Tiger_Storage_NoUSB=Y"
+has '--WARN-- [stor008w] USB storage can be used' && ok "Tiger_Storage_NoUSB=Y, nothing blocks it: stor008w" || { bad "usb"; cat "$W/out"; }
+mkdir -p "$W/hera/etc/modprobe.d"; printf 'install usb-storage /bin/false\nblacklist usb-storage\n' > "$W/hera/etc/modprobe.d/usb.conf"
+go hera "Tiger_Storage_NoUSB=Y"
+[ "`count stor008w`" = 0 ] && ok "usb-storage blocked in modprobe.d: nothing" || { bad "usb blocked"; cat "$W/out"; }
+rm -f "$W/hera/etc/modprobe.d/usb.conf"; go hera
+[ "`count stor008w`" = 0 ] && ok "by default USB storage is not looked at" || { bad "usb default"; cat "$W/out"; }
+
+# A container
+tree ctr <<'EOF'
+overlay / overlay rw,relatime,lowerdir=/x 0 0
+EOF
+go ctr
+[ "`count .`" = 0 ] && ok "a container (overlay root): nothing said" || { bad "container"; cat "$W/out"; }
+
+[ $fail -eq 0 ] && echo "PASS"
+exit $fail

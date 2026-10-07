@@ -1,0 +1,18 @@
+Id: stor007w
+Severity: WARN
+Category: filesystem
+Check: check_storage
+References: core(5), limits.conf(5)
+
+When a program crashes the kernel writes its memory to a core file
+(kernel.core_pattern names it, and it is not handed to a program such
+as systemd-coredump or apport), and no '* hard core 0' in
+/etc/security/limits.conf limits that. A program's memory can hold
+passwords, keys and private data, and the core file is left in its
+working directory with the program user's permissions, where it may be
+read or copied long after.
+
+To fix it, add '* hard core 0' to /etc/security/limits.conf, or install
+systemd-coredump, which keeps dumps in /var/lib/systemd/coredump where
+only root reads them and removes them after a while. fs.suid_dumpable
+(lin027w) covers setuid programs.

@@ -1,0 +1,14 @@
+Id: stor002i
+Severity: INFO
+Category: filesystem
+Check: check_storage
+References: mount(8)
+
+A world-writable file system (/tmp, /dev/shm, or a separate /var/tmp) is
+mounted without noexec, so programs can be run from it directly: a
+common step in attacks that download a tool into /tmp and start it.
+noexec does not stop a script being run through its interpreter
+(sh /tmp/x), so it is a hurdle rather than a wall, and some software
+(installers that unpack into /tmp, JIT runtimes using /dev/shm) breaks
+with it; that is why this is informational. The CIS benchmarks ask for
+it.

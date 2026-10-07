@@ -353,8 +353,18 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   of package units replaced or extended there (sysd008i). pathmsg now
   passes over a sticky directory above the path, such as /tmp, which
   lets nobody replace what is not theirs; that changes check_crontabs'
-  and check_aliases' findings the same way. Hera: Wegweiser, two backup
-  units and three others local, nothing writable.
+  and check_aliases' findings the same way. Hera: Wegweiser, the three backup
+  units and two others local, nothing writable.
+- [x] **`check_storage`**: /tmp, /dev/shm and a separate /var/tmp without
+  nosuid or nodev (stor001w) or noexec (stor002i), /tmp not a file
+  system of its own (stor003i); local file systems not on dm-crypt,
+  looked for through the device stack (LVM on LUKS), a WARN on a
+  machine with a battery of its own (stor004w) and an INFO elsewhere
+  (stor005i); swap unencrypted under an encrypted root (stor006w); core
+  dumps written as files with no limit (stor007w); USB storage when
+  Tiger_Storage_NoUSB=Y says there should be none (stor008w). Hera:
+  /tmp on /, /dev/shm without noexec, nothing encrypted (its only
+  battery is the mouse's).
 
 ## 3.2.x: maintenance
 
@@ -485,8 +495,8 @@ open items below ship from 3.4.0 on.
   updates, reboot required (`check_updates`, upd001w to upd004i; on
   master since 3.3.0). `check_patches`, apt-only, networked and off by
   default, stays as it was.
-- [ ] Storage: LUKS, mount options (`/tmp`, `/dev/shm`), core dumps, USB
-  storage.
+- [x] Storage: LUKS, mount options (`/tmp`, `/dev/shm`), core dumps, USB
+  storage (`check_storage`, stor001w to stor008w; on master since 3.3.0).
 - [ ] Containers: Docker or Podman socket permissions, rootless mode,
   privileged containers.
 

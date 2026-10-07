@@ -1,0 +1,15 @@
+Id: stor003i
+Severity: INFO
+Category: filesystem
+Check: check_storage
+References: tmpfs(5)
+
+/tmp is a directory on the root file system rather than a file system
+of its own, so it shares the root's mount options and cannot have
+nosuid, nodev and noexec (stor001w, stor002i), and filling it fills
+the root file system. Debian 13 and Fedora already mount a tmpfs there.
+
+To fix it, enable the tmpfs systemd ships ('systemctl enable
+tmp.mount'; on Ubuntu copy /usr/share/systemd/tmp.mount to
+/etc/systemd/system first), or add 'tmpfs /tmp tmpfs
+nosuid,nodev,noexec,mode=1777 0 0' to /etc/fstab, and reboot.

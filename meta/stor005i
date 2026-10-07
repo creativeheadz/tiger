@@ -1,0 +1,13 @@
+Id: stor005i
+Severity: INFO
+Category: filesystem
+Check: check_storage
+References: cryptsetup(8)
+
+Some local file systems are not encrypted (the detail lists them).
+Whoever gets hold of the disks, a stolen machine, a disk sent back
+under warranty or thrown away, can read them. Whether that matters
+depends on where the machine is: for a server in a locked room it may
+not, which is why this is informational on a machine without a battery
+(stor004w is the warning for portable ones). LUKS is the usual way to
+encrypt them.

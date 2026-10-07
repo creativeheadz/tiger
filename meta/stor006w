@@ -1,0 +1,18 @@
+Id: stor006w
+Severity: WARN
+Category: filesystem
+Check: check_storage
+References: crypttab(5)
+
+The root file system is encrypted, but swap is not: a swap partition
+on a plain device, or a swap file on an unencrypted file system.
+Whatever the kernel swaps out of memory, which can include passwords,
+keys and the contents of encrypted files, is written to the disk in
+clear and stays there, so the encryption of the rest can be read
+around.
+
+To fix it, put swap on the encrypted volume (a swap file on the
+encrypted root, or a logical volume inside the LUKS container), or
+encrypt the swap partition with a random key at each boot (a crypttab
+line with /dev/urandom as the key and the swap option), which rules out
+hibernation.

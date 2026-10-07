@@ -76,6 +76,7 @@ Tiger_Check_UPDATES=Y           # Fast - security updates waiting, automatic, re
 Tiger_Check_SUDO=Y              # Fast - sudo rules without a password or with wildcards
 Tiger_Check_PAM=Y               # Fast - password quality and lockout in PAM
 Tiger_Check_UNITS=Y             # Fast - what enabled systemd services and timers run
+Tiger_Check_STORAGE=Y           # Fast - /tmp and /dev/shm options, encryption, core dumps
 Tiger_Check_PKGINTEGRITY=Y      # Installed files against the rpm, apk or pacman database
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       
@@ -412,6 +413,12 @@ Tiger_Listening_ValidUsers='root'
 # List of processes separated by '|'... no whitespaces allowed (but wildcards are)
 #
 Tiger_Listening_ValidProcs=''
+#
+# Is USB storage forbidden here? With Y, check_storage reports (stor008w)
+# when the usb-storage driver is neither blacklisted nor replaced in
+# /etc/modprobe.d. The default leaves USB storage alone.
+#
+Tiger_Storage_NoUSB=N
 #
 # Which processess should be checked for by Tiger?
 # Processes in this list (separated by whitespaces) which are not

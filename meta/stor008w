@@ -1,0 +1,20 @@
+Id: stor008w
+Severity: WARN
+Category: filesystem
+Check: check_storage
+References: modprobe.d(5)
+
+The policy is to allow no USB storage (Tiger_Storage_NoUSB=Y in
+tigerrc), but the usb-storage driver is neither blacklisted nor
+replaced in /etc/modprobe.d, so a USB stick plugged in is mounted and
+data can be copied off or on.
+
+To fix it, add to a file in /etc/modprobe.d:
+
+    install usb-storage /bin/false
+    blacklist usb-storage
+    install uas /bin/false
+    blacklist uas
+
+then rebuild the initramfs (update-initramfs -u, or dracut -f). If USB
+storage is wanted, set Tiger_Storage_NoUSB=N.

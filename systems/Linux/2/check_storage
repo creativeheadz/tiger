@@ -1,0 +1,211 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_storage: the mount options of the world-writable file systems,
+#                 disk encryption, swap under it, core dumps, USB storage.
+#
+# 10/07/2026 atrimbitas - Initial version. Mounts come from /proc/mounts,
+#                 swap from /proc/swaps. A device is encrypted when it, or
+#                 a device under it (LVM on LUKS: /sys/class/block/X/slaves),
+#                 is a dm-crypt mapping (dm/uuid begins CRYPT-). A machine
+#                 is portable when it has a battery of its own (type
+#                 Battery, scope not Device: a wireless mouse's does not
+#                 count). Core dumps are files when kernel.core_pattern is
+#                 not a pipe to a handler (systemd-coredump, apport).
+#                 USB storage is looked at only when Tiger_Storage_NoUSB=Y
+#                 says the policy is to have none. fs.suid_dumpable is
+#                 check_sysctl's (lin027w). Containers are left alone.
+#                 Tiger_Sysctl_Root prefixes /proc, /sys, /dev and /etc
+#                 for the tests.
+#
+# References:
+#   man 8 mount, man 5 tmpfs, man 8 cryptsetup, man 5 core
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP LS SED || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP LS SED || exit 1
+
+root=${Tiger_Sysctl_Root:-}
+mounts=`$CAT "$root/proc/mounts" 2>/dev/null`
+[ -n "$mounts" ] || exit 0
+# A container's file systems are its host's business
+[ -f "$root/.dockerenv" ] || [ -f "$root/run/.containerenv" ] || [ -f "$root/run/systemd/container" ] && exit 0
+case "`echo "$mounts" | $AWK '$2 == "/" { t = $3 } END { print t }'`" in overlay|aufs) exit 0 ;; esac
+
+echo
+echo "# Checking mount options, disk encryption and core dumps..."
+
+# opts MOUNTPOINT: its options, or nothing when it is not a mount of its own
+opts()
+{
+  echo "$mounts" | $AWK -v m="$1" '$2 == m { o = $4 } END { print o }'
+}
+
+#
+# The world-writable file systems: nosuid and nodev, and noexec
+#
+for m in /tmp /dev/shm /var/tmp
+do
+  o=`opts $m`
+  if [ -z "$o" ]; then
+    [ "$m" = /tmp ] && message INFO stor003i "Make /tmp a tmpfs of its own ('systemctl enable tmp.mount' where systemd ships it, or a tmpfs line in /etc/fstab) with nosuid,nodev,noexec." "/tmp is part of the root file system, so it cannot be mounted nosuid, nodev or noexec on its own."
+    continue
+  fi
+  missing=
+  for want in nosuid nodev
+  do
+    case ",$o," in *",$want,"*) ;; *) missing="$missing,$want" ;; esac
+  done
+  [ -n "$missing" ] && message WARN stor001w "Mounted with $o. Add ${missing#,} to its options (in /etc/fstab, or a drop-in for its .mount unit)." "$m is mounted without ${missing#,}: anyone may leave files there, and ${missing#,} is what stops them being setuid programs or device files."
+  case ",$o," in
+    *,noexec,*) ;;
+    *) message INFO stor002i "Mounted with $o. Adding noexec stops programs being run from it directly; some software (installers, JIT runtimes) expects to." "$m is mounted without noexec." ;;
+  esac
+done
+
+#
+# Encryption
+#
+# crypt NAME: is the block device NAME, or one under it, a dm-crypt mapping
+crypt()
+{
+  __b="$root/sys/class/block/$1"
+  case "`$CAT "$__b/dm/uuid" 2>/dev/null`" in CRYPT-*) return 0 ;; esac
+  for __s in `$LS "$__b/slaves" 2>/dev/null`
+  do
+    crypt "$__s" && return 0
+  done
+  return 1
+}
+# blk SOURCE: the block device a mount or swap source is, by name
+blk()
+{
+  __t=`readlink -f "$root$1" 2>/dev/null`
+  [ -n "$__t" ] || __t=$1
+  echo "${__t##*/}"
+}
+
+# The local disk file systems, but /boot (which cannot be encrypted the
+# usual way) and loop devices (snaps, images)
+plain=
+for line in `echo "$mounts" | $AWK '$1 ~ /^\/dev\// && $1 !~ /^\/dev\/loop/ && $2 !~ /^\/boot/ { print $1 "|" $2 }' | $AWK '!seen[$0]++'`
+do
+  src=${line%%|*} mnt=${line#*|}
+  crypt "`blk "$src"`" || plain="$plain, $mnt ($src)"
+done
+plain=${plain#, }
+portable=N
+for p in "$root"/sys/class/power_supply/*
+do
+  [ "`$CAT "$p/type" 2>/dev/null`" = Battery ] || continue
+  [ "`$CAT "$p/scope" 2>/dev/null`" = Device ] && continue
+  portable=Y
+done
+if [ -n "$plain" ]; then
+  if [ "$portable" = Y ]; then
+    message WARN stor004w "Not encrypted: $plain. Encrypting means reinstalling onto LUKS (every installer offers it) or converting in place with cryptsetup reencrypt, after a backup." "This machine runs on a battery, so it can be carried off, and its disks are not encrypted: whoever has it has the data."
+  else
+    message INFO stor005i "Not encrypted: $plain." "Some local file systems are not encrypted: whoever has the disks has the data."
+  fi
+fi
+
+# Swap: under an encrypted root, an unencrypted swap keeps what was in
+# memory (keys, passwords) on the disk in clear
+rootdev=`echo "$mounts" | $AWK '$2 == "/" { d = $1 } END { print d }'`
+rootblk=`blk "$rootdev"`
+if crypt "$rootblk"; then
+  $AWK 'NR > 1 { print $1, $2 }' "$root/proc/swaps" 2>/dev/null | while read sw type
+  do
+    case "$sw" in /dev/zram*) continue ;; esac
+    if [ "$type" = file ]; then
+      # the file system the swap file is on
+      dev=`echo "$mounts" | $AWK -v f="$sw" 'index(f, $2) == 1 && length($2) > l { l = length($2); d = $1 } END { print d }'`
+    else
+      dev=$sw
+    fi
+    crypt "`blk "$dev"`" || message WARN stor006w "Swap: $sw. Put it on LUKS too (or a crypttab entry with a random key, for swap that need not survive a reboot)." "The root file system is encrypted but swap is not: what the kernel swaps out of memory, passwords and keys among it, is written to the disk in clear."
+  done
+fi
+
+#
+# Core dumps
+#
+pattern=`$CAT "$root/proc/sys/kernel/core_pattern" 2>/dev/null`
+case "$pattern" in
+  ''|'|'*) ;;
+  *)
+    limited=`$CAT "$root/etc/security/limits.conf" "$root"/etc/security/limits.d/*.conf 2>/dev/null |
+      $AWK '!/^[ \t]*#/ && $1 == "*" && $2 == "hard" && $3 == "core" && $4 == "0" { print "y" }'`
+    [ -z "$limited" ] && message WARN stor007w "kernel.core_pattern is \"$pattern\". Add '* hard core 0' to /etc/security/limits.conf, or install systemd-coredump, which keeps them where only root reads them." "A program that crashes writes its memory to a core file beside it, passwords and keys included, and nothing limits that."
+    ;;
+esac
+
+#
+# USB storage, when the policy is to have none
+#
+if [ "$Tiger_Storage_NoUSB" = Y ]; then
+  blocked=`$CAT "$root"/etc/modprobe.d/*.conf "$root"/usr/lib/modprobe.d/*.conf "$root"/lib/modprobe.d/*.conf 2>/dev/null |
+    $AWK '!/^[ \t]*#/ && (($1 == "blacklist" || $1 == "install") && ($2 == "usb-storage" || $2 == "usb_storage")) { print "y" }'`
+  [ -z "$blocked" ] && message WARN stor008w "Add 'install usb-storage /bin/false' and 'blacklist usb-storage' to a file in /etc/modprobe.d (and uas likewise), then rebuild the initramfs." "USB storage can be used, and the policy (Tiger_Storage_NoUSB) is to have none."
+fi
+
+exit 0
