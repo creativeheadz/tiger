@@ -3,6 +3,7 @@ Severity: WARN
 Category: filesystem
 Check: check_storage
 References: crypttab(5)
+Controls: CIS 3.11; NIST SC-28; ISO 8.24
 
 The root file system is encrypted, but swap is not: a swap partition
 on a plain device, or a swap file on an unencrypted file system.

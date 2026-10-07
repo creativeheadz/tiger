@@ -3,6 +3,7 @@ Severity: WARN
 Category: kernel
 Check: check_mac
 References: apparmor(7), selinux(8)
+Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 
 No mandatory access control system is confining anything: AppArmor and
 SELinux are both off, or one is on with no policy enforced. Then a

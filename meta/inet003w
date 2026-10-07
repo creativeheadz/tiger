@@ -2,6 +2,7 @@ Id: inet003w
 Severity: WARN
 Category: services
 Check: check_services
+Controls: CIS 4.8; NIST CM-7; ISO 8.21; CE Secure configuration
 
 The indicated port number is assigned to another service.  This
 indicates either a misconfiguration in the services database, or a

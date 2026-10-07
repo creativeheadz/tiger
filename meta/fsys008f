@@ -2,6 +2,7 @@ Id: fsys008f
 Severity: FAIL
 Category: filesystem
 Check: check_wdir
+Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 The listed directories are world writable.  These provide a location
 for intruders to store files.  They should be checked for unusual

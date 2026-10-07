@@ -3,6 +3,7 @@ Severity: WARN
 Category: kernel
 Check: check_mac
 References: selinux(8), setenforce(8)
+Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 
 SELinux is loaded but in permissive mode: it logs every access its
 policy would deny and denies none of them, so it protects nothing.

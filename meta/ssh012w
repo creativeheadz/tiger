@@ -2,6 +2,7 @@ Id: ssh012w
 Severity: WARN
 Category: ssh
 Check: check_ssh
+Controls: CIS 4.1, 5.4; NIST AC-17, IA-2; ISO 8.5, 8.20; CE Secure configuration, User access control
 
 LoginGraceTime is above 60 seconds, so an unauthenticated connection
 can tie up a slot for longer than it needs to, which makes exhausting

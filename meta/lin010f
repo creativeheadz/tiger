@@ -2,6 +2,7 @@ Id: lin010f
 Severity: FAIL
 Category: network
 Check: check_network_config
+Controls: CIS 4.1; NIST SC-5, SC-7; ISO 8.20; CE Secure configuration
 
 The system will answer to ICMP broadcast echo messages. This is considered
 a problem since ICMP broadcasts can cause network denial of service as

@@ -2,6 +2,7 @@ Id: misc010w
 Severity: WARN
 Category: services
 Check: check_sendmail
+Controls: CIS 4.8; NIST CM-7; ISO 8.21; CE Secure configuration
 
 CERT Advisory CA-93:15
 

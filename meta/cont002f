@@ -2,6 +2,7 @@ Id: cont002f
 Severity: FAIL
 Category: containers
 Check: check_containers
+Controls: CIS 4.1, 5.4; NIST AC-6, CM-7; ISO 8.2, 8.9; CE Secure configuration, User access control
 
 The Docker (or Podman) socket can be read and written by anyone on the
 system: every local user, and every service account a compromised

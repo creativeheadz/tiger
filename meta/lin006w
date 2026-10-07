@@ -2,6 +2,7 @@ Id: lin006w
 Severity: WARN
 Category: packages
 Check: deb_checkmd5sums
+Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 The check of installed files against package checksums could not be done
 because this does not look like a Debian system, or dpkg's information is

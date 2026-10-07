@@ -2,6 +2,7 @@ Id: lin036w
 Severity: WARN
 Category: kernel
 Check: check_sysctl
+Controls: CIS 7.3; NIST SI-2, SI-16; ISO 8.8; CE Security update management
 
 The kernel reports that a hardware speculation flaw (Spectre, Meltdown,
 MDS, Retbleed and their relatives) is not mitigated on this machine:

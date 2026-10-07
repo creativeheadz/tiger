@@ -1,0 +1,147 @@
+# doc/controls.map - which controls each finding is evidence about
+#
+# A finding maps to the controls whose requirement it shows is not met,
+# or not met as well as it could be. That makes Tigris's report evidence
+# for an assessment against these frameworks; it is not a certification,
+# and passing every check does not mean a control is met: most controls
+# ask for things no tool on one host can see (a process, a policy, an
+# inventory).
+#
+#   CIS    CIS Critical Security Controls v8, by safeguard (5.2)
+#   NIST   NIST SP 800-53 Rev. 5, by control or enhancement (IA-5(1))
+#   ISO    ISO/IEC 27001:2022 Annex A, by control (8.9)
+#   CE     UK Cyber Essentials, by technical control theme
+#
+# One rule a line: what it applies to, then the four frameworks' controls,
+# separated by " | ", each a comma-separated list, or "-" for none:
+#
+#   check:NAME   every finding id whose metadata names NAME as its check;
+#                an id with several checks takes all of theirs
+#   id:ID        that id alone, instead of its checks' rules
+#
+# An ERROR or CONFIG message says a check could not run, which is evidence
+# of nothing: those ids get no controls, whatever the rules say.
+#
+# util/mkcontrols writes the result into each meta/ID as its Controls:
+# line, and tests/explain_check.sh fails when the two disagree. The JSON
+# report carries it with each finding (doc/json-format.md).
+
+# ---- accounts and passwords
+check:check_passwd        | 5.1, 5.2           | AC-2, IA-5(1)            | 5.16, 5.17          | User access control
+check:check_passwdformat  | 5.1, 5.2           | AC-2, IA-5(1)            | 5.16, 5.17          | User access control
+check:check_passwdspec    | 5.2                | IA-5(1)                  | 5.17                | User access control
+check:check_group         | 5.1                | AC-2                     | 5.16                | User access control
+check:check_accounts      | 3.3, 5.1           | AC-2, AC-3               | 5.16, 5.18, 8.3     | User access control
+check:check_neverlogin    | 5.3                | AC-2(3)                  | 5.18                | User access control
+check:check_root          | 5.4                | AC-6, AC-17              | 8.2, 8.5            | User access control
+check:check_sudo          | 5.4                | AC-6                     | 8.2                 | User access control
+check:check_pam           | 5.2                | IA-5(1)                  | 5.17, 8.5           | User access control
+check:crack_run           | 5.2                | IA-5(1)                  | 5.17                | User access control
+check:check_path          | 4.1                | CM-6                     | 8.9                 | Secure configuration
+check:check_issue         | -                  | AC-8                     | -                   | -
+check:gen_passwd_sets     | 5.1                | AC-2                     | 5.16                | User access control
+id:pass011f               | 5.2                | IA-5(1)                  | 5.17                | User access control
+id:pass013w               | 5.2                | IA-5(1), SC-13           | 5.17, 8.24          | User access control
+id:pass017w               | 5.4                | AC-6(5)                  | 8.2                 | User access control
+id:pass018f               | 5.4                | AC-6(5), IA-5(1)         | 8.2, 5.17           | User access control
+id:pass021f               | 5.4                | AC-6                     | 8.2                 | User access control
+id:acc021w                | 5.3                | AC-2(3)                  | 5.18                | User access control
+id:pam003w                | 4.1                | AC-7                     | 8.5                 | User access control
+
+# ---- boot
+check:check_lilo          | 4.1                | AC-3, CM-6               | 8.9                 | Secure configuration
+check:check_single        | 4.1                | AC-3, IA-2               | 8.5, 8.9            | Secure configuration
+check:check_secureboot    | 4.1                | CM-14, SI-7(9)           | 8.9                 | Secure configuration
+
+# ---- containers
+check:check_containers    | 4.1, 5.4           | AC-6, CM-7               | 8.2, 8.9            | Secure configuration, User access control
+
+# ---- cron
+check:check_crontabs      | 4.1                | AC-3, CM-5, CM-6         | 8.9                 | Secure configuration
+
+# ---- the file system
+check:check_perms         | 3.3, 4.1           | AC-3, CM-6               | 8.3, 8.9            | Secure configuration
+check:check_suid          | 4.1                | AC-6, CM-7               | 8.2, 8.18           | Secure configuration
+check:check_sgid          | 4.1                | AC-6, CM-7               | 8.2, 8.18           | Secure configuration
+check:check_wdir          | 3.3                | AC-3                     | 8.3                 | Secure configuration
+check:check_nousrgrp      | 3.3                | AC-3, CM-6               | 8.3                 | Secure configuration
+check:check_rootdir       | 3.3                | AC-3                     | 8.3                 | Secure configuration
+check:check_devices       | 3.3                | AC-3                     | 8.3                 | Secure configuration
+check:check_devs          | 4.1                | CM-6                     | 8.9                 | Secure configuration
+check:check_links         | 4.1                | CM-6                     | 8.9                 | Secure configuration
+check:check_names         | -                  | SI-4                     | 8.16                | -
+check:check_embedded      | 4.1                | AC-3, CM-6               | 8.9                 | Secure configuration
+check:check_umask         | 4.1                | AC-3, CM-6               | 8.9                 | Secure configuration
+check:check_rcumask       | 4.1                | AC-3, CM-6               | 8.9                 | Secure configuration
+check:find_files          | 4.1                | CM-6                     | 8.9                 | Secure configuration
+check:check_storage       | 4.1                | CM-6                     | 8.9                 | Secure configuration
+id:stor004w               | 3.6, 3.11          | SC-28                    | 8.24                | -
+id:stor005i               | 3.11               | SC-28                    | 8.24                | -
+id:stor006w               | 3.11               | SC-28                    | 8.24                | -
+id:stor009i               | 3.11               | SC-28                    | 8.24                | -
+id:stor008w               | -                  | MP-7                     | 7.10                | -
+
+# ---- the firewall
+check:check_firewall      | 4.4, 4.5           | SC-7                     | 8.20, 8.22          | Firewalls
+
+# ---- integrity
+check:aide_run            | -                  | SI-7                     | 8.16                | -
+check:integrit_run        | -                  | SI-7                     | 8.16                | -
+check:tripwire_run        | -                  | SI-7                     | 8.16                | -
+check:check_signatures    | -                  | SI-7                     | 8.16                | -
+
+# ---- signs of intrusion
+check:check_known         | 10.1               | SI-3, SI-4               | 8.7, 8.16           | Malware protection
+check:check_rootkit       | 10.1               | SI-3, SI-4               | 8.7, 8.16           | Malware protection
+check:check_exrc          | 10.1               | SI-3, SI-4               | 8.7, 8.16           | Malware protection
+check:check_finddeleted   | 10.1               | SI-4                     | 8.16                | Malware protection
+
+# ---- the kernel
+check:check_sysctl        | 4.1, 10.5          | CM-6, SI-16              | 8.9                 | Secure configuration
+check:check_mac           | 4.1                | AC-3(3)                  | 8.9                 | Secure configuration
+id:lin032w                | 4.1                | CM-6, SC-7               | 8.20                | Secure configuration
+id:lin033w                | 4.1                | CM-6, SC-7               | 8.20                | Secure configuration
+id:lin034w                | 4.1                | CM-6, SC-7               | 8.20                | Secure configuration
+id:lin035f                | 4.1                | CM-6, SC-7               | 8.20                | Secure configuration
+id:lin036w                | 7.3                | SI-2, SI-16              | 8.8                 | Security update management
+
+# ---- logging
+check:check_logfiles      | 8.2, 8.3           | AU-9                     | 8.15                | -
+check:check_audit         | 8.2, 8.5           | AU-2, AU-12              | 8.15                | -
+
+# ---- the network
+check:check_network_config | 4.1               | SC-5, SC-7               | 8.20                | Secure configuration
+check:check_listeningprocs | 4.8               | CM-7                     | 8.20                | Secure configuration
+check:check_exports       | 3.3, 4.8           | AC-3, CM-7               | 8.3, 8.21           | Secure configuration
+check:check_ntp           | 8.4                | AU-8, SC-45              | 8.17                | -
+check:check_sendmail      | 4.8                | CM-7                     | 8.21                | Secure configuration
+
+# ---- packages
+check:pkg_integrity       | 2.3                | SI-7                     | 8.19                | -
+check:deb_checkmd5sums    | 2.3                | SI-7                     | 8.19                | -
+check:deb_nopackfiles     | 2.3                | SI-7, CM-11              | 8.19                | -
+check:deb_statoverride    | 3.3                | AC-3, CM-6               | 8.3                 | Secure configuration
+check:check_updates       | 7.3, 7.4           | SI-2                     | 8.8                 | Security update management
+check:check_patches       | 7.3, 7.4           | SI-2                     | 8.8                 | Security update management
+check:check_release       | 2.2                | SA-22                    | 8.8                 | Security update management
+id:upd004i                | 7.3                | SI-2                     | 8.8                 | Security update management
+
+# ---- services
+check:check_aliases       | 4.1                | CM-6                     | 8.9                 | Secure configuration
+check:check_apache        | 4.1                | CM-6, CM-7               | 8.9                 | Secure configuration
+check:check_services      | 4.8                | CM-7                     | 8.21                | Secure configuration
+check:check_systemd       | 4.1                | CM-7, SC-39              | 8.9                 | Secure configuration
+check:check_units         | 4.1                | CM-5, CM-6               | 8.9                 | Secure configuration
+check:check_timesync      | 8.4                | AU-8, SC-45              | 8.17                | -
+check:check_runprocs      | 4.8                | CM-7                     | 8.9                 | Secure configuration
+
+# ---- sshd
+check:check_ssh           | 4.1, 5.4           | AC-17, IA-2              | 8.5, 8.20           | Secure configuration, User access control
+id:ssh017w                | 3.10               | SC-8, SC-13              | 8.24                | Secure configuration
+id:ssh018w                | 3.10               | SC-8, SC-13              | 8.24                | Secure configuration
+id:ssh019w                | 3.10               | SC-8, SC-13              | 8.24                | Secure configuration
+
+# Tigris's own messages (its configuration, the run, its helpers) are about
+# Tigris, not the system: check:config, check:initdefs, check:tiger,
+# check:tigris, check:gen_mounts, check:tigercron, check:check_symlink,
+# check:check_system, check:mksig and check:any have no rule.

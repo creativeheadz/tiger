@@ -2,6 +2,7 @@ Id: nfs003w
 Severity: WARN
 Category: network
 Check: check_exports
+Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
 
 Exporting the root file-system allows remote machines to
 access critical files such as /etc/passwd, possibly allowing

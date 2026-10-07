@@ -2,6 +2,7 @@ Id: lin034w
 Severity: WARN
 Category: network
 Check: check_sysctl
+Controls: CIS 4.1; NIST CM-6, SC-7; ISO 8.20; CE Secure configuration
 
 net.ipv6.conf.*.accept_redirects is 1, so the host accepts IPv6 ICMP
 redirects and lets any machine on the link change its routes. See

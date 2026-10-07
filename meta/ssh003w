@@ -2,6 +2,7 @@ Id: ssh003w
 Severity: WARN
 Category: ssh
 Check: check_ssh
+Controls: CIS 4.1, 5.4; NIST AC-17, IA-2; ISO 8.5, 8.20; CE Secure configuration, User access control
 
 The RhostsAuthentication directive determines if .rhosts or
 /etc/hosts.equiv is sufficient authentication.  This option

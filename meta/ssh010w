@@ -2,6 +2,7 @@ Id: ssh010w
 Severity: WARN
 Category: ssh
 Check: check_ssh
+Controls: CIS 4.1, 5.4; NIST AC-17, IA-2; ISO 8.5, 8.20; CE Secure configuration, User access control
 
 UsePAM is no, so account expiry, access rules and session set-up in the
 PAM stack are not applied to SSH logins. Set it to yes.

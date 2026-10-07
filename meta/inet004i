@@ -2,6 +2,7 @@ Id: inet004i
 Severity: INFO
 Category: services
 Check: check_services
+Controls: CIS 4.8; NIST CM-7; ISO 8.21; CE Secure configuration
 
 The indicated service has been added to the services database
 as distributed.  These are normal output, but you should be

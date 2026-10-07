@@ -2,6 +2,7 @@ Id: issue002w
 Severity: WARN
 Category: accounts
 Check: check_issue
+Controls: NIST AC-8
 
 The /etc/issue.net file does not have the designated content.  This file
 is often used as a network login banner by programs and should contain

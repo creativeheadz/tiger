@@ -3,6 +3,7 @@ Severity: WARN
 Category: filesystem
 Check: check_storage
 References: modprobe.d(5)
+Controls: NIST MP-7; ISO 7.10
 
 The policy is to allow no USB storage (Tiger_Storage_NoUSB=Y in
 tigerrc), but the usb-storage driver is neither blacklisted nor

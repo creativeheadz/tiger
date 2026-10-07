@@ -2,6 +2,7 @@ Id: nfs006f
 Severity: FAIL
 Category: network
 Check: check_exports
+Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
 
 Exporting a file-system R/W to everyone means that anyone can
 modify the data on your system, possibly making changes that

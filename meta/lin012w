@@ -2,6 +2,7 @@ Id: lin012w
 Severity: WARN
 Category: network
 Check: check_network_config
+Controls: CIS 4.1; NIST SC-5, SC-7; ISO 8.20; CE Secure configuration
 
 The system is configured to accept ICMP redirects, this might or might
 not be necessary in your network topology. If you have multiple routers

@@ -2,6 +2,7 @@ Id: netw042f
 Severity: FAIL
 Category: network
 Check: check_ntp
+Controls: CIS 8.4; NIST AU-8, SC-45; ISO 8.17
 
 The NTP daemon is running but its configuration names no remote time
 server, so the clock is never corrected. A drifting clock breaks log

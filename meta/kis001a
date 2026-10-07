@@ -2,6 +2,7 @@ Id: kis001a
 Severity: ALERT
 Category: intrusion
 Check: check_known
+Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 The indicated file is a directory.  The file is a known location used
 by intruders.  This should be considered a sign that this system

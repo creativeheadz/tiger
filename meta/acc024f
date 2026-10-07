@@ -2,6 +2,7 @@ Id: acc024f
 Severity: FAIL
 Category: accounts
 Check: check_neverlogin
+Controls: CIS 5.3; NIST AC-2(3); ISO 5.18; CE User access control
 
 There is a user in the system (which might or might not have a valid
 password) that has not logged into the system since he/she was created.

@@ -2,6 +2,7 @@ Id: ssh018w
 Severity: WARN
 Category: ssh
 Check: check_ssh
+Controls: CIS 3.10; NIST SC-8, SC-13; ISO 8.24; CE Secure configuration
 
 The effective MACs list includes MD5, RIPEMD or truncated 96-bit MACs.
 Set MACs to the SHA-2 encrypt-then-MAC variants, for example:

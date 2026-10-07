@@ -2,6 +2,7 @@ Id: lin038w
 Severity: WARN
 Category: packages
 Check: pkg_integrity
+Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 A file installed by a package has a different mode or owner than the
 package set. The check asks the package manager (rpm -V, apk audit,

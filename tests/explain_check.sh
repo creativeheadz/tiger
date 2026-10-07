@@ -217,5 +217,24 @@ else
   bad "malformed echoed ids:"; echo "$deformed" | sed 's/^/     /'
 fi
 
+# The compliance mapping: every Controls: line is what doc/controls.map
+# says, and every rule in the map names a check some metadata names, or an
+# id that has a metadata file
+if out=`sh "$TIGER/util/mkcontrols" -c "$TIGER" 2>&1`; then
+  ok "every Controls: line is what doc/controls.map makes of it"
+else
+  bad "Controls: lines out of date (run util/mkcontrols):"; echo "$out" | head -5 | sed 's/^/     /'
+fi
+stale=`grep -v '^[ 	]*\(#\|$\)' "$TIGER/doc/controls.map" | sed 's/[ 	]*|.*//' | while read -r rule
+do
+  case "$rule" in
+    id:*) [ -f "$TIGER/meta/${rule#id:}" ] || echo "$rule" ;;
+    check:*) grep -lq "^Check: \(.* \)*${rule#check:}\( .*\)*$" "$TIGER"/meta/* || echo "$rule" ;;
+    *) echo "$rule (neither check: nor id:)" ;;
+  esac
+done`
+[ -z "$stale" ] && ok "every rule in doc/controls.map names a check or an id that exists" ||
+  { bad "rules in doc/controls.map that name nothing:"; echo "$stale" | sed 's/^/     /'; }
+
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

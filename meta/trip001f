@@ -2,6 +2,7 @@ Id: trip001f
 Severity: FAIL
 Category: integrity
 Check: tripwire_run
+Controls: NIST SI-7; ISO 8.16
 
 Tripwire reports that a file it is watching has been modified since the
 database was last updated. If the change was expected (an upgrade),

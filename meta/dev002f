@@ -2,6 +2,7 @@ Id: dev002f
 Severity: FAIL
 Category: filesystem
 Check: check_devices
+Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 Devices that have improper (world) permissions might be accessed by
 any system user. This might open security holes if these are shared

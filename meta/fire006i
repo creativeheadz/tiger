@@ -2,6 +2,7 @@ Id: fire006i
 Severity: INFO
 Category: firewall
 Check: check_firewall
+Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 Docker publishes ports to the network, and there are rules that may
 restrict them: rules in DOCKER-USER other than Docker's own "return", or

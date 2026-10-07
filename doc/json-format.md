@@ -41,6 +41,7 @@ order:
 | `check` | The script that reported it. |
 | `message` | The text, on one line. |
 | `detail` | Optional. Extra lines the check printed (for example a file listing), joined with `\n`. |
+| `controls` | The compliance controls the finding is evidence about, from its metadata (made from [controls.map](controls.map)): `{"cis_v8":["5.4"],"nist_800_53":["AC-6","AC-17"],"iso_27001_2022":["8.2","8.5"],"cyber_essentials":["User access control"]}`, each framework only when it maps to one. Evidence for an assessment, not a verdict on the control: most controls ask for more than one host can show. Absent when the finding maps to none, and in reports written before 3.6.0. |
 | `category` | The area the finding belongs to, from its metadata file `meta/ID`: `accounts`, `boot`, `containers`, `cron`, `filesystem`, `firewall`, `integrity`, `intrusion`, `kernel`, `logging`, `network`, `packages`, `services`, `ssh` or `tigris` ([metadata.md](metadata.md)). Absent in reports written before 3.4.0. |
 | `accepted` | Optional. Present when the finding was accepted with `tigris-accept`: `reason`, and `until` as `YYYY-MM-DD` or `-` for no expiry. An accepted finding is **not** in the text report. A consumer that wants the same view as the text report skips findings that have `accepted`. |
 

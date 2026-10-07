@@ -2,6 +2,7 @@ Id: grp005w
 Severity: WARN
 Category: accounts
 Check: check_group
+Controls: CIS 5.1; NIST AC-2; ISO 5.16; CE User access control
 
 The indicated group id (gid) exists in separate group files, but the
 group names are different.  This can lead to unexpected access to

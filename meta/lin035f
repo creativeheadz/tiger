@@ -2,6 +2,7 @@ Id: lin035f
 Severity: FAIL
 Category: network
 Check: check_sysctl
+Controls: CIS 4.1; NIST CM-6, SC-7; ISO 8.20; CE Secure configuration
 
 net.ipv6.conf.*.accept_source_route is 1, so the host accepts IPv6
 packets that dictate their own route. See lin016f for the IPv4

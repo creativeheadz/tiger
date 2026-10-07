@@ -59,7 +59,7 @@ Settled, so they do not have to be argued again:
 | Platforms            | Linux: Debian/Ubuntu, Fedora/RHEL/SUSE, Alpine, Arch            | Linux, macOS, BSD, Solaris, AIX          |
 | Machine output       | JSON Lines with a versioned schema, next to the text report     | `report.dat` (key=value)                 |
 | Explanations         | `tigris explain ID`, one metadata file per id (severity, category, checks) | Suggestions linked to the CISOfy website |
-| Compliance mapping   | None yet                                                        | Enterprise (paid) edition only           |
+| Compliance mapping   | CIS v8, NIST 800-53, ISO 27001:2022, Cyber Essentials, per finding, in the JSON (on master, after 3.5.0) | Enterprise (paid) edition only |
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
@@ -578,7 +578,7 @@ what scripts and cron see.
   and the HTML reference are read from it, and
   `tests/explain_check.sh` holds the files and the code to each other
   both ways. On master since 3.3.0.
-- [ ] **Open compliance mapping**, free: CIS Controls v8, ISO 27001:2022
+- [x] **Open compliance mapping** (after 3.5.0), free: CIS Controls v8, ISO 27001:2022
   Annex A, NIST 800-53 and UK Cyber Essentials, kept as data files and
   carried in the JSON. Lynis offers this only in its paid edition.
 - [x] **Drift**: `tigris-diff` and `tigris-accept`, and the main

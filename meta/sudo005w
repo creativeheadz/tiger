@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_sudo
 References: sudoers(5)
+Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 
 A file holding sudo's rules (/etc/sudoers, /etc/sudoers.d or a file in
 it) is not owned by root, or can be written by its group or by anyone.

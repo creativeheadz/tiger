@@ -2,6 +2,7 @@ Id: ssh008w
 Severity: WARN
 Category: ssh
 Check: check_ssh
+Controls: CIS 4.1, 5.4; NIST AC-17, IA-2; ISO 8.5, 8.20; CE Secure configuration, User access control
 
 X11Forwarding is yes. A forwarded X11 connection lets the server read
 and inject into the client's display. Set it to no unless users need

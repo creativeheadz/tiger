@@ -2,6 +2,7 @@ Id: root004w
 Severity: WARN
 Category: accounts
 Check: check_root
+Controls: CIS 5.4; NIST AC-6, AC-17; ISO 8.2, 8.5; CE User access control
 
 The graphical login manager, xdm or an old gdm, is configured to let
 root log in at the console (allowRootLogin, AllowRoot or

@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_pam
 References: pwquality.conf(5), NIST SP 800-63B
+Controls: CIS 5.2; NIST IA-5(1); ISO 5.17, 8.5; CE User access control
 
 Passwords are checked for quality, but the minimum length allowed is
 below 8 characters (minlen= on the pam_pwquality or pam_cracklib line,

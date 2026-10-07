@@ -3,6 +3,7 @@ Severity: WARN
 Category: logging
 Check: check_audit
 References: audit.rules(7), augenrules(8)
+Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 
 auditd is running, but no audit rules are loaded ('auditctl -l' says
 "No rules"), so it records little beyond what the kernel and PAM send

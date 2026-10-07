@@ -142,6 +142,33 @@
           "pattern": "^[a-z]+$",
           "description": "The area the finding belongs to, from its metadata file (meta/ID): accounts, boot, containers, cron, filesystem, firewall, integrity, intrusion, kernel, logging, network, packages, services, ssh or tigris. See doc/metadata.md. Absent in reports older than the field."
         },
+        "controls": {
+          "type": "object",
+          "description": "The compliance controls the finding is evidence about, from its metadata (meta/ID, made from doc/controls.map): CIS Controls v8 safeguards, NIST SP 800-53 Rev. 5 controls, ISO/IEC 27001:2022 Annex A controls and UK Cyber Essentials themes. Each framework only when the finding maps to it; absent for findings that map to none, and in reports older than the field.",
+          "additionalProperties": false,
+          "properties": {
+            "cis_v8": {
+              "type": "array",
+              "items": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+              "minItems": 1
+            },
+            "nist_800_53": {
+              "type": "array",
+              "items": { "type": "string", "pattern": "^[A-Z]{2}-[0-9]+(\\([0-9]+\\))?$" },
+              "minItems": 1
+            },
+            "iso_27001_2022": {
+              "type": "array",
+              "items": { "type": "string", "pattern": "^[5-8]\\.[0-9]+$" },
+              "minItems": 1
+            },
+            "cyber_essentials": {
+              "type": "array",
+              "items": { "enum": ["Firewalls", "Secure configuration", "Security update management", "User access control", "Malware protection"] },
+              "minItems": 1
+            }
+          }
+        },
         "accepted": {
           "description": "Present when the finding was accepted with tigris-accept; it is then not in the text report.",
           "type": "object",

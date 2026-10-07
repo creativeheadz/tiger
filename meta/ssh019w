@@ -2,6 +2,7 @@ Id: ssh019w
 Severity: WARN
 Category: ssh
 Check: check_ssh
+Controls: CIS 3.10; NIST SC-8, SC-13; ISO 8.24; CE Secure configuration
 
 The effective KexAlgorithms list includes SHA-1 based or 1024-bit
 Diffie-Hellman groups. Set KexAlgorithms to curve25519 and the SHA-2

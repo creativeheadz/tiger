@@ -2,6 +2,7 @@ Id: acc023w
 Severity: WARN
 Category: accounts
 Check: check_accounts
+Controls: CIS 3.3, 5.1; NIST AC-2, AC-3; ISO 5.16, 5.18, 8.3; CE User access control
 
 The user's parent directory does not have the correct administrative
 permissions. It generally should not have write access for groups &

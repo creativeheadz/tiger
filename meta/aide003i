@@ -2,6 +2,7 @@ Id: aide003i
 Severity: INFO
 Category: integrity
 Check: aide_run
+Controls: NIST SI-7; ISO 8.16
 
 Aide finished a run and found differences; this line carries the
 summary counts ("Total number of ...") from its report. It is context

@@ -2,5 +2,6 @@ Id: aide001i
 Severity: INFO
 Category: integrity
 Check: aide_run
+Controls: NIST SI-7; ISO 8.16
 
 Aide detected no changes. Good.

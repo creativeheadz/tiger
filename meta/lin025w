@@ -2,6 +2,7 @@ Id: lin025w
 Severity: WARN
 Category: kernel
 Check: check_sysctl
+Controls: CIS 4.1, 10.5; NIST CM-6, SI-16; ISO 8.9; CE Secure configuration
 
 kernel.unprivileged_bpf_disabled is 0, so unprivileged users may load
 BPF programs into the kernel. The BPF verifier has been the source of

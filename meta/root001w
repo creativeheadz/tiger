@@ -2,6 +2,7 @@ Id: root001w
 Severity: WARN
 Category: accounts
 Check: check_root
+Controls: CIS 5.4; NIST AC-6, AC-17; ISO 8.2, 8.5; CE User access control
 
 The indicated file allows remote (i.e., other than system console).
 root logins for telnet and other services.  For /etc/default/login,

@@ -2,5 +2,6 @@ Id: grp003w
 Severity: WARN
 Category: accounts
 Check: check_group
+Controls: CIS 5.1; NIST AC-2; ISO 5.16; CE User access control
 
 The listed entry does not have the correct number of fields (4).

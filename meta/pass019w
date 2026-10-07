@@ -2,6 +2,7 @@ Id: pass019w
 Severity: WARN
 Category: accounts
 Check: check_passwdspec
+Controls: CIS 5.2; NIST IA-5(1); ISO 5.17; CE User access control
 
 The account has no password aging: the password never expires and
 there is no warning before it would. Set PASS_MAX_DAYS and PASS_WARN_AGE

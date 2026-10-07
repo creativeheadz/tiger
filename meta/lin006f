@@ -2,6 +2,7 @@ Id: lin006f
 Severity: FAIL
 Category: packages
 Check: deb_checkmd5sums pkg_integrity
+Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 A file installed by a package no longer exists in the system, so it
 cannot be checked. An administrator should not remove files from the

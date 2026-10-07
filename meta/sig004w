@@ -2,6 +2,7 @@ Id: sig004w
 Severity: WARN
 Category: integrity
 Check: check_signatures
+Controls: NIST SI-7; ISO 8.16
 
 No match was found for the signature of the indicated file.  This
 indicates either a local modification has been performed, replacing

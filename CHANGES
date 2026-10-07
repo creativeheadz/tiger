@@ -1,6 +1,24 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
+Changes since 3.5.0 (unreleased)
+--------------------------------
+
+- Open compliance mapping. Every finding maps to the controls it is
+  evidence about in CIS Controls v8 (safeguards), NIST SP 800-53 Rev. 5,
+  ISO/IEC 27001:2022 Annex A and UK Cyber Essentials (its five themes).
+  The map is one file, doc/controls.map, by check, with overrides by
+  finding id (encryption, crypto, privileged accounts, lockout and the
+  like); util/mkcontrols writes it into each meta/ID as a Controls:
+  line, and tests/explain_check.sh fails when they disagree or a rule
+  names nothing. ERROR and CONFIG ids, which say a check could not run,
+  map to nothing. tigris explain shows a finding's controls, make's
+  doc/explanations.html lists them, and the JSON report carries them as
+  "controls", an object with a list per framework (schema 1, a new
+  optional field). 353 of the 400 ids map to something; the rest are
+  Tigris's own messages. A finding is evidence for an assessment, not
+  a verdict on a control.
+
 Changes (v 3.5.0)
 --------------------
 

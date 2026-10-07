@@ -2,6 +2,7 @@ Id: fire002w
 Severity: WARN
 Category: firewall
 Check: check_firewall
+Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 As fire001w, for IPv6. A host can deny IPv4 by default and leave IPv6
 open: an nftables table of family 'ip' or an iptables (not ip6tables)

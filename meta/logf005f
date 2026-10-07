@@ -2,6 +2,7 @@ Id: logf005f
 Severity: FAIL
 Category: logging
 Check: check_logfiles
+Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
 
 The log file does not have proper permissions set. It is recommended that
 you change the permissions to those suggested for these file.

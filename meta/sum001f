@@ -2,6 +2,7 @@ Id: sum001f
 Severity: FAIL
 Category: boot
 Check: check_single
+Controls: CIS 4.1; NIST AC-3, IA-2; ISO 8.5, 8.9; CE Secure configuration
 
 The system does not appear to require a password during single-user
 mode boot.  Either add a password to your boot loader or add the line:

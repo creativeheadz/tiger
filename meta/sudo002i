@@ -3,6 +3,7 @@ Severity: INFO
 Category: accounts
 Check: check_sudo
 References: sudoers(5)
+Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 
 Some sudo rules let their users run specific commands as root without
 a password; the detail lists them, as "who: command". Packages add

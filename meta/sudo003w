@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_sudo
 References: sudoers(5)
+Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 
 A Defaults line turns off authentication (!authenticate): sudo asks
 the users it applies to for no password at all, as if every rule had

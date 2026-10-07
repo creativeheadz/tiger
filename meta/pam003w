@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_pam
 References: pam_faillock(8), faillock.conf(5)
+Controls: CIS 4.1; NIST AC-7; ISO 8.5; CE User access control
 
 No PAM module locks an account after repeated failed logins: neither
 pam_faillock nor the older pam_tally2 is in an auth stack. Passwords

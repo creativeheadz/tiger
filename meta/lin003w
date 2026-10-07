@@ -2,6 +2,7 @@ Id: lin003w
 Severity: WARN
 Category: network
 Check: check_listeningprocs
+Controls: CIS 4.8; NIST CM-7; ISO 8.20; CE Secure configuration
 
 Processes that have not been run by a valid user are listening on interfaces
 open to external networks. This processes might have been run by a valid user

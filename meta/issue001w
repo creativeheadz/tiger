@@ -2,6 +2,7 @@ Id: issue001w
 Severity: WARN
 Category: accounts
 Check: check_issue
+Controls: NIST AC-8
 
 The /etc/issue file does not have the designated content.  This file
 is often used as a local login banner and should contain appropriate

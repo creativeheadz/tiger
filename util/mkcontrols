@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# mkcontrols [-c] [DIR]: write each finding's Controls: line in DIR/meta
+#                 (DIR defaults to the tree this script is in) from
+#                 DIR/doc/controls.map, or with -c only say which differ
+#                 and exit 1 when any does.
+#
+# 10/07/2026 atrimbitas - Initial version, for the open compliance mapping.
+#                 An id takes its id: rule, or else every check: rule of
+#                 the checks its metadata names, merged in the order the
+#                 map gives them; an ERROR or CONFIG id takes none. The
+#                 line reads "Controls: CIS 4.1, 5.4; NIST AC-17; ISO 8.5;
+#                 CE Secure configuration", leaving out a framework with
+#                 nothing, and is the last line of the header.
+#
+#-----------------------------------------------------------------------------
+#
+check=N
+[ "$1" = -c ] && { check=Y; shift; }
+dir=${1:-`cd "\`dirname "$0"\`/.." && pwd`}
+map=$dir/doc/controls.map
+[ -r "$map" ] && [ -d "$dir/meta" ] || { echo "mkcontrols: no $map or $dir/meta" >&2; exit 2; }
+AWK=${AWK:-awk}
+
+# "ID<TAB>Controls line" for every id, the line empty when it has none
+want=`for f in "$dir"/meta/*; do printf '%s\n' "$f"; done |
+$AWK -v map="$map" '
+  function add(fw, items,   n, a, i, x) {
+    if (items == "-" || items == "") return
+    n = split(items, a, /,[ \t]*/)
+    for (i = 1; i <= n; i++) {
+      x = a[i]; gsub(/^[ \t]+|[ \t]+$/, "", x)
+      if (x != "" && !((fw, x) in seen)) { seen[fw, x]; list[fw] = list[fw] (list[fw] == "" ? "" : ", ") x }
+    }
+  }
+  function apply(r,   n, f, i) {
+    n = split(rule[r], f, /[ \t]*\|[ \t]*/)
+    for (i = 1; i <= 4 && i <= n; i++) add(i, f[i])
+  }
+  BEGIN {
+    while ((getline l < map) > 0) {
+      if (l ~ /^[ \t]*(#|$)/) continue
+      k = l; sub(/[ \t]*\|.*/, "", k)
+      r = l; sub(/^[^|]*\|[ \t]*/, "", r)
+      rule[k] = r
+    }
+    name[1] = "CIS"; name[2] = "NIST"; name[3] = "ISO"; name[4] = "CE"
+  }
+  {
+    file = $0; id = file; sub(/.*\//, "", id)
+    sev = ""; checks = ""
+    while ((getline l < file) > 0) {
+      if (l == "") break
+      if (l ~ /^Severity: /) { sev = l; sub(/^Severity: /, "", sev) }
+      if (l ~ /^Check: /) { checks = l; sub(/^Check: /, "", checks) }
+    }
+    close(file)
+    split("", seen); split("", list)
+    if (sev != "ERROR" && sev != "CONFIG") {
+      if (("id:" id) in rule) apply("id:" id)
+      else {
+        n = split(checks, c, /[ \t,]+/)
+        for (i = 1; i <= n; i++) if (("check:" c[i]) in rule) apply("check:" c[i])
+      }
+    }
+    out = ""
+    for (i = 1; i <= 4; i++) if (list[i] != "") out = out (out == "" ? "" : "; ") name[i] " " list[i]
+    printf "%s\t%s\n", id, (out == "" ? "" : "Controls: " out)
+  }'`
+
+# "ID<TAB>Controls line" as the files have it now
+have()
+{
+  $AWK -v id="$1" '/^$/ { exit } /^Controls: / { print; exit }' "$dir/meta/$1"
+}
+
+printf '%s\n' "$want" | while IFS='	' read -r id line
+do
+  [ -n "$id" ] || continue
+  [ "`have "$id"`" = "$line" ] && continue
+  if [ "$check" = Y ]; then
+    echo "meta/$id: has \"`have "$id"`\", the map says \"$line\""
+    continue
+  fi
+  # the header without its Controls line, then the new line, then the rest
+  $AWK -v line="$line" '
+    !body && /^Controls: / { next }
+    !body && /^$/ { if (line != "") print line; body = 1 }
+    { print }
+    END { if (!body && line != "") print line }' "$dir/meta/$id" > "$dir/meta/.$id.new" &&
+    cat "$dir/meta/.$id.new" > "$dir/meta/$id" && rm -f "$dir/meta/.$id.new"
+done | {
+  out=`cat`
+  [ -n "$out" ] && { printf '%s\n' "$out"; exit 1; }
+  exit 0
+}

@@ -2,6 +2,7 @@ Id: grp001w
 Severity: WARN
 Category: accounts
 Check: check_group
+Controls: CIS 5.1; NIST AC-2; ISO 5.16; CE User access control
 
 The indicated group name exists multiple times in the same group file.
 This indicates a configuration problem which should be corrected.

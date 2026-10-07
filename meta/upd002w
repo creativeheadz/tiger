@@ -3,6 +3,7 @@ Severity: WARN
 Category: packages
 Check: check_updates
 References: unattended-upgrades(8), dnf-automatic(8)
+Controls: CIS 7.3, 7.4; NIST SI-2; ISO 8.8; CE Security update management
 
 Security updates are not installed automatically, so each stays
 uninstalled until someone remembers to install it. Most of the

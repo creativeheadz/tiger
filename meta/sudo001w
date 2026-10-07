@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_sudo
 References: sudoers(5)
+Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 
 The named user or group (%group) may run any command as root through
 sudo without typing a password (NOPASSWD: ALL). The password prompt is

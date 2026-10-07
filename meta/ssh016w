@@ -2,6 +2,7 @@ Id: ssh016w
 Severity: WARN
 Category: ssh
 Check: check_ssh
+Controls: CIS 4.1, 5.4; NIST AC-17, IA-2; ISO 8.5, 8.20; CE Secure configuration, User access control
 
 LogLevel is below INFO, so successful and failed logins are not logged
 in enough detail to investigate an incident. Set it to INFO or VERBOSE.

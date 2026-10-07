@@ -2,6 +2,7 @@ Id: misc011w
 Severity: WARN
 Category: services
 Check: check_sendmail
+Controls: CIS 4.8; NIST CM-7; ISO 8.21; CE Secure configuration
 
 The local sendmail.cf is using the sendmail restricted shell (smrsh)
 for program delivery, but it appears to use a program which allows

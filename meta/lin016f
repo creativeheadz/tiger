@@ -2,6 +2,7 @@ Id: lin016f
 Severity: FAIL
 Category: network
 Check: check_network_config
+Controls: CIS 4.1; NIST SC-5, SC-7; ISO 8.20; CE Secure configuration
 
 Source routing might permit an attacker to send packets through your
 host (if routing is enabled) to other hosts without following your

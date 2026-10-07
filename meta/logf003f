@@ -2,6 +2,7 @@ Id: logf003f
 Severity: FAIL
 Category: logging
 Check: check_logfiles
+Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
 
 The log file "lastlog" should exist to show a user's most recent login
 session on the server.  This file is accessed by the command "lastlog".

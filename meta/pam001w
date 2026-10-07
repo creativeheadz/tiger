@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_pam
 References: pam_pwquality(8), pwquality.conf(5)
+Controls: CIS 5.2; NIST IA-5(1); ISO 5.17, 8.5; CE User access control
 
 No PAM module checks the quality of new passwords: none of
 pam_pwquality, pam_cracklib or pam_passwdqc is in a password stack in

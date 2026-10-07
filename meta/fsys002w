@@ -2,6 +2,7 @@ Id: fsys002w
 Severity: WARN
 Category: filesystem
 Check: check_suid
+Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 The listed program is a setuid executable, and it appears to contain
 relative pathnames (do not start with a '/').  This often represents

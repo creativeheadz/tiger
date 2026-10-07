@@ -2,6 +2,7 @@ Id: osv004w
 Severity: WARN
 Category: packages
 Check: check_release
+Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
 
 The machine is running an unreleased version of Debian GNU/Linux.
 This version is not supported by the security team so it might not

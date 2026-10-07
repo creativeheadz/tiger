@@ -2,6 +2,7 @@ Id: ptch002f
 Severity: FAIL
 Category: packages
 Check: check_patches
+Controls: CIS 7.3, 7.4; NIST SI-2; ISO 8.8; CE Security update management
 
 apt-get reports packages that have newer versions available. Run
 apt-get update && apt-get upgrade, or at least install the security

@@ -2,6 +2,7 @@ Id: nfs001f
 Severity: FAIL
 Category: network
 Check: check_exports
+Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
 
 The anonymous ID defines the 'uid' to be used for authenticating
 NFS requests which have no credentials.  Setting this to 0 is

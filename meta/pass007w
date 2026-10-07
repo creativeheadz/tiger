@@ -2,6 +2,7 @@ Id: pass007w
 Severity: WARN
 Category: accounts
 Check: check_passwd
+Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
 
 Some password controls or constraints are missing.  These should be be
 applied to all users via their /etc/login.defs configuration values.

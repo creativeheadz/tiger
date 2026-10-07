@@ -2,6 +2,7 @@ Id: fsys017w
 Severity: WARN
 Category: filesystem
 Check: check_names
+Controls: NIST SI-4; ISO 8.16
 
 Files with unusual names (see fsys005a) were found in a directory where
 such names are routine rather than suspicious: home directories, media

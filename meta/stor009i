@@ -3,6 +3,7 @@ Severity: INFO
 Category: filesystem
 Check: check_storage
 References: crypttab(5), cryptsetup(8)
+Controls: CIS 3.11; NIST SC-28; ISO 8.24
 
 Auditing a system that is not running (tigris --root), its disk
 encryption is read from what it sets up at boot: /etc/crypttab, which

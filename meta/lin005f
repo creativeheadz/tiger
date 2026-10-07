@@ -2,6 +2,7 @@ Id: lin005f
 Severity: FAIL
 Category: packages
 Check: deb_checkmd5sums pkg_integrity
+Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 An installed file differs from what the package that provided it
 contains: its content (checksum or size) has changed. Tigris asks the

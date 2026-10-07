@@ -3,6 +3,7 @@ Severity: INFO
 Category: filesystem
 Check: check_storage
 References: cryptsetup(8)
+Controls: CIS 3.11; NIST SC-28; ISO 8.24
 
 Some local file systems are not encrypted (the detail lists them).
 Whoever gets hold of the disks, a stolen machine, a disk sent back

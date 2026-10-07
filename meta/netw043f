@@ -2,6 +2,7 @@ Id: netw043f
 Severity: FAIL
 Category: network
 Check: check_ntp
+Controls: CIS 8.4; NIST AU-8, SC-45; ISO 8.17
 
 The NTP daemon is running but its configuration restricts none of its
 remote servers, so any of them may reconfigure it. A rogue or

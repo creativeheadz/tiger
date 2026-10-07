@@ -2,6 +2,7 @@ Id: lin002i
 Severity: WARN, INFO
 Category: network
 Check: check_listeningprocs
+Controls: CIS 4.8; NIST CM-7; ISO 8.20; CE Secure configuration
 
 Installed processes listening on Internet interfaces must be
 tightly controlled since they are the "open doors" to the

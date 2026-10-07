@@ -2,6 +2,7 @@ Id: kis011f
 Severity: FAIL
 Category: intrusion
 Check: check_finddeleted
+Controls: CIS 10.1; NIST SI-4; ISO 8.16; CE Malware protection
 
 A server in the system (that is, a process with a listening socket towards
 the Internet) or its parent process has an open file which has been removed

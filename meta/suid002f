@@ -2,6 +2,7 @@ Id: suid002f
 Severity: FAIL
 Category: filesystem
 Check: check_suid
+Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 A setuid file can be written by its group or by any user. Whoever can
 write the file can replace it with a program of their own choosing,

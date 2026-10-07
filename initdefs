@@ -214,7 +214,7 @@ accepted_message()
 
 # One JSON Lines record per finding, when Tiger_JSON_File is set. Built in
 # full first and written with one call, so checks running in parallel do
-# not interleave. The category comes from meta/ID. INFO goes in regardless of Tiger_Show_INFO_Msgs: the
+# not interleave. The category and controls come from meta/ID. INFO goes in regardless of Tiger_Show_INFO_Msgs: the
 # JSON is for programs, which can filter for themselves.
 json_record()
 {
@@ -223,12 +223,31 @@ json_record()
   _jline="{\"type\":\"finding\",\"level\":\"$1\",\"id\":\"$2\",\"check\":\"${0##*/}\",\"message\":\"$_jmsg\""
   [ -n "$3" ] && _jline="$_jline,\"detail\":\"`printf '%s' "$3" | json_escape`\""
   [ -n "$accepted_reason" ] && _jline="$_jline,\"accepted\":{\"reason\":\"`printf '%s' "$accepted_reason" | json_escape`\",\"until\":\"${accepted_until:--}\"}"
-  # the category from the finding's metadata (meta/ID, doc/metadata.md)
+  # the category and the compliance controls from the finding's metadata
+  # (meta/ID, doc/metadata.md, doc/controls.map), read in one pass: the
+  # controls as {"cis_v8":[...],"nist_800_53":[...],...}
   case "$2" in
     ''|*[!a-z0-9]*) ;;
     *) [ -f "$BASEDIR/meta/$2" ] &&
-         _jcat=`$SED -n -e '/^$/q' -e 's/^Category: \([a-z]*\)$/\1/p' "$BASEDIR/meta/$2"` &&
-         [ -n "$_jcat" ] && _jline="$_jline,\"category\":\"$_jcat\"" ;;
+         _jmeta=`$AWK '
+           /^$/ { exit }
+           /^Category: [a-z]+$/ { cat = substr($0, 11) }
+           /^Controls: / {
+             n = split(substr($0, 11), f, /; /)
+             for (i = 1; i <= n; i++) {
+               fw = f[i]; sub(/ .*/, "", fw); items = substr(f[i], length(fw) + 2)
+               key = fw == "CIS" ? "cis_v8" : fw == "NIST" ? "nist_800_53" : fw == "ISO" ? "iso_27001_2022" : fw == "CE" ? "cyber_essentials" : ""
+               if (key == "") continue
+               m = split(items, it, /, /); l = ""
+               for (j = 1; j <= m; j++) l = l (j > 1 ? "," : "") "\"" it[j] "\""
+               ctl = ctl (ctl == "" ? "" : ",") "\"" key "\":[" l "]"
+             }
+           }
+           END {
+             if (cat != "") printf ",\"category\":\"%s\"", cat
+             if (ctl != "") printf ",\"controls\":{%s}", ctl
+           }' "$BASEDIR/meta/$2"` &&
+         _jline="$_jline$_jmeta" ;;
   esac
   printf '%s}\n' "$_jline" >> "$Tiger_JSON_File"
 }

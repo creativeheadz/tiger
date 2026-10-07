@@ -3,6 +3,7 @@ Severity: WARN
 Category: logging
 Check: check_audit
 References: journald.conf(5)
+Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 
 The system's logs are not kept across a reboot. journald keeps them in
 memory (/run/log/journal) when Storage= is volatile or none, or when it

@@ -2,6 +2,7 @@ Id: kis009w
 Severity: WARN
 Category: intrusion
 Check: check_exrc
+Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 There is an .exrc file outside of any user's home directory. This file can
 be loaded inadvertently by a user if executing an editor in that directory

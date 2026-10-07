@@ -2,6 +2,7 @@ Id: time004w
 Severity: WARN
 Category: services
 Check: check_timesync
+Controls: CIS 8.4; NIST AU-8, SC-45; ISO 8.17
 
 More than one time synchronisation daemon is running. Each corrects
 the clock towards its own servers, so they fight, and the clock can

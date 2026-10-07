@@ -2,6 +2,7 @@ Id: lin011f
 Severity: FAIL
 Category: network
 Check: check_network_config
+Controls: CIS 4.1; NIST SC-5, SC-7; ISO 8.20; CE Secure configuration
 
 The system is configured to answer to bad formatted ICMP messages. This
 behavior is not recommended, please unconfigure it with:

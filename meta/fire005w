@@ -2,6 +2,7 @@ Id: fire005w
 Severity: WARN
 Category: firewall
 Check: check_firewall
+Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 A port that Docker publishes is open to the network, and nothing in the
 host's packet filter restricts it. Docker publishes a port (docker run

@@ -2,6 +2,7 @@ Id: lin015w
 Severity: WARN
 Category: network
 Check: check_network_config
+Controls: CIS 4.1; NIST SC-5, SC-7; ISO 8.20; CE Secure configuration
 
 IP forwarding is the option that permits the system to act as a router
 and thus resend packets from one network interface to another. If your

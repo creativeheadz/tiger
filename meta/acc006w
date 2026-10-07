@@ -2,6 +2,7 @@ Id: acc006w
 Severity: WARN
 Category: accounts
 Check: check_accounts
+Controls: CIS 3.3, 5.1; NIST AC-2, AC-3; ISO 5.16, 5.18, 8.3; CE User access control
 
 The home directory of the listed login ID has group write permission,
 world write permission or both enabled.  This allows new files to be added

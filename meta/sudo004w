@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_sudo
 References: sudoers(5)
+Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 
 A sudo rule names a command with a wildcard (*). In sudoers a *
 matches any characters, spaces included, so a rule meant for one kind

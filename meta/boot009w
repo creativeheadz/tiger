@@ -3,6 +3,7 @@ Severity: WARN
 Category: boot
 Check: check_secureboot
 References: UEFI specification, chapter 32 (Secure Boot and Driver Signing)
+Controls: CIS 4.1; NIST CM-14, SI-7(9); ISO 8.9; CE Secure configuration
 
 Secure Boot is off. The firmware starts whatever boot loader is on the
 disk, and the boot loader whatever kernel, so anyone who can write the

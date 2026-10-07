@@ -2,6 +2,7 @@ Id: pass009f
 Severity: FAIL
 Category: accounts
 Check: check_passwdformat
+Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
 
 The format of a given configuration file used for user (or group)
 authentication has some inconsistency that might be a security vulnerability.

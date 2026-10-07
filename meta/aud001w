@@ -3,6 +3,7 @@ Severity: WARN
 Category: logging
 Check: check_audit
 References: auditd(8), audit.rules(7)
+Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 
 auditd, the Linux audit daemon, is not running. Without it the kernel's
 audit events (logins, changes to accounts and to watched files, use of

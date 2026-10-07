@@ -2,6 +2,7 @@ Id: aide005w
 Severity: WARN
 Category: integrity
 Check: aide_run
+Controls: NIST SI-7; ISO 8.16
 
 Aide detected, by checking file against the database, the file was not part of
 the database. "Benign" actions like installing software and related files or

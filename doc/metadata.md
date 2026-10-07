@@ -30,7 +30,7 @@ plain text, wrapped at about 72 columns. Lines indented in the text
 | `Check`      | yes      | The scripts that report it, separated by spaces, or `any` for the start-up messages every check carries (init002e). |
 | `Fix`        | no       | One line: what to do about it, when that fits in a line.                |
 | `References` | no       | Sources, separated by `; `: man pages, standards, books.                 |
-| `Controls`   | no       | Compliance controls it maps to, separated by `; `, once the open mapping exists (ROADMAP, 4.0). |
+| `Controls`   | no       | The compliance controls the finding is evidence about: `CIS 4.1, 5.4; NIST AC-17, IA-2; ISO 8.5; CE Secure configuration` (CIS Controls v8 safeguards, NIST SP 800-53 Rev. 5, ISO/IEC 27001:2022 Annex A, UK Cyber Essentials themes; a framework with nothing is left out). Written by `util/mkcontrols` from [controls.map](controls.map); edit the map, not this line. ERROR and CONFIG ids have none. |
 
 Unknown keys are an error, so a typo does not go unnoticed.
 

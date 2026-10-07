@@ -2,6 +2,7 @@ Id: upd003f
 Severity: FAIL
 Category: packages
 Check: check_updates
+Controls: CIS 7.3, 7.4; NIST SI-2; ISO 8.8; CE Security update management
 
 Security updates are available and not installed: the packages named
 in the detail have known holes that their new versions close, and the

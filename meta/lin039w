@@ -3,6 +3,7 @@ Severity: WARN
 Category: packages
 Check: deb_statoverride
 References: dpkg-statoverride(1)
+Controls: CIS 3.3; NIST AC-3, CM-6; ISO 8.3; CE Secure configuration
 
 A file's mode or owner differs from what dpkg-statoverride sets for it.
 dpkg records no mode or owner for the files packages install, but it

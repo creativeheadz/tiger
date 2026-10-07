@@ -2,6 +2,7 @@ Id: dev003w
 Severity: WARN
 Category: filesystem
 Check: check_devices
+Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 There is a file in the devices directory which is a common file. Devices
 directory should only hold special files although some systems have

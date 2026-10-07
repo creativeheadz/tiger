@@ -2,6 +2,7 @@ Id: fsys014w
 Severity: WARN
 Category: filesystem
 Check: check_nousrgrp
+Controls: CIS 3.3; NIST AC-3, CM-6; ISO 8.3; CE Secure configuration
 
 The file does not belong to any user. It is owned by a numeric UID which is
 not defined in the system. This might have happened due to a user being

@@ -2,6 +2,7 @@ Id: lin013f
 Severity: FAIL
 Category: network
 Check: check_network_config
+Controls: CIS 4.1; NIST SC-5, SC-7; ISO 8.20; CE Secure configuration
 
 It is common to protect systems against Denial of Service attacks using
 SYN packets (commonly known as "SYN flooding") by activating support

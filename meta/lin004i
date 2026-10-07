@@ -2,6 +2,7 @@ Id: lin004i
 Severity: INFO
 Category: network
 Check: check_listeningprocs
+Controls: CIS 4.8; NIST CM-7; ISO 8.20; CE Secure configuration
 
 Neither ss nor lsof was found, so the listening processes were read with
 netstat. It gives less: the process name is cut from its command line

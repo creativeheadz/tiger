@@ -2,6 +2,7 @@ Id: acc021w
 Severity: WARN
 Category: accounts
 Check: check_accounts
+Controls: CIS 5.3; NIST AC-2(3); ISO 5.18; CE User access control
 
 The listed login ID appears to be dormant.  Files in the home
 directory of this user have not been modified in the specified

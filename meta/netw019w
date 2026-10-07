@@ -2,6 +2,7 @@ Id: netw019w
 Severity: WARN
 Category: network
 Check: check_sendmail
+Controls: CIS 4.8; NIST CM-7; ISO 8.21; CE Secure configuration
 
 The sendmail configuration file (sendmail.cf) has the default
 sendmail banner. This means that when the mail server is active

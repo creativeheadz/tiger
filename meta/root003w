@@ -2,6 +2,7 @@ Id: root003w
 Severity: WARN
 Category: accounts
 Check: check_root
+Controls: CIS 5.4; NIST AC-6, AC-17; ISO 8.2, 8.5; CE User access control
 
 The root user should not have the message capability turned on.  This
 could lead to inadvertent modification of files with the root user is

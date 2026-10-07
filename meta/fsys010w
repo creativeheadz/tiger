@@ -2,6 +2,7 @@ Id: fsys010w
 Severity: WARN
 Category: filesystem
 Check: check_sgid
+Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 The listed file is a setgid script.  On most UNIX machines, it is not
 possible to write a secure setgid script, due to a race condition in

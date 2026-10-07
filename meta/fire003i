@@ -2,6 +2,7 @@ Id: fire003i
 Severity: INFO
 Category: firewall
 Check: check_firewall
+Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 Incoming traffic of this family is denied by default: the chain named
 drops or rejects what its rules do not accept. This is informational;

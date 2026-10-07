@@ -23,6 +23,7 @@
   <a href="#quick-start">Quick start</a> ·
   <a href="#what-it-checks">What it checks</a> ·
   <a href="#audit-a-system-that-is-not-running">Offline audit</a> ·
+  <a href="#compliance-mapping">Compliance</a> ·
   <a href="#reports-drift-and-exit-status">Reports and drift</a> ·
   <a href="#install">Install</a> ·
   <a href="ROADMAP.md">Roadmap</a>
@@ -77,8 +78,9 @@ Nothing in the image is ever run.
 <td valign="top">
 
 **A contract for machines.** Every run also writes JSON Lines with a
-versioned schema and a category per finding, and `tigris explain ID`
-says what any of the 400 finding ids means and how to fix it.
+versioned schema, a category and the compliance controls per finding,
+and `tigris explain ID` says what any of the 400 finding ids means and
+how to fix it.
 
 </td>
 </tr>
@@ -205,6 +207,22 @@ CI checks that they go on doing so; the sshd and sudo checks were compared
 against the live system the same way. Tigris writes nothing into the
 root, but the package tools may write their logs and caches there as they
 would on that system: mount it read-only if it must stay unchanged.
+
+## Compliance mapping
+
+Every finding maps to the controls it is evidence about in four
+frameworks, free and in the open: CIS Controls v8 safeguards, NIST SP
+800-53 Rev. 5, ISO/IEC 27001:2022 Annex A and UK Cyber Essentials. The
+map is one reviewable file, [doc/controls.map](doc/controls.map), by
+check, with overrides by finding id; `tigris explain ID` shows a
+finding's controls and the JSON carries them:
+
+```json
+{"type":"finding","level":"WARN","id":"root001w","check":"check_root","message":"Remote root login allowed in /etc/securetty","category":"accounts","controls":{"cis_v8":["5.4"],"nist_800_53":["AC-6","AC-17"],"iso_27001_2022":["8.2","8.5"],"cyber_essentials":["User access control"]}}
+```
+
+A finding is evidence for an assessment, not a verdict on a control:
+most controls ask for things no tool on one host can see.
 
 ## Reports, drift and exit status
 

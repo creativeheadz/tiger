@@ -2,6 +2,7 @@ Id: pass018f
 Severity: FAIL
 Category: accounts
 Check: check_passwd
+Controls: CIS 5.4; NIST AC-6(5), IA-5(1); ISO 8.2, 5.17; CE User access control
 
 The listed administrative login should have an impossible password.
 Files owned by this login ID may reside in critical system directories
