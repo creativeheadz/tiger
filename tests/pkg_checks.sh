@@ -40,7 +40,7 @@ STRAY=/usr/bin/zz-tiger-stray
 
 W=`mktemp -d`
 trap 'rm -rf "$W"' 0
-( cd "$TIGER" && tar --exclude=.git -cf - . ) | ( cd "$W" && tar -xf - )
+( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
 chown -R 0:0 "$W"
 mkdir -p "$W/run" "$W/log"
 

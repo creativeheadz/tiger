@@ -15,7 +15,7 @@ command -v python3 >/dev/null || { echo "SKIP: python3 needed to parse JSON"; ex
 
 W=`mktemp -d`
 trap 'rm -rf "$W"' 0
-( cd "$TIGER" && tar --exclude=.git -cf - . ) | ( cd "$W" && tar -xf - )
+( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
 mkdir -p "$W/run" "$W/log"
 fail=0
 

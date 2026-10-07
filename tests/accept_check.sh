@@ -11,7 +11,7 @@
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 W=`mktemp -d`
 trap 'rm -rf "$W"' 0
-( cd "$TIGER" && tar --exclude=.git -cf - . ) | ( cd "$W" && tar -xf - )
+( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
 mkdir -p "$W/run" "$W/log" "$W/bad/proc/sys/kernel" "$W/bad/proc/sys/fs"
 echo 0 > "$W/bad/proc/sys/kernel/kptr_restrict"       # lin020w
 echo 0 > "$W/bad/proc/sys/kernel/randomize_va_space"  # lin023f

@@ -12,7 +12,10 @@ TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 
 W=`mktemp -d`
 trap 'rm -rf "$W"' 0
-( cd "$TIGER" && tar --exclude=.git -cf - . ) | ( cd "$W" && tar -xf - )
+# log/ and run/ stay behind: an old report there would be checked instead
+# of this run's
+( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
+mkdir -p "$W/log" "$W/run"
 chown -R 0:0 "$W"
 cd "$W"
 sh util/genmsgidx doc/*.txt >/dev/null 2>&1
