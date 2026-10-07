@@ -59,6 +59,8 @@ jobs:
         run: sh tests/mac_check.sh
       - name: check_audit against process trees, auditctl and journald drop-ins
         run: sh tests/audit_check.sh
+      - name: check_timesync against process trees, timedatectl and chronyc
+        run: sh tests/timesync_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: ShellCheck (errors)

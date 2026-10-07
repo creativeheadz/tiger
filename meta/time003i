@@ -1,0 +1,10 @@
+Id: time003i
+Severity: INFO
+Category: services
+Check: check_timesync
+
+The clock is synchronised by the daemon named and, for chronyd, from
+the server named. This is informational. For a server where the time
+matters (logs kept as evidence, Kerberos), chrony with several sources
+and Network Time Security (the nts option on a server line) is worth
+considering: plain NTP can be spoofed by anyone on the path.

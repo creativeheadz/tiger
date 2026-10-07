@@ -321,6 +321,12 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   Storage= as systemd resolves journald.conf and its drop-ins, or a
   syslog daemon (logf008w). Hera: AppArmor enforcing 26 profiles, no
   auditd, journal on disk.
+- [x] **`check_timesync`**: a time daemon running (time001w), only one
+  (time004w), and the clock synchronised (time002w, time003i): chronyc
+  tracking for chronyd, which marks the kernel clock synchronised only
+  with rtcsync, timedatectl for the others. `check_ntp` stays for an
+  ntpd's configuration. Containers, on their host's clock, are left
+  alone. Hera: systemd-timesyncd, synchronised.
 
 ## 3.2.x: maintenance
 
@@ -442,7 +448,8 @@ open items below ship from 3.4.0 on.
 - [x] AppArmor or SELinux enforcing, auditd, journald persistence
   (`check_mac`, mac001w to mac004e; `check_audit`, aud001w to aud004e
   and logf008w; on master since 3.3.0).
-- [ ] Time sync (chrony, timesyncd) instead of the NTP-only check.
+- [x] Time sync (chrony, timesyncd) beside the NTP-only check
+  (`check_timesync`, time001w to time004w; on master since 3.3.0).
 - [ ] Updates: automatic security updates configured, pending security
   updates, reboot required. The existing `check_patches` is apt-only and
   off by default.
