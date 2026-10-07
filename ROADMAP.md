@@ -327,6 +327,15 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   with rtcsync, timedatectl for the others. `check_ntp` stays for an
   ntpd's configuration. Containers, on their host's clock, are left
   alone. Hera: systemd-timesyncd, synchronised.
+- [x] **`check_updates`**, offline: security updates waiting (upd003f)
+  from what the package manager has cached (apt's -security suites,
+  dnf's security advisories, zypper's security patches; pacman and apk
+  have no such data), or that they cannot be counted (upd004i); whether
+  they are installed automatically (upd002w: unattended-upgrades, Linux
+  Mint's update automation, dnf-automatic with apply_updates); and a
+  reboot pending (upd001w: /run/reboot-required, the running kernel's
+  modules gone, a newer kernel-core installed). Hera: 12 security
+  updates waiting, none installed automatically.
 
 ## 3.2.x: maintenance
 
@@ -450,9 +459,10 @@ open items below ship from 3.4.0 on.
   and logf008w; on master since 3.3.0).
 - [x] Time sync (chrony, timesyncd) beside the NTP-only check
   (`check_timesync`, time001w to time004w; on master since 3.3.0).
-- [ ] Updates: automatic security updates configured, pending security
-  updates, reboot required. The existing `check_patches` is apt-only and
-  off by default.
+- [x] Updates: automatic security updates configured, pending security
+  updates, reboot required (`check_updates`, upd001w to upd004i; on
+  master since 3.3.0). `check_patches`, apt-only, networked and off by
+  default, stays as it was.
 - [ ] Storage: LUKS, mount options (`/tmp`, `/dev/shm`), core dumps, USB
   storage.
 - [ ] Containers: Docker or Podman socket permissions, rootless mode,

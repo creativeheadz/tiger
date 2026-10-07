@@ -1,0 +1,17 @@
+Id: upd001w
+Severity: WARN
+Category: packages
+Check: check_updates
+
+Updates were installed that only take effect after a reboot: a new
+kernel, or libraries that every running program already has loaded
+(the C library, OpenSSL, systemd). Until the reboot the old versions,
+with the holes the updates closed, keep running. The detail says how
+it was found: /run/reboot-required (Debian and Ubuntu write it, with
+the packages in /run/reboot-required.pkgs), the running kernel's
+modules gone from /lib/modules (Arch, Alpine), or a newer kernel-core
+installed than the one running (Fedora, RHEL).
+
+To fix it, reboot at a convenient time. 'needs-restarting -r' (Fedora,
+RHEL) and 'needrestart' (Debian, Ubuntu) also name the services that
+can be restarted instead, for the updates that do not need a reboot.

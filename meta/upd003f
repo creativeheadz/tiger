@@ -1,0 +1,18 @@
+Id: upd003f
+Severity: FAIL
+Category: packages
+Check: check_updates
+
+Security updates are available and not installed: the packages named
+in the detail have known holes that their new versions close, and the
+holes are public. The count comes from what the package manager has
+cached, without going to the network (apt's package lists from the
+-security suites, dnf's security advisories, zypper's security
+patches), so it is only as recent as the last 'apt update', 'dnf
+makecache' or 'zypper refresh'; the detail says how old apt's lists
+are. pacman and apk publish no security data, so on Arch and Alpine
+nothing is counted.
+
+To fix it, install them: 'apt-get upgrade', 'dnf upgrade --security'
+or 'zypper patch --category security'. upd002w explains how to have
+it done automatically.

@@ -1,0 +1,12 @@
+Id: upd004i
+Severity: INFO
+Category: packages
+Check: check_updates
+
+The security updates waiting could not be counted, because the
+package manager has nothing cached to count them from: apt's package
+lists are empty (container images often delete them), dnf has no
+cached metadata, or zypper could not read its repositories without
+refreshing them. Tigris does not refresh them itself, since that
+needs the network. 'apt update', 'dnf makecache' or 'zypper refresh'
+fill the cache, and the next run counts.

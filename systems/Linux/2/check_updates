@@ -1,0 +1,245 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_updates: security updates waiting, installed automatically or not,
+#                 and a reboot that would put the installed ones to use.
+#
+# 10/07/2026 atrimbitas - Initial version, beside check_patches, which runs
+#                 apt-get update and is off by default. This one never
+#                 touches the network: it reads what the package manager
+#                 already has (apt's lists, dnf's cache, zypper's
+#                 repositories), so its count is as fresh as the last
+#                 update of those, which the detail says for apt.
+#                 Security updates are apt's from a -security suite,
+#                 dnf's updateinfo of type security, zypper's patches of
+#                 category security; pacman and apk carry no such data.
+#                 Automatic installation is unattended-upgrades or Linux
+#                 Mint's update automation, dnf-automatic with
+#                 apply_updates; enabled timers are their links in
+#                 /etc/systemd/system/timers.target.wants. A reboot is
+#                 needed when /run/reboot-required exists, the running
+#                 kernel's modules are gone, or (dnf) the newest kernel-core
+#                 installed is not the one running. In a container there is
+#                 no kernel to reboot.
+#                 Tiger_Sysctl_Root prefixes the files; Tiger_Updates_Manager
+#                 and the Tiger_*_Cmd settings below replace the commands,
+#                 for the tests.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP LS SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP LS SED SORT || exit 1
+
+root=${Tiger_Sysctl_Root:-}
+
+findtool()
+{
+  for d in /usr/bin /bin /usr/sbin /sbin
+  do
+    [ -x "$d/$1" ] && { echo "$d/$1"; return 0; }
+  done
+  return 1
+}
+
+# Which package manager to ask
+mgr=${Tiger_Updates_Manager:-}
+if [ -z "$mgr" ]; then
+  case "$LXPKGMGR" in
+    dpkg) findtool apt-get >/dev/null && mgr=apt ;;
+    rpm) if findtool dnf >/dev/null; then mgr=dnf; elif findtool zypper >/dev/null; then mgr=zypper; fi ;;
+    pacman|apk) mgr=$LXPKGMGR ;;
+  esac
+fi
+[ -n "$mgr" ] || exit 0
+
+container=N
+[ -f "$root/.dockerenv" ] || [ -f "$root/run/.containerenv" ] || [ -f "$root/run/systemd/container" ] && container=Y
+
+echo
+echo "# Checking security updates ($mgr)..."
+
+# timer_on NAME: is NAME.timer enabled: its link in timers.target.wants,
+# pointing at a unit that is there (the link's target is read under root)
+timer_on()
+{
+  __l="$root/etc/systemd/system/timers.target.wants/$1.timer"
+  [ -L "$__l" ] || return 1
+  __t=`readlink "$__l"`
+  case "$__t" in /*) [ -e "$root$__t" ] ;; *) [ -e "$__l" ] ;; esac
+}
+
+# list: the first ten words of stdin, and how many more
+list()
+{
+  $AWK '{ if (NR <= 10) printf "%s%s", (NR > 1 ? ", " : ""), $0 } END { if (NR > 10) printf " and %d more", NR - 10 }'
+}
+
+#
+# A reboot that would put installed updates to use
+#
+if [ "$container" = N ]; then
+  running=`$CAT "$root/proc/sys/kernel/osrelease" 2>/dev/null`
+  why=
+  if [ -f "$root/run/reboot-required" ]; then
+    pkgs=`$SORT -u "$root/run/reboot-required.pkgs" 2>/dev/null | list`
+    why="/run/reboot-required is there${pkgs:+, for $pkgs}"
+  elif [ -n "$running" ] && [ -d "$root/lib/modules" ] && [ ! -d "$root/lib/modules/$running" ] &&
+       [ -n "`$LS "$root/lib/modules" 2>/dev/null`" ]; then
+    why="the running kernel, $running, has no modules in /lib/modules any more: its package was upgraded"
+  elif [ "$mgr" = dnf ] && [ -n "$running" ]; then
+    cmd=${Tiger_Rpm_Kernel_Cmd:-}
+    [ -z "$cmd" ] && r=`findtool rpm` && cmd="$r -q --last kernel-core"
+    newest=`$cmd 2>/dev/null | $AWK 'NR == 1 && $1 ~ /^kernel-core-/ { sub(/^kernel-core-/, "", $1); print $1 }'`
+    [ -n "$newest" ] && [ "$newest" != "$running" ] && why="kernel $newest was installed last, and $running is running"
+  fi
+  [ -n "$why" ] && message WARN upd001w "Reboot when it suits: $why." "A reboot is needed to put the updates installed to use: until then the old kernel or libraries keep running."
+fi
+
+#
+# Security updates waiting, from what the package manager has cached
+#
+pending= unknown= age=
+case "$mgr" in
+  apt)
+    cmd=${Tiger_Apt_Simulate_Cmd:-}
+    [ -z "$cmd" ] && a=`findtool apt-get` && cmd="$a -s -o Debug::NoLocking=1 dist-upgrade"
+    if [ -z "`$LS "$root"/var/lib/apt/lists/ 2>/dev/null | $GREP '_Packages'`" ]; then
+      unknown="apt has no package lists (apt update has not run, or they were cleaned)"
+    else
+      pending=`$cmd 2>/dev/null | $AWK '/^Inst / && /-security|Debian-Security/ { print $2 }' | $SORT -u`
+      # how old the newest list is, in days
+      now=`$DATE +%s`
+      age=`for f in "$root"/var/lib/apt/lists/*Release; do stat -c %Y "$f" 2>/dev/null; done |
+        $SORT -n | $AWK -v now="$now" 'END { if (NR) print int((now - $0) / 86400) }'`
+    fi
+    ;;
+  dnf)
+    cmd=${Tiger_Dnf_Security_Cmd:-}
+    [ -z "$cmd" ] && d=`findtool dnf` && cmd="$d -C -q updateinfo list --security"
+    if out=`$cmd 2>/dev/null`; then
+      # dnf 4 and 5 lay it out differently; the package is the field
+      # shaped name-version-release.arch
+      pending=`echo "$out" | $AWK '{ for (i = 1; i <= NF; i++) if ($i ~ /^[^ ]+-[^-]+-[^-]+\.[a-z0-9_]+$/) print $i }' | $SORT -u`
+    else
+      unknown="dnf has no cached metadata to read (dnf makecache has not run)"
+    fi
+    ;;
+  zypper)
+    cmd=${Tiger_Zypper_Security_Cmd:-}
+    [ -z "$cmd" ] && z=`findtool zypper` && cmd="$z --non-interactive --no-refresh --xmlout list-patches --category security"
+    if out=`$cmd 2>/dev/null`; then
+      pending=`echo "$out" | $GREP '<update ' | $GREP 'category="security"' | $GREP 'status="needed"' |
+        $SED -n 's/.* name="\([^"]*\)".*/\1/p' | $SORT -u`
+    else
+      unknown="zypper could not read its repositories without refreshing them"
+    fi
+    ;;
+esac
+if [ -n "$unknown" ]; then
+  message INFO upd004i "" "Security updates waiting cannot be counted: $unknown."
+elif [ -n "$pending" ]; then
+  n=`echo "$pending" | $GREP -c .`
+  trail=`echo "$pending" | list`
+  case "$age" in
+    '') trail="$trail." ;;
+    0) trail="$trail. The package lists were last updated today." ;;
+    1) trail="$trail. The package lists were last updated yesterday." ;;
+    *) trail="$trail. The package lists were last updated $age days ago." ;;
+  esac
+  case "$mgr" in
+    apt) trail="$trail Install them with 'apt-get upgrade'." ;;
+    dnf) trail="$trail Install them with 'dnf upgrade --security'." ;;
+    zypper) trail="$trail Install them with 'zypper patch --category security'." ;;
+  esac
+  message FAIL upd003f "$trail" "$n security updates are waiting to be installed ($mgr)."
+fi
+
+#
+# Security updates installed automatically
+#
+auto=
+case "$mgr" in
+  apt)
+    auto=N
+    if [ -x "$root/usr/bin/unattended-upgrade" ] && timer_on apt-daily-upgrade; then
+      cmd=${Tiger_AptConfig_Cmd:-}
+      [ -z "$cmd" ] && c=`findtool apt-config` && cmd="$c dump"
+      v=`$cmd 2>/dev/null | $SED -n 's/^APT::Periodic::Unattended-Upgrade "\(.*\)";$/\1/p' | $SED -n '$p'`
+      case "$v" in ''|0) ;; *) auto=Y ;; esac
+    fi
+    # Linux Mint's Update Manager has its own
+    timer_on mintupdate-automation-upgrade && auto=Y
+    fix="Install unattended-upgrades and run 'dpkg-reconfigure -plow unattended-upgrades' (it installs security updates by default); on Linux Mint, turn on automatic updates in Update Manager's preferences."
+    ;;
+  dnf)
+    auto=N
+    timer_on dnf-automatic-install && auto=Y
+    if timer_on dnf-automatic || timer_on dnf5-automatic; then
+      apply=`$CAT "$root/etc/dnf/automatic.conf" "$root/etc/dnf/dnf5-plugins/automatic.conf" 2>/dev/null |
+        $SED -n 's/^[[:space:]]*apply_updates[[:space:]]*=[[:space:]]*\([A-Za-z0-9]*\).*/\1/p' | $SED -n '$p'`
+      case "$apply" in yes|true|1|on|True|Yes) auto=Y ;; esac
+    fi
+    fix="Install dnf-automatic (dnf5-plugin-automatic on Fedora), set apply_updates = yes and upgrade_type = security in /etc/dnf/automatic.conf, and 'systemctl enable --now dnf-automatic.timer'."
+    ;;
+esac
+[ "$auto" = N ] && message WARN upd002w "$fix" "Security updates are not installed automatically: each waits until someone installs it."
+
+exit 0

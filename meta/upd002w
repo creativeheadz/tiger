@@ -1,0 +1,22 @@
+Id: upd002w
+Severity: WARN
+Category: packages
+Check: check_updates
+References: unattended-upgrades(8), dnf-automatic(8)
+
+Security updates are not installed automatically, so each stays
+uninstalled until someone remembers to install it. Most of the
+machines broken into through a published hole were unpatched for
+weeks after the fix was out. Installing security updates (not all
+updates) automatically is safe enough on most systems, and the
+distributions ship the means.
+
+To fix it, on Debian and Ubuntu install unattended-upgrades and turn
+it on ('dpkg-reconfigure -plow unattended-upgrades'; by default it
+installs only security updates); on Linux Mint, turn on automatic
+updates in Update Manager's preferences. On Fedora and RHEL, install
+dnf-automatic (dnf5-plugin-automatic on recent Fedora), set
+apply_updates = yes and upgrade_type = security in
+/etc/dnf/automatic.conf, and enable dnf-automatic.timer. Where updates
+are deployed another way (configuration management, an image
+pipeline), accept the finding with tigris-accept.
