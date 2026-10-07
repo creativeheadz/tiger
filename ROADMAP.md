@@ -7,7 +7,7 @@ reference point because it is the tool people compare against.
 
 *Last updated 7 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
 Everything marked done is on `master`; "released" means tagged (the last
-tag is `version_3_5_0`).
+tag is `version_3_6_0`).
 
 ## Contents
 
@@ -51,7 +51,7 @@ Settled, so they do not have to be argued again:
 
 ## Where things stand
 
-|                      | Tigris 3.5.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
+|                      | Tigris 3.6.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
@@ -59,7 +59,7 @@ Settled, so they do not have to be argued again:
 | Platforms            | Linux: Debian/Ubuntu, Fedora/RHEL/SUSE, Alpine, Arch            | Linux, macOS, BSD, Solaris, AIX          |
 | Machine output       | JSON Lines with a versioned schema, next to the text report     | `report.dat` (key=value)                 |
 | Explanations         | `tigris explain ID`, one metadata file per id (severity, category, checks) | Suggestions linked to the CISOfy website |
-| Compliance mapping   | CIS v8, NIST 800-53, ISO 27001:2022, Cyber Essentials, per finding, in the JSON (on master, after 3.5.0) | Enterprise (paid) edition only |
+| Compliance mapping   | CIS v8, NIST 800-53, ISO 27001:2022, Cyber Essentials, per finding, in the JSON                          | Enterprise (paid) edition only |
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
@@ -73,17 +73,18 @@ other tools can use, on honest evidence, and on engineering quality.
 12 threads, 62 GB, a 1.8 TB root disk and a 3.6 TB data disk holding
 1.9 TB, 2.4k packages), run as root on an otherwise idle machine:
 
-| | 3.2.4 as released | 3.4.0, full | 3.4.0, `--profile quick` | 3.5.0, full | 3.5.0, `--profile quick` |
+| | 3.2.4 as released | 3.5.0, full | 3.5.0, `--profile quick` | 3.6.0, full | 3.6.0, `--profile quick` |
 |---|---|---|---|---|---|
-| Report | 49,651 lines; 24 checks refused to run | 306 lines: 13 FAIL, 61 WARN | 266 lines: 13 FAIL, 46 WARN | 318 lines: 13 FAIL, 67 WARN | 267 lines: 13 FAIL, 47 WARN |
-| Wall time | 7:16 | 1:58 | 1:02 | 1:59 | 1:00 |
-| CPU (user + system) | not recorded | 107 s + 92 s | 65 s + 45 s | 102 s + 83 s | 59 s + 35 s |
-| Peak memory | 159 MB | 134 MB | 134 MB | 134 MB | 134 MB |
+| Report | 49,651 lines; 24 checks refused to run | 318 lines: 13 FAIL, 67 WARN | 267 lines: 13 FAIL, 47 WARN | 343 lines: 13 FAIL, 70 WARN | 285 lines: 13 FAIL, 47 WARN |
+| Wall time | 7:16 | 1:59 | 1:00 | 2:01 | 1:01 |
+| CPU (user + system) | not recorded | 102 s + 83 s | 59 s + 35 s | 104 s + 85 s | 60 s + 37 s |
+| Peak memory | 159 MB | 134 MB | 134 MB | 131 MB | 131 MB |
 
-3.3.0 took 1:58 and 34.6 MB full, 0:58 and 13.9 MB quick. The 134 MB is
-apt-get mapping its package cache for under a second. An offline audit
-of a Debian 13 image with systemd and sshd (3.5.0) takes 9 seconds and
-peaks at 67 MB.
+3.3.0 took 1:58 and 34.6 MB full, 0:58 and 13.9 MB quick; 3.4.0 took
+1:58 and 134 MB full, 1:02 and 134 MB quick. The 131 MB is apt-get
+mapping its package cache for under a second. An offline audit of a
+Debian 13 image with systemd and sshd (3.5.0) takes 9 seconds and
+peaks at 67 MB; 3.6.0 takes about 10 seconds there.
 
 3.4.0's peak is apt-get mapping its package cache for under a second
 when check_updates asks what is waiting; without that check the quick

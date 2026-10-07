@@ -293,12 +293,12 @@ archive, not this fork.
 ## Where it is going
 
 [ROADMAP.md](ROADMAP.md) has the decisions, the status and what is next.
-3.5.0 brought the offline audit; the rest of TIGER's original checks are
-to follow, until an image reads as fully as a running system. Ahead: a
-free compliance mapping (CIS Controls, ISO 27001, NIST 800-53, Cyber
-Essentials) carried in the JSON, a transparent summary, and later a
-PowerShell engine for Windows against the same contract. Every change is
-measured for wall time, CPU and memory.
+3.6.0 brought the compliance mapping, the transparent summary and five
+server-side checks; 3.5.0 brought the offline audit. Still to come: the
+rest of TIGER's original checks offline, until an image reads as fully
+as a running system, and later a PowerShell engine for Windows against
+the same contract. Every change is measured for wall time, CPU and
+memory.
 
 ## Lineage
 
