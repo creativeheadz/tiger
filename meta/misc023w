@@ -1,0 +1,8 @@
+Id: misc023w
+Severity: WARN
+Category: filesystem
+Check: check_umask
+
+There are more than two umask entries in the configuration file.  Please
+check if the umask settings are secure (to prevent public write, suggested
+values are either 002 or 022).

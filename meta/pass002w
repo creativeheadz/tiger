@@ -1,0 +1,10 @@
+Id: pass002w
+Severity: WARN
+Category: accounts
+Check: check_passwd check_passwdformat
+
+The listed userid (uid) occurs more than once in the same file.  This
+usually indicates a configuration problem and should be corrected.  On
+many systems, uid 0 (zero) and uid 1 (one) are often used for multiple
+usernames.  It is usually to completely disable all of the usernames
+except for `root' for uid zero and all of the usernames for uid one.

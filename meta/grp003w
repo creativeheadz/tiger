@@ -1,0 +1,6 @@
+Id: grp003w
+Severity: WARN
+Category: accounts
+Check: check_group
+
+The listed entry does not have the correct number of fields (4).

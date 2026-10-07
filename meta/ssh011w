@@ -1,0 +1,9 @@
+Id: ssh011w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+KbdInteractiveAuthentication (ChallengeResponseAuthentication in older
+versions) is yes. With PAM in use this is a password prompt by another
+name, and it stays open when PasswordAuthentication is no. Set it to no
+unless a one-time-password module depends on it.

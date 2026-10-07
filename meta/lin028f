@@ -1,0 +1,10 @@
+Id: lin028f
+Severity: FAIL
+Category: kernel
+Check: check_sysctl
+
+fs.protected_hardlinks is 0, so a user may create a hard link to a file
+they do not own and cannot write. Combined with a privileged program
+that writes to a path under the user's control, this is a classic way
+to overwrite system files:
+  # sysctl -w fs.protected_hardlinks=1

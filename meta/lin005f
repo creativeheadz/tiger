@@ -1,0 +1,16 @@
+Id: lin005f
+Severity: FAIL
+Category: packages
+Check: deb_checkmd5sums pkg_integrity
+
+An installed file differs from what the package that provided it
+contains: its content (checksum or size) has changed. Tigris asks the
+package manager's own database: dpkg's md5sums on Debian and Ubuntu,
+rpm -V on Fedora, RHEL, SUSE and their relatives, apk audit on Alpine,
+pacman -Qk on Arch. A change can be harmless (a file edited by hand, a
+prelink or a locale tool) or a trojan put in place of a system binary by
+an intruder; the message names the package so you can reinstall the file
+with the package manager (apt install --reinstall, dnf reinstall,
+apk fix, pacman -S) and see whether the difference goes away. Be
+forewarned that an attacker with root can modify the package database
+too, so a clean result is not proof of a clean system.

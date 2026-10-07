@@ -1,0 +1,10 @@
+Id: perm007f
+Severity: FAIL
+Category: filesystem
+Check: check_perms
+
+The /etc/aliases, /etc/aliases.dir and /etc/aliases.pag files should not
+be writable by non-root users.  On SunOS 4 systems, these files are
+shipped world writable.  The permissions should be 644 on all three
+files.  If left writable, program aliases can be added which can
+allow unauthorized access.

@@ -1,0 +1,7 @@
+Id: root002w
+Severity: WARN
+Category: accounts
+Check: check_root
+
+The indicated /etc/ftpusers file allows remote root ftp logins.  The entry
+"root" should be added to this file.

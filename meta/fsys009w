@@ -1,0 +1,8 @@
+Id: fsys009w
+Severity: WARN
+Category: filesystem
+Check: check_names
+
+An FSP server control file has been located.  This indicates that
+an FSP server may be running, or have been running, using the
+directory containing the listed file as its base.

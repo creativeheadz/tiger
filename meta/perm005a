@@ -1,0 +1,11 @@
+Id: perm005a
+Severity: ALERT
+Category: filesystem
+Check: check_perms
+
+The /etc/security directory contains security information that should
+not be accessible by non-root users.  The owner should be root, and group
+and world should have only search access (mode 711).  The directory
+unfortunately must be search-able because of some library routines which
+check for the existence of the security.adjunct file.  The files in the
+directory should be mode 600.

@@ -1,0 +1,8 @@
+Id: lin011f
+Severity: FAIL
+Category: network
+Check: check_network_config
+
+The system is configured to answer to bad formatted ICMP messages. This
+behavior is not recommended, please unconfigure it with:
+ # sysctl -w net.ipv4.icmp_ignore_bogus_error_responses = 1

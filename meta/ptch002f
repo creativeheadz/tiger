@@ -1,0 +1,8 @@
+Id: ptch002f
+Severity: FAIL
+Category: packages
+Check: check_patches
+
+apt-get reports packages that have newer versions available. Run
+apt-get update && apt-get upgrade, or at least install the security
+updates.

@@ -1,0 +1,11 @@
+Id: apa002w
+Severity: WARN
+Category: services
+Check: check_apache
+
+The Directory block for the filesystem root ('/') places no limit on
+access, or its Options are anything but None. Every file the server
+user can read becomes servable unless a deeper block forbids it, and a
+loose '/' block is the usual way a misconfiguration turns into a full
+filesystem disclosure. Deny first and open only what the site needs:
+"<Directory /> Require all denied </Directory>" with Options None.

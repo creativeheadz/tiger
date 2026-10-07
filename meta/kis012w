@@ -1,0 +1,14 @@
+Id: kis012w
+Severity: WARN
+Category: intrusion
+Check: check_finddeleted
+
+An application in the system is using a deleted file. This might be an
+indication of an intruder executing rogue processes and removing the files
+from disk so that they cannot be traced or detected by the local administrator.
+This has been observed both in intruders running password cracking programs
+or worms propagating through remote attacks.
+This also can happen if a local application is using shared libraries which have
+been upgraded but the service itself has not been restarted in order to
+use the new libraries.  Notice that if there was a vulnerability in the
+library and the server was not restarted the system is still vulnerable.

@@ -1,0 +1,8 @@
+Id: perm002f
+Severity: FAIL
+Category: filesystem
+Check: check_perms
+
+The group owner of the indicated file is not correct.  With the incorrect
+group ownership, a vulnerability may exist.  The group owner of the file
+should be corrected.

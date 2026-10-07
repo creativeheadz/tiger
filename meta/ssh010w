@@ -1,0 +1,7 @@
+Id: ssh010w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+UsePAM is no, so account expiry, access rules and session set-up in the
+PAM stack are not applied to SSH logins. Set it to yes.

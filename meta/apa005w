@@ -1,0 +1,10 @@
+Id: apa005w
+Severity: WARN
+Category: services
+Check: check_apache
+
+A Directory block sets ExecCGI, so files the server can execute run as
+programs. Combined with an upload path or a writable directory this
+lets an attacker run code as the server user. Take ExecCGI off every
+directory except the one cgi-bin the site actually uses, and make sure
+that directory is writable only by root.

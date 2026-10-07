@@ -1,0 +1,12 @@
+Id: apa001w
+Severity: WARN, INFO
+Category: services
+Check: check_apache
+
+The Apache server is listening on every address of the machine instead
+of one named address (a Listen directive without an IP, or no Listen
+restriction at all). On a machine with more than one interface this
+serves the site where it was never meant to be served. The same id at
+INFO level confirms the server does listen only on one address and
+port. Give each Listen directive an explicit address, for example
+"Listen 192.0.2.10:80", and restart the server.

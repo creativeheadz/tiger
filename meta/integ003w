@@ -1,0 +1,9 @@
+Id: integ003w
+Severity: WARN
+Category: integrity
+Check: integrit_run
+
+Integrit detected, by checking against the files' the attributes in the
+database, the file has changed. "Benign" actions, like accessing a file
+(remember directories are files too) may have changed it, but it may be part
+of a breach of security. Please investigate.

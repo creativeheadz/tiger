@@ -1,0 +1,9 @@
+Id: acc021w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The listed login ID appears to be dormant.  Files in the home
+directory of this user have not been modified in the specified
+period of time and after investigation the account may need to
+be disabled.

@@ -1,0 +1,8 @@
+Id: ali007
+Severity: WARN, INFO
+Category: services
+Check: check_aliases
+
+The indicated alias includes a file which is not owned by root.
+This may allow the owner of the included file (or anyone gaining
+access to that login ID) to gain unauthorized privileges.

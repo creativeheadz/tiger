@@ -1,0 +1,7 @@
+Id: grp004w
+Severity: WARN
+Category: accounts
+Check: check_group
+
+The indicated group name exists in separate group files, but the group
+id's are different.  This can lead to unexpected access to resources.

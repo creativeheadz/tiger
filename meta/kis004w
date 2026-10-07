@@ -1,0 +1,13 @@
+Id: kis004w
+Severity: WARN
+Category: intrusion
+Check: check_known
+
+The 'lost+found' directory (one exists for each file system) is used
+by the `fsck' program as a directory for re-linking "dangling" files
+during the file system check.  These directories should be checked when
+a file system check is not clean and files recovered from here.  This
+directory is also used by intruders to store files, as it is often
+ignored.  The files found here should be checked.  If any unusual files
+are found, the system should be checked for other signs of intrusion.
+In any event, the 'lost+found' directories should be kept clean.

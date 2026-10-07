@@ -1,0 +1,10 @@
+Id: netw044f
+Severity: FAIL
+Category: network
+Check: check_ntp
+
+The NTP daemon is configured as a broadcast, manycast or multicast
+client, so it takes the time from whoever answers on the network
+instead of from named servers. Any machine on the segment can feed it
+a false clock. Point the configuration at explicit servers with
+"server" lines instead, and turn the broadcast client off.

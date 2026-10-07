@@ -1,0 +1,7 @@
+Id: pass011f
+Severity: FAIL
+Category: accounts
+Check: check_passwd
+
+The listed username has an empty password string.  This will allow any user
+to gain access to the account without being prompted for a password.

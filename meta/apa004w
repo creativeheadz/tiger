@@ -1,0 +1,11 @@
+Id: apa004w
+Severity: WARN
+Category: services
+Check: check_apache
+
+A Directory block sets FollowSymLinks, so the server follows any
+symbolic link under it. Anyone who can create a link in the served
+tree, through an upload, a shared directory or another account on the
+machine, can expose files outside it, such as /etc/passwd. Remove
+FollowSymLinks, or at least replace it with SymLinksIfOwnerMatch, and
+check the tree for links that should not be there.

@@ -1,0 +1,6 @@
+Id: netw014f
+Severity: FAIL
+Category: network
+Check: check_ntp
+
+/etc/securetty has world write permissions.

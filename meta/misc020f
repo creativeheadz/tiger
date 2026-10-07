@@ -1,0 +1,10 @@
+Id: misc020f
+Severity: FAIL
+Category: services
+Check: check_runprocs
+
+Tiger checked the process table and was not able to find a process
+which it was configured to look for.
+
+If the process is not part of the system processes consider adjusting
+the Tiger_Running_Procs definition in your tigerrc configuration file.

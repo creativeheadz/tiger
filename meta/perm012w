@@ -1,0 +1,10 @@
+Id: perm012w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The /etc/inetd.conf file defines the network daemons controlled by
+`inetd'.  If this file is writable by non-root users, then unauthorized
+access can be obtained.  In addition, it is not necessary that this file
+be readable by non-root users.  Making the file unreadable reduces the
+information available to an intruder attempting to gain privileges.

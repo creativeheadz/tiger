@@ -1,0 +1,7 @@
+Id: logf005f
+Severity: FAIL
+Category: logging
+Check: check_logfiles
+
+The log file does not have proper permissions set. It is recommended that
+you change the permissions to those suggested for these file.

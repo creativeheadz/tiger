@@ -1,0 +1,9 @@
+Id: path001w
+Severity: WARN
+Category: accounts
+Check: check_path
+
+The indicated file is in root's PATH, and is group writable, world
+writable or both.  This can allow Trojan horse programs or viruses to be
+planted into these executables and spread by `root'.  The group
+and world write permissions should be removed.

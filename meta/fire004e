@@ -1,0 +1,9 @@
+Id: fire004e
+Severity: ERROR
+Category: firewall
+Check: check_firewall
+
+The packet filter rules could not be read, so the check cannot say
+whether incoming traffic is filtered. Reading them needs root ('nft list
+ruleset' fails with "Operation not permitted" otherwise), and the nft or
+iptables command. The detail gives the command's own error.

@@ -1,0 +1,6 @@
+Id: dev001f
+Severity: FAIL
+Category: filesystem
+Check: check_devices
+
+Tape devices used for backups should not have world permissions.

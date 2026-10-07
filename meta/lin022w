@@ -1,0 +1,10 @@
+Id: lin022w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+kernel.yama.ptrace_scope is 0, so any process may attach to any other
+process of the same user with ptrace and read its memory, including the
+passwords and keys held by an agent or a browser. 1 restricts ptrace to
+a process's descendants, which is what debuggers need:
+  # sysctl -w kernel.yama.ptrace_scope=1

@@ -1,0 +1,8 @@
+Id: acc008w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The listed login ID has a configuration file which has group write permission,
+word write permission, or both enabled.  This allows others to change this
+file, compromising the login ID.

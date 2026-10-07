@@ -1,0 +1,10 @@
+Id: fsys018f
+Severity: FAIL
+Category: filesystem
+Check: check_suid
+
+A setuid file is owned by an ordinary user rather than an
+administrative account. A setuid program runs with its owner's
+privileges, so this gives whoever can run it that user's identity, and
+the owner can change the program at will. Setuid files should be owned
+by root or another administrative account, or not be setuid.

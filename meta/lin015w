@@ -1,0 +1,9 @@
+Id: lin015w
+Severity: WARN
+Category: network
+Check: check_network_config
+
+IP forwarding is the option that permits the system to act as a router
+and thus resend packets from one network interface to another. If your
+system is not acting as such this option should be disabled:
+ # sysctl -w net.ipv4.ip_forward = 0

@@ -1,0 +1,9 @@
+Id: lin037e
+Severity: ERROR
+Category: packages
+Check: deb_nopackfiles
+
+None of the directories the package check looks at (/bin, /usr/bin,
+/sbin, /usr/sbin, /lib) is a plain directory on this system, so there is
+nothing to compare against the package database. This should not
+happen on a Linux system; check the dirlist in deb_nopackfiles.

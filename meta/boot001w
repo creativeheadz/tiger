@@ -1,0 +1,7 @@
+Id: boot001w
+Severity: WARN
+Category: boot
+Check: check_lilo
+
+The LILO configuration file is readable by its group. It can hold the
+boot password in clear text and should be 0600 and owned by root.

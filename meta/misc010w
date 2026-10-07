@@ -1,0 +1,27 @@
+Id: misc010w
+Severity: WARN
+Category: services
+Check: check_sendmail
+
+CERT Advisory CA-93:15
+
+CERT Advisory CA-93:16
+
+A serious vulnerability exists in most versions of sendmail
+distributed prior to late October, or early November 1993.  This
+vulnerability allows remote users to execute arbitrary programs.
+The vulnerability affects the final destination host, therefore
+firewalled machines are vulnerable.  The CERT advisory CA-93:16
+provides three approaches for the problem.  If feasible, the
+best approach is to disable the program mailer (Mprog) in the
+`sendmail.cf' file.  If not feasible, then a version of sendmail
+(such as sendmail 8.6.4 or later from ftp.cs.berkeley.edu) should
+be installed.  Vendor provided fixes are
+
+HP-UX 8.x, series 300/400     PHNE_3369
+
+HP-UX 9.x, series 300/400     PHNE_3370
+
+HP-UX 8.x, series 700/800     PHNE_3371
+
+HP-UX 9.x, series 700/800     PHNE_3372

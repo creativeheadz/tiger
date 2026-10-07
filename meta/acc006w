@@ -1,0 +1,9 @@
+Id: acc006w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The home directory of the listed login ID has group write permission,
+world write permission or both enabled.  This allows new files to be added
+(and existing files potentially removed) by others.  The write permissions
+should be removed.

@@ -1,0 +1,10 @@
+Id: sig004w
+Severity: WARN
+Category: integrity
+Check: check_signatures
+
+No match was found for the signature of the indicated file.  This
+indicates either a local modification has been performed, replacing
+the binary, or that the file has been altered by an intruder.  If
+you are not aware of any local modifications, you should check this
+carefully.

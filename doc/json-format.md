@@ -13,8 +13,8 @@ order:
 
 ```
 {"type":"run","schema":1,"id":"…","tool":"tigris","version":"3.2.4, 2026.10.04.15.40","host":"Hera","os":"Linux","release":"7.0.0-38-generic","arch":"x86_64","config":"./tigerrc","start":"2026-10-05T07:12:03Z"}
-{"type":"finding","level":"WARN","id":"ssh008w","check":"check_ssh","message":"sshd: x11forwarding is yes: X11 is forwarded, which exposes the client's display to this server"}
-{"type":"finding","level":"WARN","id":"lin015w","check":"check_network_config","message":"The system has IP forwarding enabled","accepted":{"reason":"Docker needs IP forwarding","until":"-"}}
+{"type":"finding","level":"WARN","id":"ssh008w","check":"check_ssh","message":"sshd: x11forwarding is yes: X11 is forwarded, which exposes the client's display to this server","category":"ssh"}
+{"type":"finding","level":"WARN","id":"lin015w","check":"check_network_config","message":"The system has IP forwarding enabled","accepted":{"reason":"Docker needs IP forwarding","until":"-"},"category":"network"}
 {"type":"summary","id":"…","end":"2026-10-05T07:14:01Z","counts":{"ALERT":0,"FAIL":12,"WARN":52,"INFO":132,"ERROR":0}}
 ```
 
@@ -35,10 +35,11 @@ order:
 | field | meaning |
 |---|---|
 | `level` | `ALERT`, `FAIL`, `WARN`, `INFO` or `ERROR`. Most to least urgent, `ERROR` meaning the check could not run. |
-| `id` | The message id, e.g. `lin016f`: three to seven lower-case letters, three digits, and a last letter that repeats the level. Stable: `tigexp lin016f` explains it. |
+| `id` | The message id, e.g. `lin016f`: three to seven lower-case letters, three digits, and a last letter that repeats the level. Stable: `tigris explain lin016f` explains it. |
 | `check` | The script that reported it. |
 | `message` | The text, on one line. |
 | `detail` | Optional. Extra lines the check printed (for example a file listing), joined with `\n`. |
+| `category` | The area the finding belongs to, from its metadata file `meta/ID`: `accounts`, `boot`, `cron`, `filesystem`, `firewall`, `integrity`, `intrusion`, `kernel`, `logging`, `network`, `packages`, `services`, `ssh` or `tigris` ([metadata.md](metadata.md)). Absent in reports written before 3.4.0. |
 | `accepted` | Optional. Present when the finding was accepted with `tigris-accept`: `reason`, and `until` as `YYYY-MM-DD` or `-` for no expiry. An accepted finding is **not** in the text report. A consumer that wants the same view as the text report skips findings that have `accepted`. |
 
 `INFO` findings are always here, whatever the text report shows.

@@ -1,0 +1,7 @@
+Id: boot005w
+Severity: WARN
+Category: boot
+Check: check_lilo
+
+Neither LILO's nor GRUB's configuration file could be read, so the boot
+loader checks were not done.

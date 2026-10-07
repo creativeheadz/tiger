@@ -1,0 +1,8 @@
+Id: pass012w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The listed home directory is specified for multiple users. This can lead to
+denial-of-service and unexpected resource usage (i.e. shell initialization
+files, etc) if not corrected.

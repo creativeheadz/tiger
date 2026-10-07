@@ -1,0 +1,9 @@
+Id: con009e
+Severity: ERROR
+Category: tigris
+Check: check_runprocs
+
+There doesn't exist a configuration variable or it is not properly
+defined. Since the variable is needed for the module to run, it
+will probably exit. This is a configuration problem. It is
+necessary to add the variable to the tigerrc configuration file.

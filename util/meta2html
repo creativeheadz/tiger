@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# meta2html [META-DIR]: one HTML page explaining every finding id, from the
+#                 metadata files (doc/metadata.md), grouped by category,
+#                 with an anchor per id (explanations.html#lin002i).
+#
+# 10/07/2026 atrimbitas - Initial version, replacing doc2html and
+#                 convert2html, which turned doc/*.txt into a page each.
+#
+#-----------------------------------------------------------------------------
+#
+dir=${1:-`dirname "$0"`/../meta}
+
+# One line per id first, "category id", to sort on
+for f in "$dir"/*
+do
+  [ -f "$f" ] || continue
+  printf '%s %s\n' "`sed -n -e '/^$/q' -e 's/^Category: //p' "$f"`" "$f"
+done | sort |
+awk '
+function esc(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); return s }
+BEGIN {
+  print "<!DOCTYPE html>"
+  print "<html lang=\"en\"><head><meta charset=\"utf-8\">"
+  print "<title>Tigris findings</title>"
+  print "<style>body{font-family:sans-serif;max-width:52em;margin:2em auto;padding:0 1em}"
+  print "pre{white-space:pre-wrap}dt{font-weight:bold}.meta{color:#555}</style>"
+  print "</head><body>"
+  print "<h1>Tigris findings</h1>"
+  print "<p>What each finding id means, by category. <code>tigris explain ID</code> shows the same text.</p>"
+}
+{
+  cat = $1; file = $2
+  if (cat != prev) { if (prev != "") print "</dl>"; print "<h2 id=\"" cat "\">" esc(cat) "</h2><dl>"; prev = cat }
+  head = 1; text = ""; split("", v)
+  while ((getline line < file) > 0) {
+    if (head && line == "") { head = 0; continue }
+    if (head) { k = line; sub(/:.*/, "", k); sub(/^[^:]*: ?/, "", line); v[k] = line }
+    else text = text line "\n"
+  }
+  close(file)
+  print "<dt id=\"" v["Id"] "\">" v["Id"] "</dt><dd>"
+  m = "Severity: " v["Severity"] ". Reported by: " v["Check"] "."
+  print "<p class=\"meta\">" esc(m) "</p>"
+  if (v["References"] != "") print "<p class=\"meta\">References: " esc(v["References"]) "</p>"
+  printf "<pre>%s</pre></dd>\n", esc(text)
+}
+END { if (prev != "") print "</dl>"; print "</body></html>" }
+'

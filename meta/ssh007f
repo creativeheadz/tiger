@@ -1,0 +1,7 @@
+Id: ssh007f
+Severity: FAIL
+Category: ssh
+Check: check_ssh
+
+PermitEmptyPasswords is yes, so an account with an empty password can
+log in over the network. Set it to no.

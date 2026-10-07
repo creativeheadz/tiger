@@ -1,0 +1,8 @@
+Id: misc018w
+Severity: WARN
+Category: filesystem
+Check: check_rcumask
+
+There are two umask settings in the boot scripts, this probably means
+that only one of them will be valid. Check the appropriate file to
+fix this issue.

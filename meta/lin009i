@@ -1,0 +1,10 @@
+Id: lin009i
+Severity: INFO
+Category: network
+Check: check_network_config
+
+The kernel will answer (per configuration) to ICMP echo requests in any
+interface. You might want to configure it to not answer to this requests
+and thus make it more "invisible". Do it with:
+ # sysctl -w net.ipv4.icmp_echo_ignore_all=1
+Note, however, that this violates RFCs.

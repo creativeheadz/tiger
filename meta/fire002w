@@ -1,0 +1,13 @@
+Id: fire002w
+Severity: WARN
+Category: firewall
+Check: check_firewall
+
+As fire001w, for IPv6. A host can deny IPv4 by default and leave IPv6
+open: an nftables table of family 'ip' or an iptables (not ip6tables)
+policy covers IPv4 only. If the host has IPv6 addresses, its services
+are reachable over IPv6 even when IPv4 is filtered. Use a table of
+family 'inet', which covers both, or set the ip6tables policy too. If the
+host does not use IPv6 at all, it can be switched off with
+net.ipv6.conf.all.disable_ipv6 = 1, and this check then says nothing
+about it.

@@ -1,0 +1,7 @@
+Id: ssh009w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+MaxAuthTries is above 4, which gives a password-guessing client more
+attempts per connection before it is dropped. Set it to 4 or fewer.

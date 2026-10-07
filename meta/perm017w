@@ -1,0 +1,10 @@
+Id: perm017w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The /etc/utmp file should not be writable by non-root users.  This
+is a security vulnerability.  Unfortunately, on SunOS 4 systems, the
+SunView and OpenWindows 'cmdtool' and 'shelltool' programs do not
+function correctly if it is not.  If you are not using these tools,
+then you should set the permissions to 644.

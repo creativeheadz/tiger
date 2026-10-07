@@ -1,0 +1,11 @@
+Id: lin020w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+kernel.kptr_restrict is 0, so any user can read kernel addresses from
+/proc/kallsyms and similar files, which defeats the randomisation of the
+kernel's own layout. Set it to 1 (hidden from unprivileged users) or 2
+(hidden from everyone):
+  # sysctl -w kernel.kptr_restrict=1
+and keep it in a file under /etc/sysctl.d/.

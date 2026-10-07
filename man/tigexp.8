@@ -5,6 +5,9 @@ tigexp \- UNIX Security Checker Explanation Generator
 .B tigexp
 .IR msgid " [" msgid [ msgid ...]]
 .LP
+.B tigris explain
+.IR msgid " [" msgid [ msgid ...]]
+.LP
 .B tigexp
 .RB [ -f | -F ]
 .RI [ security_report ]
@@ -14,7 +17,10 @@ tigexp \- UNIX Security Checker Explanation Generator
 \fBTigexp\fR is used to generate explanations of the output from the
 \fBTiger\fR security checking package.  In the first form,
 .B tigexp
-will generate an explanation of each of the message ids listed.
+will generate an explanation of each of the message ids listed,
+after its severity, category and the checks that report it;
+.B "tigris explain"
+does the same.
 In the second form, the security report specified will be scanned
 and explanations generated.  The
 .B "\-f"
@@ -83,11 +89,11 @@ after each entry in the report.  If the name of a security report
 is not given, then the report is read from stdin.
 .LP
 .SH FILES
-$TIGERHOMEDIR/doc/explain.idx
+$TIGERHOMEDIR/meta/\fIID\fR, one file per message id (doc/metadata.md)
 .LP
 .SH SEE ALSO
 .BR tiger (8)
 .LP
 .SH BUGS
-If the explanation index is out of date, it doesn't recognize it
-and generates junk.
+Ids retired before 3.4.0 have no explanation; theirs are in the git
+history, under doc/*.txt at the tag version_3_3_0.

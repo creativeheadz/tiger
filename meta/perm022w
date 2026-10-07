@@ -1,0 +1,8 @@
+Id: perm022w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The indicated disk device file is not owned by `root'.  This allows the
+owner of the disk device to bypass the systems file access controls.
+The owner should be changed to `root'.

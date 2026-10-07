@@ -1,0 +1,9 @@
+Id: logf004f
+Severity: FAIL
+Category: logging
+Check: check_logfiles
+
+The log file "utmp" should exist so that a list of current users on the
+server can be listed.  This is accessed by the command "who".
+It might not exist due to a system configuration error or an
+intruder that has tried to cover this tracks by removing it.

@@ -1,0 +1,9 @@
+Id: pass017w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The listed login ID has a user ID of zero (0) and is not the 'root'
+account.  This should be checked to see if it is legitimate.  In any
+case, having login ID's with a user ID of zero tends to lead to security
+problems, and should be avoided (except for 'root')

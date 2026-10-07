@@ -1,0 +1,7 @@
+Id: ssh016w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+LogLevel is below INFO, so successful and failed logins are not logged
+in enough detail to investigate an incident. Set it to INFO or VERBOSE.

@@ -1,0 +1,9 @@
+Id: rootkit005a
+Severity: ALERT
+Category: intrusion
+Check: check_rootkit
+
+The 'chkrootkit' program has detected a rootkit installation
+A full analysis of the system is recommended to determine the
+presence of further signs of intrusion and to determine if the
+rootkit is indeed installed.

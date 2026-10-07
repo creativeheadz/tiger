@@ -1,0 +1,14 @@
+Id: fsys014w
+Severity: WARN
+Category: filesystem
+Check: check_nousrgrp
+
+The file does not belong to any user. It is owned by a numeric UID which is
+not defined in the system. This might have happened due to a user being
+removed from the system and the files that were owned by this user have not
+been removed. In this case, if a new user is created in the system matching
+this user ID he will inmediately own the orphaned files.
+
+This circumstance might also show up if the user database is not fully defined
+locally (i.e. some of it is in an external repository such as an LDAP). If
+this is the case you can safely ignore this warning.

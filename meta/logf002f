@@ -1,0 +1,9 @@
+Id: logf002f
+Severity: FAIL
+Category: logging
+Check: check_logfiles
+
+The log file "btmp" should exist to log a list of bad logins.
+This file is accessed using the command "lastb".
+It might not exist due to a system configuration error or an
+intruder that has tried to cover this tracks by removing it.

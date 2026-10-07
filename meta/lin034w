@@ -1,0 +1,10 @@
+Id: lin034w
+Severity: WARN
+Category: network
+Check: check_sysctl
+
+net.ipv6.conf.*.accept_redirects is 1, so the host accepts IPv6 ICMP
+redirects and lets any machine on the link change its routes. See
+lin012w for the IPv4 equivalent:
+  # sysctl -w net.ipv6.conf.all.accept_redirects=0
+  # sysctl -w net.ipv6.conf.default.accept_redirects=0

@@ -1,0 +1,8 @@
+Id: perm023a
+Severity: ALERT
+Category: filesystem
+Check: check_perms
+
+The indicated file has the setuid bit set, but it should not have it.
+This should be changed by using 'chmod u-s file' where 'file' is the
+indicated file.  The system should be checked for signs of intrusion.

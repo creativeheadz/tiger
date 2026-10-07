@@ -1,0 +1,10 @@
+Id: crk001w
+Severity: WARN
+Category: accounts
+Check: crack_run
+
+The Crack password guesser ran against the password file and guessed
+somebody's password; the login ids follow the message. A guessable
+password falls to the first dictionary an attacker tries. Make each
+listed account pick a strong password, and consider a password-quality
+check so weak ones cannot be set again.

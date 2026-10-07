@@ -1,0 +1,7 @@
+Id: ptch005e
+Severity: ERROR
+Category: packages
+Check: check_patches
+
+The patch check needs root to refresh the package lists; run Tiger as
+root for a reliable result.

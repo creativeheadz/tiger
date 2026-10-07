@@ -1,0 +1,10 @@
+Id: suid002
+Severity: FAIL, WARN, INFO
+Category: filesystem
+Check: check_suid
+
+A setuid file can be written by its group or by any user. Whoever can
+write the file can replace it with a program of their own choosing,
+which then runs with the file owner's privileges. Remove the write
+permission with chmod, or take the setuid bit off if the program does
+not need it.

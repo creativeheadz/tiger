@@ -1,0 +1,11 @@
+Id: nfs006f
+Severity: FAIL
+Category: network
+Check: check_exports
+
+Exporting a file-system R/W to everyone means that anyone can
+modify the data on your system, possibly making changes that
+allow them to login to the system and access or destroy other
+files.
+
+See `nfs013i'

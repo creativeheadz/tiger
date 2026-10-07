@@ -1,0 +1,8 @@
+Id: ssh015w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+PermitUserEnvironment is yes, so a user can set environment variables
+such as LD_PRELOAD from authorized_keys and have them applied to the
+login, which bypasses restrictions placed on the shell. Set it to no.

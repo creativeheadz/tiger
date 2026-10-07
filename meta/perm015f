@@ -1,0 +1,10 @@
+Id: perm015f
+Severity: FAIL
+Category: filesystem
+Check: check_perms
+
+The 'rc.*' scripts are executed during system startup.  If they are
+writable by non-root users, then unauthorized access or privileges can
+be obtained.  In addition, there is no need for these files to be world
+readable.  Making them unreadable reduces the information available to
+an intruder attempting to gain privileges.

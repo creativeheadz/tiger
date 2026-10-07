@@ -1,0 +1,8 @@
+Id: perm020w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The indicated disk device file is world readable, writable or both.  This
+allows the file access controls to be bypassed.  The world permissions
+should be removed.

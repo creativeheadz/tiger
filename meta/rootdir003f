@@ -1,0 +1,6 @@
+Id: rootdir003f
+Severity: FAIL
+Category: filesystem
+Check: check_rootdir
+
+The ownership of the root directory is not secure.

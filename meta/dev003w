@@ -1,0 +1,9 @@
+Id: dev003w
+Severity: WARN
+Category: filesystem
+Check: check_devices
+
+There is a file in the devices directory which is a common file. Devices
+directory should only hold special files although some systems have
+directories and shell scripts in /dev. Please check your system's
+documentation to determine if that file should be located there.

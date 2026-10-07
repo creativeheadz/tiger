@@ -1,0 +1,14 @@
+Id: nfs010i
+Severity: INFO
+Category: network
+Check: check_exports
+
+Exporting a file-system with root access can allow the
+a user on the remote host to gain further access on
+the local machine.  Removing root exports is a means
+of limiting the number of affected machines in the
+event that a machine(s) is compromised.  In this case,
+the directory is protected on the server because the
+permissions are '700'.  Note on some platforms, if this
+is not the root directory of a file-system, then the
+server may still be vulnerable.

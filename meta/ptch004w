@@ -1,0 +1,7 @@
+Id: ptch004w
+Severity: WARN
+Category: packages
+Check: check_patches
+
+No supported patch management tool (apt, autorpm) was found, so the
+check for pending updates could not be done.

@@ -1,0 +1,9 @@
+Id: logf003f
+Severity: FAIL
+Category: logging
+Check: check_logfiles
+
+The log file "lastlog" should exist to show a user's most recent login
+session on the server.  This file is accessed by the command "lastlog".
+It might not exist due to a system configuration error or an
+intruder that has tried to cover this tracks by removing it.

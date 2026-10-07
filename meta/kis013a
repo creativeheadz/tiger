@@ -1,0 +1,9 @@
+Id: kis013a
+Severity: ALERT
+Category: intrusion
+Check: check_known
+
+A interface is set up on promiscuous mode, this is a common method
+used by attackers to capture user account and and password information.
+For related information, see CERT advisory CA-94:01 available in
+http://www.cert.org/advisories/CA-94.01.ongoing.network.monitoring.attacks.html

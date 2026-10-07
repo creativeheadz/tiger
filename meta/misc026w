@@ -1,0 +1,10 @@
+Id: misc026w
+Severity: WARN
+Category: filesystem
+Check: check_umask
+
+/etc/login.defs has no UMASK setting, so the default file creation mask
+for login sessions is whatever the shell start-up files or PAM provide, if
+anything. Set UMASK 022 (or 027 where users should not read each other's
+files) in /etc/login.defs; with pam_umask in the PAM session stack that
+value applies to every login.

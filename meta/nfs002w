@@ -1,0 +1,9 @@
+Id: nfs002w
+Severity: WARN
+Category: network
+Check: check_exports
+
+The anonymous ID defines the 'uid' to be used for authenticating
+NFS requests which have no credentials.  Setting this to 0 is
+very dangerous.  It allows all files to be searched, possibly
+revealing security problems.

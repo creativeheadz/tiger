@@ -1,0 +1,7 @@
+Id: ptch001f
+Severity: FAIL
+Category: packages
+Check: check_patches
+
+The patch management tool reports packages that have newer versions
+available. Install the updates, in particular the security ones.

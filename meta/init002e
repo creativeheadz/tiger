@@ -1,0 +1,10 @@
+Id: init002e
+Severity: ERROR
+Category: tigris
+Check: any
+
+The required configuration script was not found in the listed directory.
+The programs can not run without this script.  The '-B' switch can
+be used to specify the directory containing the configuration script.
+
+./tiger -B path_to_tiger_home

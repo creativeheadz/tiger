@@ -1,0 +1,12 @@
+Id: fsys013w
+Severity: WARN
+Category: filesystem
+Check: find_files
+
+The symbolic link points to a file that does not exist in the filesystem.
+In itself, the link is not dangerous, but you should be aware of its
+presence, as it might be related to an abnormal situation or
+system misconfiguration.
+You can safely ignore this information if it is related to a remotely
+mounted filesystem (e.g. NFS) since symlinks in remote filesystems
+might be valid only on the system that exports it.

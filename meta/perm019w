@@ -1,0 +1,12 @@
+Id: perm019w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The /etc directory is not owned by root, or its group is not the
+expected one. Almost every security decision on the system lives in a
+file under /etc, so the wrong owner there can rewrite passwords,
+sudoers, SSH keys and service definitions. Restore it with
+chown root:root /etc, and check for files under it that changed hands
+at the same time. (The ALERT-era entry perm019a above is kept so old
+reports still explain.)

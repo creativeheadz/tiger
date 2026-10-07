@@ -1,0 +1,11 @@
+Id: root004w
+Severity: WARN
+Category: accounts
+Check: check_root
+
+The graphical login manager, xdm or an old gdm, is configured to let
+root log in at the console (allowRootLogin, AllowRoot or
+AllowRemoteRoot set to true). A graphical session runs far more code
+as root than a shell does, and every bit of it is trusted with the
+machine. Turn the setting off and log in as an ordinary user, using su
+or sudo for the few things that need root.

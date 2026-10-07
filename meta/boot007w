@@ -1,0 +1,8 @@
+Id: boot007w
+Severity: WARN
+Category: boot
+Check: check_lilo
+
+LILO has "restricted" set, which only has an effect together with a
+password, and no password is configured. Add password= to lilo.conf,
+make the file 0600 and rerun lilo.

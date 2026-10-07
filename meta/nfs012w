@@ -1,0 +1,19 @@
+Id: nfs012w
+Severity: WARN
+Category: network
+Check: check_exports
+
+The directory for a disk-less client is exported with
+root access, but the directory is not protected on the
+server because the permissions are not '700'.  By setting
+the permissions of the directory to `700', any files created
+from the client machine will not be accessible on the server.
+Note on some platforms, if this is not the root directory
+of a file-system, then the server may still be vulnerable.
+
+NOTE:  For the disk-less clients '/' (root) directory, the
+permissions can *not* be `700' as non-root processes on the
+client will not be able to access any files.  The permissions
+on the parent directory on the server should be set to `700'
+(or if feasible, the root directory of the file-system on which
+the directory resides should be set to `700').

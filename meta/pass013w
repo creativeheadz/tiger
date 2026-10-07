@@ -1,0 +1,7 @@
+Id: pass013w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The listed username is not using an acceptable, cryptographic method for the
+password hash.

@@ -1,0 +1,7 @@
+Id: misc021w
+Severity: WARN
+Category: filesystem
+Check: check_rcumask check_umask
+
+There are no umask entries in the configuration file. It is recommended
+that there are umask entries set in the configuration file.

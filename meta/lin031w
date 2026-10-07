@@ -1,0 +1,9 @@
+Id: lin031w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+fs.protected_regular is 0, so a program that creates a file with O_CREAT
+in a world-writable sticky directory will happily open an existing file
+planted there by another user:
+  # sysctl -w fs.protected_regular=1

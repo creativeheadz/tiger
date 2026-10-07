@@ -1,0 +1,10 @@
+Id: rootkit003w
+Severity: WARN
+Category: intrusion
+Check: check_rootkit
+
+The 'chkrootkit' program has detected a suspicious directory
+which might be an indication of an intrusion.
+A full analysis of the system is recommended to determine the
+presence of further signs of intrusion since a rootkit might have
+been installed.

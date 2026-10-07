@@ -1,0 +1,9 @@
+Id: lin030w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+fs.protected_fifos is 0, so a program that opens a file by name in a
+world-writable sticky directory can be handed a FIFO created by another
+user instead, and block or read what that user feeds it:
+  # sysctl -w fs.protected_fifos=1

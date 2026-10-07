@@ -1,0 +1,8 @@
+Id: ali005w
+Severity: WARN
+Category: services
+Check: check_aliases
+
+The indicated alias is a program alias.  Program aliases should be
+used with care, as they can provide unauthorized entry into the
+system.

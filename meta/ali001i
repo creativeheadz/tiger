@@ -1,0 +1,8 @@
+Id: ali001i
+Severity: INFO
+Category: services
+Check: check_aliases
+
+The indicated alias is a program alias, but the indicated program doesn't
+appear to exist.  This indicates either a configuration error or an old
+entry which should be removed.  This is just an informatory message.

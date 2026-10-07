@@ -1,0 +1,8 @@
+Id: perm013f
+Severity: FAIL
+Category: filesystem
+Check: check_perms
+
+The /etc/netgroup file defines network groups which consist of machines
+and users.  Allowing write access can allow unauthorized access or
+privileges.

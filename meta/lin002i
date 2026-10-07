@@ -1,0 +1,22 @@
+Id: lin002i
+Severity: WARN, INFO
+Category: network
+Check: check_listeningprocs
+
+Installed processes listening on Internet interfaces must be
+tightly controlled since they are the "open doors" to the
+outside.
+
+A process with sockets on ports in the kernel's ephemeral range
+(/proc/sys/net/ipv4/ip_local_port_range, usually 32768-60999) is reported
+once for each protocol and address as "listening on ephemeral ports",
+with the ports themselves in the detail. Those ports are usually chosen
+by the kernel and change from run to run, so naming them in the message
+would make the finding look new every time.
+
+IPv4 and IPv6 sockets are both reported. A process listening on 0.0.0.0
+and on :: (or on one dual-stack socket) is one finding "on every
+interface"; ::1 counts as loopback, like 127.0.0.0/8. A socket bound to
+one device (SO_BINDTODEVICE, as DHCP clients do) is reported on that
+interface. The sockets are read with ss, or lsof or netstat where ss is
+missing.

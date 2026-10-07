@@ -1,0 +1,7 @@
+Id: grp001w
+Severity: WARN
+Category: accounts
+Check: check_group
+
+The indicated group name exists multiple times in the same group file.
+This indicates a configuration problem which should be corrected.

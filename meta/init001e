@@ -1,0 +1,19 @@
+Id: init001e
+Severity: ERROR
+Category: tigris
+Check: check_symlink initdefs mksig
+
+The indicated variable, which should specifies the pathname to a command,
+does not have a value. This message should not appear on platforms
+for which support is listed.  If it does appear, then for the missing
+commands, if you know the name of the command, then simply place it
+into the environment and rerun the checking system.
+
+setenv AWK /usr/bin/awk
+
+./tiger
+
+Or alternately, create a 'site' configuration file and insert an
+assignment statement in there of the form:
+
+AWK=/usr/bin/awk

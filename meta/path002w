@@ -1,0 +1,17 @@
+Id: path002w
+Severity: WARN
+Category: accounts
+Check: check_path
+
+The indicated file is in root's PATH, but is not owned by root.  This
+can allow Trojan horse programs or viruses to be planted into these
+executables and spread by `root'.  Often these executables are owned by
+`bin', `uucp' or other system accounts.  If these commands are never
+used by root, then this is not a problem.  If they are, you should
+consider changing the owner to `root'. Because of SMI's recent decision
+to install most /usr/sbin/* and /usr/bin/* executables
+as owned by `bin', this account will not flag a warning.
+
+Linux (notably RedHat) operating environments violate this convention
+with printer (lp*) and rpm programs among others.
+Changing ownership in this case may be problematic.

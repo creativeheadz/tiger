@@ -278,6 +278,21 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   six overrides all match; `tests/statoverride_check.sh` needs no root,
   and `tests/deb_checks.sh` plants a real override in Debian stable, sid
   and Ubuntu 24.04. `Tiger_Deb_StatOverride` turns it off.
+- [x] **Finding metadata.** Each id the code can emit has `meta/ID`: its
+  severity (the levels the code really uses: lin002i is also a WARN),
+  one of 14 categories, the checks that report it, references, and the
+  explanation, moved from `doc/*.txt`. `tigris explain ID` (still
+  `tigexp` underneath) reads it directly, so there is no index to
+  rebuild as root, and shows it as written instead of through `fmt`,
+  which ran indented examples together. Every JSON finding carries its
+  `category` (an added field, schema 1 unchanged). `make` builds one
+  HTML page, `doc/explanations.html`, from it. The 210 explanations of
+  ids nothing emits any more (inetd, anonftp, rhosts, the Solaris and
+  HP-UX checks) were dropped; they are in `doc/*.txt` at the tag
+  `version_3_3_0`. `tests/explain_check.sh` fails on an emitted id with
+  no file, a file for an id nothing emits, an unknown key or category,
+  a severity that leaves out a level the code reports, or a Check list
+  that does not match the scripts the id appears in.
 
 ## 3.2.x: maintenance
 
@@ -411,10 +426,13 @@ open items below ship from 3.4.0 on.
   version, a JSON Schema, a documented contract, an exit status from the
   worst finding (0, 2 ERROR, 3 WARN, 4 FAIL, 5 ALERT; 1 did not run), and
   `--since` for a diff-aware run of the main command.
-- [ ] **One metadata file per check**: id, severity, category, controls,
-  fix, references. The docs, `tigris explain ID` (replacing `tigexp`) and
-  the JSON are generated from it, and the rule that every id has an
-  explanation is true by construction.
+- [x] **One metadata file per finding id** (`meta/ID`, format in
+  `doc/metadata.md`): severity, category, the checks that report it,
+  references, the explanation; `Fix` and `Controls` are defined and wait
+  for content. `tigris explain ID`, the `category` of each JSON finding
+  and the HTML reference are read from it, and
+  `tests/explain_check.sh` holds the files and the code to each other
+  both ways. On master since 3.3.0.
 - [ ] **Open compliance mapping**, free: CIS Controls v8, ISO 27001:2022
   Annex A, NIST 800-53 and UK Cyber Essentials, kept as data files and
   carried in the JSON. Lynis offers this only in its paid edition.
@@ -428,7 +446,8 @@ open items below ship from 3.4.0 on.
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old
   configurations: `tigerrc` to `tigris.conf`, `Tiger_*` to `Tigris_*`,
-  `/etc/tiger` to `/etc/tigris`, `tigexp` to `tigris explain`.
+  `/etc/tiger` to `/etc/tigris`, `tigexp` to `tigris explain` (which
+  already exists; `tigexp` is what it runs).
 - [ ] A JSON schema 2 only if something has to be removed or renamed.
 
 ## Ideas parked for later

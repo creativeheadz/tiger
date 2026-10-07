@@ -1,0 +1,9 @@
+Id: fsys005a
+Severity: ALERT
+Category: filesystem
+Check: check_names
+
+The listed file has an unusual filenames.  These include files with
+multiple leading '.', filenames with spaces, etc.  The variable
+FS_FILES can be set in the 'tigerrc' file to specify the filename
+patterns which are reported.

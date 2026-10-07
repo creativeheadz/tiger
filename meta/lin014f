@@ -1,0 +1,12 @@
+Id: lin014f
+Severity: FAIL
+Category: network
+Check: check_network_config
+
+It is possible to send IP spoofed packets from this machine. Spoofed
+packets are commonly used by trojans that make use of compromised hosts
+to deliver denial of service, man in the middle or connection hijacking.
+You should consider configuring your kernel to not permit this:
+  # sysctl -w net.ipv4.conf.all.rp_filter = 2
+and:
+  # sysctl -w net.ipv4.conf.default.rp_filter = 2

@@ -1,0 +1,10 @@
+Id: apa003i
+Severity: INFO
+Category: services
+Check: check_apache
+
+A Directory block allows symbolic links to be followed only when the
+link and its target share an owner (SymLinksIfOwnerMatch). This is the
+safer form of symlink following: a user who can write to the served
+tree cannot point a link at /etc/passwd unless they already own that
+file. No action needed; the message records that the option is set.

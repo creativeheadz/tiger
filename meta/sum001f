@@ -1,0 +1,10 @@
+Id: sum001f
+Severity: FAIL
+Category: boot
+Check: check_single
+
+The system does not appear to require a password during single-user
+mode boot.  Either add a password to your boot loader or add the line:
+~~:S:wait:/sbin/sulogin
+to your /etc/inittab file.  This line should be added immediately before
+the line containing "rc 0".

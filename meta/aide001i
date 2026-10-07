@@ -1,0 +1,6 @@
+Id: aide001i
+Severity: INFO
+Category: integrity
+Check: aide_run
+
+Aide detected no changes. Good.

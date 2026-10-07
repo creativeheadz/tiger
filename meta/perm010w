@@ -1,0 +1,13 @@
+Id: perm010w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The /etc/hosts.allow and /etc/hosts.deny files (from Wietse Venema's
+tcp_wrapper package) should not be writable by non-root users.  If
+they are writable, the protection provided by the package can be
+bypassed.  In addition, if all of the daemons protected by tcp_wrapper
+run as `root', then the file does not need to be readable by non-root
+users.  Making the permissions 600, reduces the information available
+to an intruder attempting to gain privileges.  If any daemons are
+run as non-root users though, this is not possible.

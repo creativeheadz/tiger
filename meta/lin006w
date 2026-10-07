@@ -1,0 +1,9 @@
+Id: lin006w
+Severity: WARN
+Category: packages
+Check: deb_checkmd5sums
+
+The check of installed files against package checksums could not be done
+because this does not look like a Debian system, or dpkg's information is
+not available. On RPM, Alpine and Arch systems the equivalent check is
+reported under the same ids by pkg_integrity.

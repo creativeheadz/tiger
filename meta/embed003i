@@ -1,0 +1,13 @@
+Id: embed003i
+Severity: INFO
+Category: filesystem
+Check: check_embedded
+
+See the 'embed' explanation for an explanation of the format of the
+embedded references.
+
+The indicated pathname to a file or directory contains a component
+which is group writable, world writable or both.  This may indicate a
+vulnerability in the system.  It will be necessary to study the file
+and programs in which the pathname was found to determine whether
+there is a problem.

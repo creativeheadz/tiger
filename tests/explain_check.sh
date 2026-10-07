@@ -1,10 +1,13 @@
 #!/bin/sh
 #
-# tests/explain_check.sh - every finding id has an explanation
+# tests/explain_check.sh - every finding id has its metadata, and only those
 #
-# Builds a fresh explain index from doc/*.txt in a scratch directory,
-# enumerates every finding id the live code can emit, and fails on any
-# id with no entry. Also fails on any id in a message call that is not
+# Enumerates every finding id the live code can emit and fails on any id
+# with no meta/ID file, and on any file for an id nothing emits. Each file
+# is checked against doc/metadata.md: known keys, the required ones
+# present, a severity that covers every level the code reports the id at,
+# a known category, and a Check list that names exactly the scripts the
+# id appears in. Also fails on any id in a message call that is not
 # well-formed, so the next tigxxxx is caught here instead of in a report.
 #
 # What "emitted" covers, and why each source looks the way it does:
@@ -37,14 +40,10 @@ fail=0
 ok()  { echo "ok   $1"; }
 bad() { echo "FAIL $1"; fail=1; }
 
-mkdir -p "$W/doc"
-cp "$TIGER"/doc/*.txt "$W/doc/" || { bad "cannot copy doc"; exit 1; }
-BASEDIR=$W sh "$TIGER/util/genmsgidx" >/dev/null 2>&1
-[ -s "$W/doc/explain.idx" ] || { bad "genmsgidx built no index"; exit 1; }
-awk '{print $1}' "$W/doc/explain.idx" | sort -u > "$W/explained.txt"
-
 cd "$TIGER" || exit 1
-CODE="tiger tigercron tigris-accept tigris-diff config initdefs util scripts systems/Linux/2"
+ls meta | sort > "$W/explained.txt"
+[ -s "$W/explained.txt" ] || { bad "no meta files"; exit 1; }
+CODE="tiger tigris tigercron tigris-accept tigris-diff config initdefs util scripts systems/Linux/2"
 # shellcheck disable=SC2086
 grep -r "" $CODE 2>/dev/null \
   | grep -v "^[^:]*:[ 	]*#" \
@@ -72,9 +71,101 @@ cat "$W/shape_ids.txt" "$W/perm_ids.txt" "$W/sig_ids.txt" "$W/embed_ids.txt" "$W
 
 missing=`comm -23 "$W/emitted.txt" "$W/explained.txt"`
 if [ -z "$missing" ]; then
-  ok "`wc -l < "$W/emitted.txt" | tr -d ' '` emitted ids, every one explained"
+  ok "`wc -l < "$W/emitted.txt" | tr -d ' '` emitted ids, every one with a meta file"
 else
-  bad "ids with no explanation:"; echo "$missing" | sed 's/^/     /'
+  bad "ids with no meta file:"; echo "$missing" | sed 's/^/     /'
+fi
+orphans=`comm -13 "$W/emitted.txt" "$W/explained.txt"`
+if [ -z "$orphans" ]; then
+  ok "no meta file for an id nothing emits"
+else
+  bad "meta files for ids nothing emits (remove them):"; echo "$orphans" | sed 's/^/     /'
+fi
+
+# What the code says about each id: "id script" for every script it
+# appears in, and "id LEVEL" for every level a message call or a raw
+# --LEVEL-- line gives it (pathmsg: WARN or INFO for its owner id, FAIL,
+# WARN or INFO for its access id)
+# shellcheck disable=SC2086
+grep -r "" $CODE 2>/dev/null | grep -v "^[^:]*:[ 	]*#" | grep -v "^scripts/check_network:" \
+  | grep -v "systems/Linux/2/\(embedlist\|facl.strict\|file_access_list\|rel_file_exp_list\|rh7.3.baseline\|services\|services.save\|sgid_list\|signatures\|suid_list\):" \
+  | awk '{
+      file = $0; sub(/:.*/, "", file); n = split(file, p, "/"); base = p[n]
+      line = $0; sub(/^[^:]*:/, "", line)
+      rest = line
+      while (match(rest, /[a-z]+[0-9][0-9][0-9][a-z]?/)) {
+        print substr(rest, RSTART, RLENGTH), "S", base
+        rest = substr(rest, RSTART + RLENGTH)
+      }
+      nf = split(line, w, /[ \t;&|{(]+/)
+      for (i = 1; i < nf; i++) {
+        lv = w[i + 1]; id = w[i + 2]; gsub(/"/, "", lv); gsub(/"/, "", id)
+        if (w[i] == "message" && lv ~ /^(ALERT|FAIL|WARN|INFO|ERROR|CONFIG)$/ && id ~ /^[a-z]+[0-9][0-9][0-9][a-z]?$/)
+          print id, "L", lv
+        if (w[i] == "pathmsg") {
+          if (lv != ".") { print lv, "L", "WARN"; print lv, "L", "INFO" }
+          print id, "L", "FAIL"; print id, "L", "WARN"; print id, "L", "INFO"
+        }
+      }
+      rest = line
+      while (match(rest, /--(ALERT|FAIL|WARN|INFO|ERROR|CONFIG)-- +\[[a-z]+[0-9][0-9][0-9][a-z]?\]/)) {
+        m = substr(rest, RSTART, RLENGTH); lv = m; sub(/^--/, "", lv); sub(/--.*/, "", lv)
+        id = m; sub(/.*\[/, "", id); sub(/\]/, "", id)
+        print id, "L", lv
+        rest = substr(rest, RSTART + RLENGTH)
+      }
+    }' | sort -u > "$W/code.txt"
+
+# Each file against doc/metadata.md and what the code says
+problems=`awk -v code="$W/code.txt" '
+  BEGIN {
+    while ((getline l < code) > 0) {
+      split(l, f, " ")
+      if (f[2] == "S") scripts[f[1]] = scripts[f[1]] " " f[3]
+      else levels[f[1]] = levels[f[1]] " " f[3]
+    }
+    split("Id Severity Category Check Fix References Controls", k, " "); for (i in k) known[k[i]] = 1
+    split("accounts boot cron filesystem firewall integrity intrusion kernel logging network packages services ssh tigris", k, " "); for (i in k) cats[k[i]] = 1
+    split("ALERT FAIL WARN INFO ERROR CONFIG", k, " "); for (i in k) lvls[k[i]] = 1
+    suf["a"] = "ALERT"; suf["f"] = "FAIL"; suf["w"] = "WARN"; suf["i"] = "INFO"; suf["e"] = "ERROR"; suf["c"] = "CONFIG"
+  }
+  function done_file() {
+    if (file == "") return
+    id = file; sub(/.*\//, "", id)
+    if (v["Id"] != id) print id ": Id is \"" v["Id"] "\""
+    if (v["Severity"] == "") print id ": no Severity"
+    if (!(v["Category"] in cats)) print id ": unknown Category \"" v["Category"] "\""
+    if (v["Check"] == "") print id ": no Check"
+    if (body == 0) print id ": no explanation"
+    split("", sev); n = split(v["Severity"], s, /, /)
+    for (i = 1; i <= n; i++) { if (!(s[i] in lvls)) print id ": unknown level \"" s[i] "\""; sev[s[i]] = 1 }
+    last = substr(id, length(id))
+    if ((last in suf) && !(suf[last] in sev)) print id ": Severity leaves out " suf[last] ", which its last letter names"
+    n = split(levels[id], s, " ")
+    for (i = 1; i <= n; i++) if (!(s[i] in sev)) print id ": the code reports it as " s[i] ", not in Severity"
+    if (v["Check"] != "any" && id !~ /^(perm|embed)/) {
+      split("", want); split("", have)
+      n = split(scripts[id], s, " "); for (i = 1; i <= n; i++) want[s[i]] = 1
+      n = split(v["Check"], s, " "); for (i = 1; i <= n; i++) have[s[i]] = 1
+      for (c in want) if (!(c in have)) print id ": appears in " c ", not in Check"
+      for (c in have) if (!(c in want)) print id ": Check names " c ", where it does not appear"
+    }
+  }
+  FNR == 1 { done_file(); file = FILENAME; inhead = 1; body = 0; split("", v) }
+  inhead && /^$/ { inhead = 0; next }
+  inhead {
+    key = $0; sub(/:.*/, "", key); val = $0; sub(/^[^:]*: ?/, "", val)
+    if (!(key in known)) print FILENAME ": unknown key \"" key "\""
+    else if (key in v) print FILENAME ": " key " twice"
+    v[key] = val; next
+  }
+  NF { body = 1 }
+  END { done_file() }
+' meta/*`
+if [ -z "$problems" ]; then
+  ok "every meta file is well-formed and agrees with the code"
+else
+  bad "meta files:"; echo "$problems" | sed 's/^/     /'
 fi
 
 # Well-formed: the id argument of message (2nd) and pathmsg (1st, 2nd).

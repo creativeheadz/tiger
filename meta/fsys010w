@@ -1,0 +1,10 @@
+Id: fsys010w
+Severity: WARN
+Category: filesystem
+Check: check_sgid
+
+The listed file is a setgid script.  On most UNIX machines, it is not
+possible to write a secure setgid script, due to a race condition in
+the Operating System.  Even on systems where this is corrected, the
+difficulties in writing a truly secure setgid script make them very
+undesirable.

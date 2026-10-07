@@ -1,0 +1,8 @@
+Id: issue001w
+Severity: WARN
+Category: accounts
+Check: check_issue
+
+The /etc/issue file does not have the designated content.  This file
+is often used as a local login banner and should contain appropriate
+content, often an unwelcome message.

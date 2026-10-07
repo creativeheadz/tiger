@@ -21,22 +21,17 @@
 # Installation program
 INSTALL=@INSTALL@
 
-TXTFILES = $(wildcard *.txt)
-HTMLFILES = $(patsubst %.txt,%.html,$(TXTFILES))
-
-all: $(HTMLFILES) explain.idx
+# One page explaining every finding id, from ../meta (see metadata.md)
+all: explanations.html
 
 install:
 	$(INSTALL) -m 0644 *.html ../html/
 
-%.html : %.txt ../util/doc2html
-	sh ../util/doc2html 
-
-explain.idx: $(TXTFILES) ../util/genmsgidx
-	BASEDIR=../ ../util/genmsgidx
+explanations.html: $(wildcard ../meta/*) ../util/meta2html
+	sh ../util/meta2html ../meta > $@
 
 clean:
 	-rm -f ../html/*.html
 
 distclean: clean
-	-rm -f Makefile *.html explain.idx
+	-rm -f Makefile *.html

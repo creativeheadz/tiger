@@ -1,0 +1,8 @@
+Id: osv001f
+Severity: FAIL
+Category: packages
+Check: check_release
+
+The operating system version appears to be less than RedHat 6.2
+Due to security enhancements and fixes available in recent releases,
+running an older version of RedHat is strongly discouraged.

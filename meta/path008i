@@ -1,0 +1,12 @@
+Id: path008i
+Severity: INFO
+Category: accounts
+Check: check_path
+
+The indicated setuid program is in root's PATH, but is not owned by
+root.  Since it is setuid to a user other than root, there usually is
+no solution for this.  You should be aware of these though, as they
+can allow Trojan horse programs or viruses to be planted into these
+executables and spread by `root'.  Often these executables are owned
+by `bin', `uucp' or other system accounts.  If these commands are
+never used by root, then this is not a problem.

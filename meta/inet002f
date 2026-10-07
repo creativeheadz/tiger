@@ -1,0 +1,10 @@
+Id: inet002f
+Severity: FAIL
+Category: services
+Check: check_services
+
+The indicated service is assigned to the wrong port.  This indicates
+either a misconfiguration in the services database, or a possible
+sign of an intrusion.  This should be checked and corrected.  If it
+is not apparent why it is like this, the system should be checked
+for other signs of intrusion.

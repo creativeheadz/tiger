@@ -1,0 +1,10 @@
+Id: boot008w
+Severity: WARN
+Category: boot
+Check: check_lilo
+
+GRUB is not configured with a password, so anyone at the console can
+edit the boot entry (init=/bin/sh, single) and get a root shell. Set a
+superuser and a password with grub-mkpasswd-pbkdf2 in
+/etc/grub.d/40_custom and regenerate the configuration. On a machine
+without console access by untrusted people this may be acceptable.

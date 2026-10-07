@@ -1,0 +1,8 @@
+Id: fsys008f
+Severity: FAIL
+Category: filesystem
+Check: check_wdir
+
+The listed directories are world writable.  These provide a location
+for intruders to store files.  They should be checked for unusual
+files.

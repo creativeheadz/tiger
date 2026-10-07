@@ -45,6 +45,11 @@
 #
 #-----------------------------------------------------------------------------
 #
+# tigris explain ID...: what a finding means (meta/ID), through tigexp
+case "$1" in
+  explain) shift; exec sh "`dirname "$0"`/tigexp" "$@" ;;
+esac
+
 # The banner comes before config reads the options, so -q is looked for here
 case " $* " in
   *" -q "*) ;;

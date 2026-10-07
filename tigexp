@@ -21,6 +21,13 @@
 #                        lack of) idx file. Also, regenerate the index
 #                        file only if running as root.
 # tigexp  - 04/25/2009 - proper wording for error messages
+# tigexp  - 10/07/2026 - atrimbitas - Explanations are read from meta/<id>,
+#                        one file per finding id with its severity,
+#                        category and the checks that report it, instead
+#                        of doc/*.txt through an index that had to be
+#                        rebuilt as root. Shown as written, not through
+#                        fmt, which ran indented examples together. Also
+#                        run as "tigris explain".
 #
 # This program retrieves information explaining what a given message 
 # (INFO, WARN, ALERT, FAIL or ERROR) given out by Tiger means.
@@ -129,11 +136,7 @@ findcmd()
 
 GREP=`findcmd grep`
 SED=`findcmd sed`
-FMT=`findcmd fmt`
 SORT=`findcmd sort`
-LS=`findcmd ls`
-
-[ ! -n "$FMT" ] && FMT=`findcmd cat`
 
 dirname()
 {
@@ -163,11 +166,11 @@ dirname()
 
 
 [ $findbase -ne 0 ] && {
-  if [ ! -d "$basedir/doc" -o ! -d "$basedir/systems" ]; then
+  if [ ! -d "$basedir/meta" -o ! -d "$basedir/systems" ]; then
     tempdir="`dirname $0`"
-    if [ -d "$tempdir/doc" -a -d "$tempdir/systems" ]; then
+    if [ -d "$tempdir/meta" -a -d "$tempdir/systems" ]; then
       basedir="$tempdir"
-    elif [ -d ../doc -a -d ../systems ]; then
+    elif [ -d ../meta -a -d ../systems ]; then
       basedir=..
     fi
   fi
@@ -178,67 +181,28 @@ export BASEDIR
 
 params="$*"
 
-haveallcmds GREP FMT SED SORT LS || exit 1
+haveallcmds GREP SED SORT || exit 1
 haveallfiles BASEDIR || exit 1
 
-check_idx()
-{
- [ "$UUID" = "" ] && UNAME=`whoami`
-
-# Check if the index is up to date
- if [ "$UNAME" != "root" ] ; then 
-  {
-# Not running as root, just warn if the index file is out of date, do not
-# regenerate it
-    cd $BASEDIR/doc
-    $LS -t
-  } | {
-    read file
-    [ "$file" != "explain.idx" ] && {
-        if [ -e "doc/explain.idx" ] ; then
-	    echo "Warning: Explain index is out of date and I am unable to rebuild it."
-            echo "Warning: Please regenerate it by running, as root, the following command: "
-            echo "Warning: cd $BASEDIR && util/genmsgidx doc/*txt"
-        fi
-    }
-  }
-  else
-  {
-# Not running as root, just warn if the index file is out of date, do not
-# regenerate it
-    cd $BASEDIR/doc
-    $LS -t
-  } | {
-    read file
-    [ "$file" != "explain.idx" ] && {
-      echo "Rebuilding explain index file"
-      $BASEDIR/util/genmsgidx $BASEDIR/doc/*.txt 
-    }
-  } 
-  fi
-}
-
+# explain ID [long]: the explanation of one finding id; "long" puts its
+# severity, category and checks first
 explain()
 {
-  message="$1"
-  if [ ! -e "$BASEDIR/doc/explain.idx" ] ; then
-    echo "Error: Explain index file ($BASEDIR/doc/explain.idx) does not exist."
-    echo "Error: Please create it by running, as root, the following command: "
-    echo "Error: cd $BASEDIR && util/genmsgidx doc/*txt"
-    exit 1
+  echo
+  case "$1" in
+    ''|*[!a-z0-9]*) meta= ;;     # an id is letters and digits, nothing else
+    *) meta="$BASEDIR/meta/$1" ;;
+  esac
+  if [ -n "$meta" ] && [ -f "$meta" ]; then
+    [ "$2" = long ] && {
+      $SED -n -e '/^$/q' -e '/^Id:/d' -e p "$meta"
+      echo
+    }
+    $SED '1,/^$/d' "$meta"
+  else
+    echo "Can not find explanation for message-id $1"
   fi
-  $GREP "$message" $BASEDIR/doc/explain.idx |
-  {
-    read msgid file start end
-    echo
-    if [ -n "$start" -a -n "$end" ]; then
-      $SED -e "$start,${end}p" -e '1,$d' $BASEDIR/doc/$file |
-      $FMT
-    else
-      echo "Can not find explanation for message-id $message"
-    fi
-    echo
-  }
+  echo
 }
 
 explainfile()
@@ -254,7 +218,7 @@ explainfile()
   while read msgid
   do
     echo "Message ID: $msgid"
-    explain "$msgid"
+    explain "$msgid" long
   done
 }
 
@@ -297,17 +261,18 @@ shift
 if [ "$1" = "-f" ]; then
   explainfile $2
 elif [ "$1" = "-F" ]; then
-  check_idx
   explaininsert $2
+elif [ $# -eq 0 ]; then
+  echo "Usage: tigris explain ID... (or tigexp ID...), e.g. tigris explain lin002i"
+  echo "       tigexp -f REPORT   the explanation of every finding in a report"
+  echo "       tigexp -F REPORT   the report with each explanation after its finding"
+  exit 1
 elif [ $# -eq 1 ]; then
-  check_idx
-  explain "$1"
+  explain "$1" long
 else
-  check_idx
   for msg
   do
     echo "[$msg]"
-    explain $msg
+    explain $msg long
   done
 fi
-

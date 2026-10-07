@@ -1,0 +1,11 @@
+Id: acc007a
+Severity: ALERT
+Category: accounts
+Check: check_accounts
+
+The listed login ID has a '.hushlogin' file which is not zero-length.
+This file is normally a zero length file.  This file is frequently used
+by intruders as a place to store captured passwords.  This file should
+be looked at.  If it appears to be such a log file, then the system should
+be regarded as being compromised.  The system should be thoroughly checked
+and cleaned.

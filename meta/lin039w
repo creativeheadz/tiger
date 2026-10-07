@@ -1,0 +1,24 @@
+Id: lin039w
+Severity: WARN
+Category: packages
+Check: deb_statoverride
+References: dpkg-statoverride(1)
+
+A file's mode or owner differs from what dpkg-statoverride sets for it.
+dpkg records no mode or owner for the files packages install, but it
+keeps a list of overrides, which packages and administrators set for the
+files whose mode matters: crontab and plocate setgid, the D-Bus launch
+helper setuid to a group, /etc/ssl/private closed to all but ssl-cert.
+'dpkg-statoverride --list' shows them, and dpkg applies them whenever
+it installs or upgrades the package. A file that no longer matches has
+been changed since: a setuid or setgid bit added or removed, or a group
+that lets more people in. Entries whose file does not exist are not
+reported.
+
+To fix it, set the file back with the chown and chmod commands the
+detail gives (chown first, since it clears the setuid and setgid bits).
+If the new mode is what you want, change the override instead, so that
+dpkg does not undo it at the next upgrade:
+
+    dpkg-statoverride --remove /usr/bin/crontab
+    dpkg-statoverride --update --add root crontab 2755 /usr/bin/crontab

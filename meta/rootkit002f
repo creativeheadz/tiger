@@ -1,0 +1,10 @@
+Id: rootkit002f
+Severity: FAIL
+Category: intrusion
+Check: check_rootkit
+
+A test was run on the 'find' command to determine if it 'sees'
+certain pathnames (e.g., '...','bnc','war',etc).  Tiger creates
+a temporary directory, creates files with known hacker program
+names/directories, and attempts an 'find'.  If the 'find' does
+not recognize the file, a FAIL is issued.

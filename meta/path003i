@@ -1,0 +1,8 @@
+Id: path003i
+Severity: INFO
+Category: accounts
+Check: check_path
+
+No PATH variable could be extracted from the indicated file.  This either
+indicates that the PATH is not set in the file, or that the file is too
+complex to be able to extract it.

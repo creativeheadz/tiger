@@ -1,0 +1,9 @@
+Id: lin023f
+Severity: FAIL
+Category: kernel
+Check: check_sysctl
+
+kernel.randomize_va_space is below 2, so address space layout
+randomisation is partly or wholly off and every process is laid out
+predictably, which is what most memory-corruption exploits rely on:
+  # sysctl -w kernel.randomize_va_space=2

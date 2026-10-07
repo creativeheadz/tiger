@@ -1,0 +1,8 @@
+Id: grp005w
+Severity: WARN
+Category: accounts
+Check: check_group
+
+The indicated group id (gid) exists in separate group files, but the
+group names are different.  This can lead to unexpected access to
+resources.

@@ -1,0 +1,9 @@
+Id: lin010f
+Severity: FAIL
+Category: network
+Check: check_network_config
+
+The system will answer to ICMP broadcast echo messages. This is considered
+a problem since ICMP broadcasts can cause network denial of service as
+the same time as giving away the location of the hosts. To remove this do:
+ # sysctl -w net.ipv4.icmp_echo_ignore_broadcasts = 1

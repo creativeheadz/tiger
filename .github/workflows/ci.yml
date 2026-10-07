@@ -76,8 +76,8 @@ jobs:
           make -C c install
           ls -l bin/
           test -x bin/realpath && test -x bin/snefru
-      - name: Message index built
-        run: test -s doc/explain.idx
+      - name: Findings reference built from meta/
+        run: grep -c '<dt id=' doc/explanations.html
 
   smoke:
     name: Full run on Ubuntu

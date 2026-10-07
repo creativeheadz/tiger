@@ -1,0 +1,9 @@
+Id: perm016w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The /etc/resolv.conf file is used to designate where Domain Name
+Service is to be obtained.  If this file is writable by non-root
+users, then unauthorized access or privileges may be obtained.
+This file does need to be world readable however.

@@ -1,0 +1,11 @@
+Id: kis008w
+Severity: WARN
+Category: intrusion
+Check: check_known
+
+The indicated file in the system mail spool does not have a name which
+matches the owner.  This indicates either an attempt to create a mailbox
+for another user (allowing someone else to read that persons mail),
+or that the mail spool is being used to store files.  These files should
+be checked, and if unusual, the system should be examined for other signs
+of intrusion.

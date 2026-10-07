@@ -1,0 +1,9 @@
+Id: cron006w
+Severity: WARN
+Category: cron
+Check: check_crontabs
+
+Cron is not restricted to a given user. It is usually good to restrict
+cron as much as possible since this system has a real potential by
+abuse by either users or system crackers. Consider removing the user
+from the allowed cron list if it is not strictly needed.

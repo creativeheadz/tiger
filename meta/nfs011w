@@ -1,0 +1,13 @@
+Id: nfs011w
+Severity: WARN
+Category: network
+Check: check_exports
+
+The listed directory is exported with root access to a
+machine, and the directory is accessible on the server.
+By setting the permissions to 'rwx------', if the client is
+compromised, the server can not be compromised by any files
+which are placed underneath this directory, since they will
+be unreachable by a non-privileged user on the server.
+Note on some platforms, if this is not the root directory
+of a file-system, then the server may still be vulnerable.

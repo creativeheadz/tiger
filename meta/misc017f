@@ -1,0 +1,9 @@
+Id: misc017f
+Severity: FAIL
+Category: filesystem
+Check: check_rcumask
+
+The umask settings used in the boot scripts is insecure.
+This means that probably the boot scripts will create files
+(if any) with permissions that make them subject to attack. Recommended
+permissions are 022 or 022.

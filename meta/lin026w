@@ -1,0 +1,9 @@
+Id: lin026w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+kernel.perf_event_paranoid is below 2, so unprivileged users may use the
+performance counters, which have been used to leak kernel data and to
+mount side-channel attacks:
+  # sysctl -w kernel.perf_event_paranoid=2

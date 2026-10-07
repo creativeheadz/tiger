@@ -1,0 +1,8 @@
+Id: con003c
+Severity: CONFIG
+Category: tigris
+Check: config
+
+The configuration file listed was not read because it was
+writable by non-root users.  This is to prevent someone from
+modifying the configuration file.

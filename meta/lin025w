@@ -1,0 +1,10 @@
+Id: lin025w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+kernel.unprivileged_bpf_disabled is 0, so unprivileged users may load
+BPF programs into the kernel. The BPF verifier has been the source of
+several privilege escalations. 1 disables it until reboot, 2 until the
+next change:
+  # sysctl -w kernel.unprivileged_bpf_disabled=1

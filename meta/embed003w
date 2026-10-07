@@ -1,0 +1,12 @@
+Id: embed003w
+Severity: WARN
+Category: filesystem
+Check: check_embedded
+
+See the 'embed' explanation for an explanation of the format of the
+embedded references.
+
+The indicated pathname to an executable contains a component which
+is group writable, world writable or both.  This can enable an intruder
+to gain unauthorized privileges if they are able to replace the
+executable.

@@ -1,0 +1,8 @@
+Id: acc023w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The user's parent directory does not have the correct administrative
+permissions. It generally should not have write access for groups &
+others.

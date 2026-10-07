@@ -1,0 +1,11 @@
+Id: lin008e
+Severity: ERROR
+Category: network
+Check: check_network_config check_sysctl
+
+The /proc pseudo-filesystem is needed to check the network configuration
+settings in the kernel and determine insecure setups. /proc is available
+when the kernel is compiled with the CONFIG_PROC_FS=Y option (if you want
+to modify them you also need to add the CONFIG_SYSCTL=Y option). You also
+need to have it mounted, if it's not try: 'mount -t proc proc /proc'.
+This is usually done in most distributions per default.

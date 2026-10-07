@@ -1,0 +1,14 @@
+Id: cron005w
+Severity: WARN
+Category: cron
+Check: check_crontabs
+
+Cron allows users to submit jobs for the system to do at a
+particular, possibly recurring time.  It can be very useful, but also
+has a very real potential for abuse by either users or system crackers.
+Users can be restricted to use cron by creating a /etc/cron.allow
+(holding only system administrators) or a /etc/cron.deny file
+(listing which users are not allowed access). Depending on the site
+configuration if none exist either only root will be able to setup
+cron tasks or all users will be permitted. In many systems the
+default is to allow access to all users.

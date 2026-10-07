@@ -1,0 +1,8 @@
+Id: kis002a
+Severity: ALERT
+Category: intrusion
+Check: check_known
+
+The indicated file is a known location used by intruders.  This should
+be considered a sign that this system has been compromised.  The system
+should be checked for other signs of intrusion and cleaned up.

@@ -1,0 +1,9 @@
+Id: pass019w
+Severity: WARN
+Category: accounts
+Check: check_passwdspec
+
+The account has no password aging: the password never expires and
+there is no warning before it would. Set PASS_MAX_DAYS and PASS_WARN_AGE
+in /etc/login.defs for new accounts and use chage for existing ones,
+unless your policy is deliberately to rely on length and no rotation.

@@ -1,0 +1,9 @@
+Id: nfs005f
+Severity: FAIL
+Category: network
+Check: check_exports
+
+Exporting the root file system allows remote machines to
+access critical file such as /etc/passwd.  Exporting this
+to everyone means that anyone on the Internet can browse system
+files, allowing them to find other security problems.

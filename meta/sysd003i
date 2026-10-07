@@ -1,0 +1,9 @@
+Id: sysd003i
+Severity: INFO
+Category: services
+Check: check_systemd
+
+How many of the system's services systemd rates UNSAFE and EXPOSED
+overall. Most units on a desktop score badly, which is why Tiger only
+warns about the ones that listen on the network (sysd001w); this line
+gives the whole picture for anyone hardening a server unit by unit.

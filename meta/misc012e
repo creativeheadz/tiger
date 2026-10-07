@@ -1,0 +1,7 @@
+Id: misc012e
+Severity: ERROR
+Category: tigris
+Check: check_sendmail
+
+The indicated file could not be read.  This generally indicates that
+the check was attempted from a userid with insufficient privileges.

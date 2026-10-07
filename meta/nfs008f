@@ -1,0 +1,9 @@
+Id: nfs008f
+Severity: FAIL
+Category: network
+Check: check_exports
+
+Exporting the root file system read only and with root access
+will allow the remote machine to view system files,
+possibly allowing them to gain further access to the
+machine.

@@ -1,0 +1,9 @@
+Id: ssh017w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+The effective Ciphers list includes algorithms that are broken or
+deprecated (CBC modes, arcfour, 3DES, Blowfish, CAST). Set Ciphers to
+the AEAD and CTR modes only, for example:
+  Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr

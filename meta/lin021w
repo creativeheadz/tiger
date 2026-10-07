@@ -1,0 +1,10 @@
+Id: lin021w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+kernel.dmesg_restrict is 0, so any user can read the kernel log with
+dmesg. The log shows hardware, drivers, addresses and sometimes secrets
+an attacker finds useful:
+  # sysctl -w kernel.dmesg_restrict=1
+Note that /dev/kmsg has its own permissions (see dev004w).

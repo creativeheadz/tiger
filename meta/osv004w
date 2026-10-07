@@ -1,0 +1,9 @@
+Id: osv004w
+Severity: WARN
+Category: packages
+Check: check_release
+
+The machine is running an unreleased version of Debian GNU/Linux.
+This version is not supported by the security team so it might not
+be up-to-date security wise (support is only provided for the latest
+release). That is, "run at your own risk".

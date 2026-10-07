@@ -1,0 +1,7 @@
+Id: pass009f
+Severity: FAIL
+Category: accounts
+Check: check_passwdformat
+
+The format of a given configuration file used for user (or group)
+authentication has some inconsistency that might be a security vulnerability.

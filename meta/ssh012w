@@ -1,0 +1,8 @@
+Id: ssh012w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+LoginGraceTime is above 60 seconds, so an unauthenticated connection
+can tie up a slot for longer than it needs to, which makes exhausting
+MaxStartups easier. Set it to 60 or less.

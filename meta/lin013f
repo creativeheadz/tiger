@@ -1,0 +1,9 @@
+Id: lin013f
+Severity: FAIL
+Category: network
+Check: check_network_config
+
+It is common to protect systems against Denial of Service attacks using
+SYN packets (commonly known as "SYN flooding") by activating support
+of TCP syncookies. Note, however, that activating this violates some RFCs:
+  # sysctl -w net.ipv4.tcp_syncookies = 1

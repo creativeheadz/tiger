@@ -1,0 +1,11 @@
+Id: path005w
+Severity: WARN
+Category: accounts
+Check: check_path
+References: David A. Curry, UNIX System Security (Addison-Wesley, 1992), pages 33-34; Simson Garfinkel and Gene Spafford, Practical UNIX Security (O'Reilly, 1991), pages 151-153
+
+The PATH variable from the indicated user and initialization file
+contains the `.' (dot) directory, but it is not the last component.
+This can cause Trojan horse programs to be executed.  It is recommended
+that `.' not be in the PATH (especially for `root'), but if it is included,
+it should be the last directory listed in the PATH variable.

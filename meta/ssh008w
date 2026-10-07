@@ -1,0 +1,8 @@
+Id: ssh008w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+X11Forwarding is yes. A forwarded X11 connection lets the server read
+and inject into the client's display. Set it to no unless users need
+it; they can still request it per session with ssh -X where allowed.

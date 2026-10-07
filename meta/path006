@@ -1,0 +1,12 @@
+Id: path006
+Severity: WARN, INFO
+Category: accounts
+Check: check_path
+
+A directory on a user's PATH is not owned by that user. Another account
+can then replace the programs in it with Trojan horses that run under
+the user's identity the next time they type the command name. Give the
+directory to the user whose PATH names it, or take it out of the PATH.
+(The suffixed entries path006w and path007w above predate the current
+call and describe the two findings the other way round; they are kept
+so old reports still explain.)

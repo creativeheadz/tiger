@@ -1,0 +1,7 @@
+Id: pass015w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The listed login ID does not have a valid login program or shell.
+Usually these are defined in /etc/shells.

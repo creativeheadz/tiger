@@ -1,0 +1,8 @@
+Id: kis015i
+Severity: INFO
+Category: intrusion
+Check: check_known
+
+The ip command was not found, so promiscuous-mode detection used
+ifconfig, which reports it only for some drivers. Install iproute2 for
+a complete check.

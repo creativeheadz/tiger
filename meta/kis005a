@@ -1,0 +1,9 @@
+Id: kis005a
+Severity: ALERT
+Category: intrusion
+Check: check_known
+
+The /bin/login program appears to have a back-door installed.  The
+program should be compared against distribution media and replaced
+if it has been altered.  The system should be checked for other
+signs of intrusion and cleaned.

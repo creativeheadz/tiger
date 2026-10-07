@@ -1,0 +1,7 @@
+Id: init004e
+Severity: ERROR
+Category: tigris
+Check: initdefs
+
+The indicated command does not exist or is not executable.  This
+indicates a configuration error.

@@ -1,0 +1,13 @@
+Id: fsys017w
+Severity: WARN
+Category: filesystem
+Check: check_names
+
+Files with unusual names (see fsys005a) were found in a directory where
+such names are routine rather than suspicious: home directories, media
+and backup disks, and copies of other systems' files. Apple's resource
+fork files ("._name"), mail index files ("..cmeta") and browser lock
+files are the usual culprits. Tiger reports how many and where instead
+of listing each one. The directories where each file is still listed
+individually (fsys005a) are set by Tiger_FSScan_DetailDirs in tigerrc;
+set it to '*' to list them all.

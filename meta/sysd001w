@@ -1,0 +1,18 @@
+Id: sysd001w
+Severity: WARN
+Category: services
+Check: check_systemd
+
+The service listens on the network and systemd rates its sandboxing
+UNSAFE (exposure 9.0 or more out of 10): it runs with little or nothing
+between it and the rest of the system, so a flaw in it is a flaw in the
+host. The message names the three unmet protections that would lower
+the score most. Add them to a drop-in, for example:
+  # systemctl edit UNIT
+  [Service]
+  NoNewPrivileges=yes
+  ProtectSystem=strict
+  PrivateTmp=yes
+then restart the unit and run 'systemd-analyze security UNIT' to see
+what remains. Services that genuinely need root or wide file access
+will stay above 0 but rarely need to stay above 9.

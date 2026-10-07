@@ -1,0 +1,10 @@
+Id: tig001e
+Severity: ERROR
+Category: tigris
+Check: tigercron
+
+Tigercron, the cron driver, cannot read its control file (cronrc), so no
+scheduled check can run. The file is missing, or its permissions keep
+the cron user out. Restore cronrc from the distribution or a backup,
+make it readable by root and writable by nobody else, and the next
+scheduled run will proceed.

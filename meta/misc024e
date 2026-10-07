@@ -1,0 +1,11 @@
+Id: misc024e
+Severity: ERROR
+Category: tigris
+Check: initdefs
+
+The script will not be run since it belongs to a different owner than the
+one running the Tiger program (or script). Since running this script might
+introduce a risk (if the script was dropped in a directory that Tiger searches
+for by an attacker to have it run) it will not be executed.
+This might be a problem in the installation of Tiger so you should recheck
+the script owner and permissions.

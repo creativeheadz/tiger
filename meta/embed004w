@@ -1,0 +1,11 @@
+Id: embed004w
+Severity: WARN
+Category: filesystem
+Check: check_embedded
+
+See the 'embed' explanation for an explanation of the format of the
+embedded references.
+
+The executable is group writable, world writable or both.  This can
+enable an intruder to gain unauthorized privileges if they are able to
+overwrite the executable.

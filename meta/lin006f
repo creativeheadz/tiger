@@ -1,0 +1,14 @@
+Id: lin006f
+Severity: FAIL
+Category: packages
+Check: deb_checkmd5sums pkg_integrity
+
+A file installed by a package no longer exists in the system, so it
+cannot be checked. An administrator should not remove files from the
+system by hand: they should be removed by uninstalling the packages that
+provided them. A missing file can be an accident, an overzealous cleanup,
+or an intruder removing a binary that would have exposed them. The
+message names the package; reinstall it with the package manager to
+restore the file. On Arch and Debian-derived minimal images, files the
+administrator has declared absent (pacman's NoExtract, for example) are
+not reported.

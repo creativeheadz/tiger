@@ -1,0 +1,14 @@
+Id: fsys001f
+Severity: FAIL
+Category: filesystem
+Check: check_suid
+
+The listed file is a setuid script.  On most UNIX machines, it is not
+possible to write a secure setuid script, due to a race condition in
+the Operating System.  Even on systems where this is corrected, the
+difficulties in writing a truly secure setuid script make them very
+undesirable.  The setuid bits should be turned off of this file.
+
+If you must run a script under another id, then perhaps the best
+solution is to write a wrapper program in C which creates a safe
+environment for the script, then exec()'s it.

@@ -1,0 +1,9 @@
+Id: init009e
+Severity: ERROR
+Category: tigris
+Check: initdefs
+
+The script wanted to use a temporary script which already exists, this
+might mean somebody created it to make use of a (fortunately non-existent)
+race condition. The script will not proceed further since it will not
+use a file which it did not create itself.

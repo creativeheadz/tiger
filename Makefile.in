@@ -146,7 +146,7 @@ MISCFILES=./initdefs \
 	./util/buildconf \
 	./util/difflogs \
 	./util/flogit \
-	./util/genmsgidx \
+	./util/meta2html \
 	./util/getfs-amd \
 	./util/getfs-automount \
 	./util/getfs-nfs \
@@ -161,13 +161,13 @@ MISCFILES=./initdefs \
 	./util/setsh \
 	./util/sgrep \
 	./util/facl.lst \
-	./util/facl.tmpl \
-        ./doc/explain.idx
+	./util/facl.tmpl
 
 MISCDIRS=./bin \
 	./check.d \
 	./doc \
 	./html \
+	./meta \
 	./scripts/sub \
 	./systems
 

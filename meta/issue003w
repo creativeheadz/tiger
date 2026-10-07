@@ -1,0 +1,11 @@
+Id: issue003w
+Severity: WARN
+Category: accounts
+Check: check_issue
+
+The Tiger program does not find the an administrator-provided issue (or
+issue.net) file with which compare the content of the system files used by the
+system for the banner program.
+
+If you get this error periodically, and you cannot provide a sample
+file, please consider disabling the check.

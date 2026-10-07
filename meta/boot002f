@@ -1,0 +1,7 @@
+Id: boot002f
+Severity: FAIL
+Category: boot
+Check: check_lilo
+
+The LILO configuration file is readable by everyone. It can hold the
+boot password in clear text; make it 0600, owned by root.

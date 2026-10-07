@@ -1,0 +1,17 @@
+Id: fsys007i
+Severity: INFO
+Category: filesystem
+Check: check_links
+
+The indicated file is a symbolic link to a system file which is
+related to system security.  In itself, the link is not dangerous,
+but you should be aware of its presence, as it can cause unexpected
+results with the 'chown' and 'chmod' commands.  On many systems, the
+'chown' command does not change the owner of the link itself, but
+instead, changes the ownership of the file the link resolves to.
+The same type of problem exists for 'chmod' on most systems.  Thus,
+the simple act of performing a
+
+    chown -R joeuser /home/joeuser
+
+could potentially change the owner of a system file to 'joeuser'.

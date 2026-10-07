@@ -1,0 +1,7 @@
+Id: misc022f
+Severity: FAIL
+Category: filesystem
+Check: check_umask
+
+The umask setting in the configuration file is insecure.  Umask must be
+set as to prevent public write (i.e. either 002 or 022).

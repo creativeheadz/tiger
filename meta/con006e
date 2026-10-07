@@ -1,0 +1,24 @@
+Id: con006e
+Severity: ERROR
+Category: tigris
+Check: config
+
+The indicated option was not recognized.  The valid options are:
+
+   -B tiger_home     Specify tiger home directory
+
+   -d directory      Specify directory to create security logs in
+
+   -w directory      Specify directory to use for scratch files
+
+   -e                Insert explanations into output
+
+   -E                Generate separate explanation report
+
+   -S                Perform partial checks of disk-less client
+
+                     configuration files on server.
+
+   --since run       Report only what changed since an earlier run
+
+'./tigris -h' lists them all.

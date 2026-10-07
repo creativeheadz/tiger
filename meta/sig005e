@@ -1,0 +1,8 @@
+Id: sig005e
+Severity: ERROR
+Category: integrity
+Check: check_signatures
+
+Something prevented the system from reading the indicated file.  This
+should not occur if the security system is run from the root account
+on a non-MLS system.

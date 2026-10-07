@@ -1,0 +1,12 @@
+Id: perm021w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The indicated disk device file is group readable, writable or both by the
+indicated group.  This allows users in this group to bypass the file
+access controls.  Many systems allow a group such as `operator' to have
+read access so that backups can be performed.  Group write access is
+*not* needed and should be removed.  If backups are performed by the
+`root' account, then group read permissions are not needed and should
+be removed.

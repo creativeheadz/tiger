@@ -1,0 +1,10 @@
+Id: lin032w
+Severity: WARN
+Category: network
+Check: check_sysctl
+
+net.ipv4.conf.*.send_redirects is 1, so this host sends ICMP redirects.
+Only a router has reason to; from a host they can be used to steer
+other machines' traffic:
+  # sysctl -w net.ipv4.conf.all.send_redirects=0
+  # sysctl -w net.ipv4.conf.default.send_redirects=0

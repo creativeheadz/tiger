@@ -1,0 +1,9 @@
+Id: ssh006f
+Severity: FAIL
+Category: ssh
+Check: check_ssh
+
+PermitRootLogin is yes, so root may log in over SSH with a password,
+which puts the one account every attacker tries behind a guessable
+secret. Set it to no, or to prohibit-password if root needs key-based
+access for automation.

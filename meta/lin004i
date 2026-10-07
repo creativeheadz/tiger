@@ -1,0 +1,11 @@
+Id: lin004i
+Severity: INFO
+Category: network
+Check: check_listeningprocs
+
+Neither ss nor lsof was found, so the listening processes were read with
+netstat. It gives less: the process name is cut from its command line
+(an "avahi-daemon: r" rather than "avahi-daemon"), so the findings can
+differ from a run on a system with ss, and it may not be able to name
+the process at all. Installing iproute2, which provides ss, avoids this.
+or the user that runs it.

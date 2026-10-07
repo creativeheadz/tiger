@@ -1,0 +1,7 @@
+Id: ssh004w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+The PasswordAuthentication directive determines if passwords
+are a sufficient authentication.

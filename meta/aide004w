@@ -1,0 +1,13 @@
+Id: aide004w
+Severity: WARN
+Category: integrity
+Check: aide_run
+
+Aide detected, by checking against the files' the attributes in the database,
+the file has been removed. "Benign" configuration errors of the database
+settings may lead to incorporation and checking of for instance temporary
+files. Uninstalling software and related files may lead to the same result
+when the database was not upgraded before this check.
+If the removed file was not a temporary file and not part of legitimately
+uninstalled software, it may have been used in a breach of security.
+Please investigate.

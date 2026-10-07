@@ -1,0 +1,38 @@
+Id: fire005w
+Severity: WARN
+Category: firewall
+Check: check_firewall
+
+A port that Docker publishes is open to the network, and nothing in the
+host's packet filter restricts it. Docker publishes a port (docker run
+-p 8080:80, a compose file's "ports:") by rewriting the destination of
+packets for it in the prerouting stage and forwarding them to the
+container, so they never reach the input hook: an input policy drop, ufw
+and firewalld leave them alone, and the host can be "denied by default"
+(fire003i) with the port open to anyone who can reach the address.
+Tested with ufw enabled: a listener on the host itself did not answer,
+the published port did.
+
+The port is read from the rules Docker wrote, for its iptables backend
+(the nat table's DOCKER chain) and its nftables backend (the
+docker-bridges tables). "On every address" is a port published without
+an address (-p 8080:80); a port published on one address names it. A
+port published on a loopback address (-p 127.0.0.1:8080:80) can only be
+reached from the host and is not reported.
+
+To fix it, publish the port on the address that should serve it, or on
+127.0.0.1 if only the host (or a reverse proxy on it) needs it:
+
+    docker run -p 127.0.0.1:8080:80 ...
+    ports: ["127.0.0.1:8080:80"]
+
+or restrict who can reach it in the DOCKER-USER chain, which Docker
+consults before its own rules and never changes, for instance letting in
+only the local network on the outside interface:
+
+    iptables -I DOCKER-USER -i eth0 ! -s 192.168.1.0/24 -j DROP
+
+(ip6tables for IPv6). Docker's nftables backend has no DOCKER-USER chain;
+there, a drop rule in a forward chain of a table of your own does the
+same, since a packet dropped by any chain on the hook is dropped. If the
+port is meant to be public, accept the finding with tigris-accept.

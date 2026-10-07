@@ -1,0 +1,11 @@
+Id: kis010w
+Severity: WARN
+Category: intrusion
+Check: check_known
+
+The indicated file in the system mail spool does not belong to any user
+in the system. This might indicate that a user has been removed but not his
+mailbox or that this mailbox has been created wrongly. These files should
+be checked and, if belonging to former users, removed.
+(Note: this warning will be given too if, for some reason, the user running
+Tiger cannot access the user database)

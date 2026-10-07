@@ -1,0 +1,7 @@
+Id: con001c
+Severity: CONFIG
+Category: tigris
+Check: config
+
+The configuration file listed was not read because it was
+a directory.

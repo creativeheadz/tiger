@@ -1,0 +1,7 @@
+Id: ali002f
+Severity: FAIL
+Category: services
+Check: check_aliases
+
+The 'uudecode' alias is a known security problem and should be disabled.
+It allows files to be created/overwritten on the machine.

@@ -1,0 +1,8 @@
+Id: root003w
+Severity: WARN
+Category: accounts
+Check: check_root
+
+The root user should not have the message capability turned on.  This
+could lead to inadvertent modification of files with the root user is
+logged in.

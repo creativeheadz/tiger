@@ -1,0 +1,10 @@
+Id: fire003i
+Severity: INFO
+Category: firewall
+Check: check_firewall
+
+Incoming traffic of this family is denied by default: the chain named
+drops or rejects what its rules do not accept. This is informational;
+it says nothing about which services the rules let through, which is
+worth reviewing with 'nft list ruleset' (or 'ufw status verbose',
+'firewall-cmd --list-all').

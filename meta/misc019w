@@ -1,0 +1,9 @@
+Id: misc019w
+Severity: WARN
+Category: filesystem
+Check: check_rcumask
+
+Tiger was unable to found any umask settings to be used in the boot
+scripts. This means that probably the boot scripts will create files
+(if any) with vulnerable permissions.
+Tiger was unable

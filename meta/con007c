@@ -1,0 +1,10 @@
+Id: con007c
+Severity: CONFIG
+Category: tigris
+Check: config
+
+Generic configuration files for this system do not exist.  The
+checking system will continue on, attempting to locate items it
+needs, and using default configuration files.  Many checks will
+not be performed, and many that are attempted may function
+incorrectly, generating incorrect output.

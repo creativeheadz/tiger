@@ -1,0 +1,13 @@
+Id: lin018w
+Severity: WARN
+Category: network
+Check: check_network_config
+
+The "weak end host" description in the RFC1122 permits multihomed systems
+to receive packets for a network interface from another network interface.
+This, as a matter of fact, removes the benefit of configuring services
+and binding them to a single IP address (not to all IP addresses).
+For 2.2 kernels remove this option with:
+  # echo 1 > /proc/sys/net/ipv4/conf/eth1/hidden
+For 2.4 and later kernels you might need to patch the kernel or configure
+your firewalling rules properly (i.e. defining anti-spoofing rules).

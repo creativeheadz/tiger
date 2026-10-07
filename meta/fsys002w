@@ -1,0 +1,15 @@
+Id: fsys002w
+Severity: WARN
+Category: filesystem
+Check: check_suid
+
+The listed program is a setuid executable, and it appears to contain
+relative pathnames (do not start with a '/').  This often represents
+a security hole in the program.  These relative pathnames can be caused
+by system()* or popen()* calls which do not use full pathnames to the
+executable, or, on systems which support dynamic linking, relative
+pathnames indicating the directories containing the libraries.  In any
+case, these need to be checked.
+
+*Note:  system() and popen() should *never* be used from a program
+        which is executing with privileges.

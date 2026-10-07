@@ -1,0 +1,12 @@
+Id: init010e
+Severity: ERROR
+Category: tigris
+Check: tiger tigris
+
+Tiger is running as root but the directory holding its check scripts is
+owned by another user. Tiger never runs a check script owned by someone
+other than the user running it (see misc024e), so every check would be
+skipped and the report would be empty. A tree owned by the person who
+ran sudo is the exception: no privilege boundary is crossed, so it runs.
+Otherwise make the tree root's, for example with 'chown -R root:root' on
+the Tiger directory, or run it from an installed copy.

@@ -1,0 +1,9 @@
+Id: acc022w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The listed login ID has a home directory which is not accessible.
+This should be checked to see if this is due to networking problem
+for remote home directories.  Without a valid home directory,
+the user will end up with / as the home directory.

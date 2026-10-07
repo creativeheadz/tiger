@@ -19,7 +19,6 @@ trap 'rm -rf "$W"' 0
 mkdir -p "$W/log" "$W/run"
 chown -R 0:0 "$W"
 cd "$W"
-sh util/genmsgidx doc/*.txt >/dev/null 2>&1
 
 start=`date +%s`
 sh ./tiger > "$W/stdout" 2> "$W/stderr"
@@ -63,19 +62,14 @@ elif [ -z "$jsonl" ]; then
 fi
 # Runtime side of the every-id-explained rule: the source scan in
 # tests/explain_check.sh cannot see ids built from variables, but a real
-# run shows them. The index below is fresh from this copy's doc/*.txt
-# (built at the top of this script), so the repository is untouched.
+# run shows them. Every finding needs its meta/ID file, and so carries a
+# category in the JSON.
 if [ -n "$jsonl" ]; then
   if command -v python3 >/dev/null; then
-    python3 - "$jsonl" "$W/doc/explain.idx" <<'EOF' > "$W/ids.out" 2>&1; st=$?
-import json, sys
-explained = set()
-with open(sys.argv[2], encoding="ascii") as fh:
-    for line in fh:
-        line = line.split()
-        if line:
-            explained.add(line[0])
-emitted = set()
+    python3 - "$jsonl" "$W/meta" <<'EOF' > "$W/ids.out" 2>&1; st=$?
+import json, os, sys
+explained = set(os.listdir(sys.argv[2]))
+emitted, nocat = set(), set()
 with open(sys.argv[1], encoding="ascii") as fh:
     for line in fh:
         line = line.strip()
@@ -84,14 +78,16 @@ with open(sys.argv[1], encoding="ascii") as fh:
         rec = json.loads(line)
         if rec["type"] == "finding":
             emitted.add(rec["id"])
-missing = sorted(emitted - explained)
+            if "category" not in rec:
+                nocat.add(rec["id"])
+missing = sorted((emitted - explained) | nocat)
 if missing:
     print("\n".join(missing))
     sys.exit(1)
-print("ok   every finding id in the JSON has an explanation (%d ids)" % len(emitted))
+print("ok   every finding id in the JSON has a meta file and a category (%d ids)" % len(emitted))
 EOF
     if [ $st -eq 0 ]; then cat "$W/ids.out"
-    else echo "FAIL finding ids without an explanation:"; sed 's/^/     /' "$W/ids.out"; fail=1; fi
+    else echo "FAIL finding ids without a meta file or a category:"; sed 's/^/     /' "$W/ids.out"; fail=1; fi
   else
     echo "skip id-explanation check (python3 not installed)"
   fi

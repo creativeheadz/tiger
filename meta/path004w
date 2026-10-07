@@ -1,0 +1,9 @@
+Id: path004w
+Severity: WARN
+Category: accounts
+Check: check_path
+References: David A. Curry, UNIX System Security (Addison-Wesley, 1992), pages 33-34; Simson Garfinkel and Gene Spafford, Practical UNIX Security (O'Reilly, 1991), pages 151-153
+
+The PATH variable from the indicated initialization file for `root' puts `.'
+(dot) in the PATH.  Having dot in `root's path can allow Trojan horse
+programs to be unknowingly executed by root.

@@ -1,0 +1,11 @@
+Id: misc013w
+Severity: WARN
+Category: services
+Check: check_suid
+
+CERT Advisory CA-93:17
+
+The xterm utility contains a vulnerability which allows any file to
+be overwritten, or the ownership of the file changed.  Consult vendors
+for patches for supported versions of xterm.  MIT Patch 26 for X11R5
+contains a patch for the MIT distribution.

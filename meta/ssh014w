@@ -1,0 +1,7 @@
+Id: ssh014w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+IgnoreRhosts is no, so .rhosts and .shosts files in home directories
+take part in host-based authentication. Set it to yes.

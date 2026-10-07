@@ -1,0 +1,8 @@
+Id: ali006i
+Severity: INFO
+Category: services
+Check: check_aliases
+
+The indicated alias attempts to include a file, but the file does
+not exist.  This is indicates either a misconfiguration, or an
+old entry which should be removed.  This is just an informatory message.

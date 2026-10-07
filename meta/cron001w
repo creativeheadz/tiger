@@ -1,0 +1,8 @@
+Id: cron001w
+Severity: WARN
+Category: cron
+Check: check_crontabs
+
+The listed cron entry does not use a full pathname for the listed command
+(or if a shell is specified, the name of the shell script).  Full pathnames
+should be used for cron entries.

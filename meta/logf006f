@@ -1,0 +1,9 @@
+Id: logf006f
+Severity: FAIL
+Category: logging
+Check: check_logfiles
+
+The log file "loginlog" should exist to show a user login attempts
+on the server.
+It might not exist due to a system configuration error or an
+intruder that has tried to cover this tracks by removing it.

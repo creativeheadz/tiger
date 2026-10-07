@@ -1,0 +1,14 @@
+Id: misc015w
+Severity: WARN
+Category: services
+Check: check_suid
+
+The `xload' utility, when built with the standard (unpatched) MIT
+X11R5 distribution on systems with dynamic linking, contains a
+security vulnerability.  The link step links against libraries
+using relative pathnames (../../..).  To correct the problem,
+the `xload' utility should be relinked without these pathnames
+(the absolute pathname to your X11 libraries should be used).
+
+Another alternative is to disable the `xload' utility by turning
+off the setuid and/or setgid bits.

@@ -1,0 +1,16 @@
+Id: kis011f
+Severity: FAIL
+Category: intrusion
+Check: check_finddeleted
+
+A server in the system (that is, a process with a listening socket towards
+the Internet) or its parent process has an open file which has been removed
+from the system. This might be a usual behaviour in the process or it might
+be an indication of an intruder that has executed a backdoor in the system
+(which opens a connection to accept requests from the Internet) and has
+later removed the program from the system so that it cannot be traced back
+to him.
+This also can happen if a local service is using shared libraries which have
+been upgraded but the service itself has not been restarted in order to
+use the new libraries. Notice that if there was a vulnerability in the
+library and the server is not restarted the system is still vulnerable.

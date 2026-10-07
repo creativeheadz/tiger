@@ -1,0 +1,10 @@
+Id: lin027w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+fs.suid_dumpable is 1, so a setuid program that crashes writes a core
+dump, which may hold secrets, into a directory any user can read. 0
+disables dumps for setuid programs; 2 writes them readable by root
+only, which is what systems using a crash handler such as apport need:
+  # sysctl -w fs.suid_dumpable=0

@@ -124,6 +124,11 @@
           "type": "string",
           "description": "Extra lines the check printed under the message."
         },
+        "category": {
+          "type": "string",
+          "pattern": "^[a-z]+$",
+          "description": "The area the finding belongs to, from its metadata file (meta/ID): accounts, boot, cron, filesystem, firewall, integrity, intrusion, kernel, logging, network, packages, services, ssh or tigris. See doc/metadata.md. Absent in reports older than the field."
+        },
         "accepted": {
           "description": "Present when the finding was accepted with tigris-accept; it is then not in the text report.",
           "type": "object",

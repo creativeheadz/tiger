@@ -1,0 +1,11 @@
+Id: suid001a
+Severity: ALERT
+Category: filesystem
+Check: check_suid
+
+A setuid file elsewhere on the disk has the same contents as a known
+system binary. Somebody copied a privileged program to an unexpected
+place, which is what an intruder does to keep a back door after the
+original is cleaned, or what a careless build leaves behind. Compare
+the two files, find out who put the copy there, and remove it unless
+there is a documented reason for it to exist.

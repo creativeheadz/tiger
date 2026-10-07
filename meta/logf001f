@@ -1,0 +1,9 @@
+Id: logf001f
+Severity: FAIL
+Category: logging
+Check: check_logfiles
+
+The log file "wtmp" should exist to show an audit trail of which user has
+logged into the server.  This file is accessed by the command "last".
+It might not exist due to a system configuration error or an
+intruder that has tried to cover this tracks by removing it.

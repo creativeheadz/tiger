@@ -1,0 +1,9 @@
+Id: root001w
+Severity: WARN
+Category: accounts
+Check: check_root
+
+The indicated file allows remote (i.e., other than system console).
+root logins for telnet and other services.  For /etc/default/login,
+be sure that the line "CONSOLE=/dev/console" exists.  For /etc/securetty,
+be sure that there are no ttyp entries.

@@ -1,0 +1,10 @@
+Id: dev002f
+Severity: FAIL
+Category: filesystem
+Check: check_devices
+
+Devices that have improper (world) permissions might be accessed by
+any system user. This might open security holes if these are shared
+devices or hold binaries (disks for example). The administrator should
+properly set device access (using group configuration to provide
+access to a device to multiple users, for example).

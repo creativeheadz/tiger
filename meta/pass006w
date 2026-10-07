@@ -1,0 +1,8 @@
+Id: pass006w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The password files have integrity issues as found by 'pwck -r'.  This
+can lead to looping of password manipulation programs and to authentication
+or login issues if not corrected.

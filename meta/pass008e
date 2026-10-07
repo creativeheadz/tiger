@@ -1,0 +1,7 @@
+Id: pass008e
+Severity: ERROR
+Category: accounts
+Check: check_neverlogin
+
+The password file was not generated and cannot be analysed. This might
+probably happen due to Tiger not running with full administrative access.

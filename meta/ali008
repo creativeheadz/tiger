@@ -1,0 +1,8 @@
+Id: ali008
+Severity: FAIL, WARN, INFO
+Category: services
+Check: check_aliases
+
+The indicated alias includes a file which has group write permission,
+world write permission or both.  This allows others to add or modify
+entries in the file, possibly gaining unauthorized privileges.

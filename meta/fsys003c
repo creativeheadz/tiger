@@ -1,0 +1,9 @@
+Id: fsys003c
+Severity: CONFIG
+Category: filesystem
+Check: check_sgid check_suid
+
+The database of setuid programs for this platform does not exist, thus
+all setuid programs will be listed.  When fully configured for a
+platform, only those setuid programs that do not appear in the
+distribution will be listed.

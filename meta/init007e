@@ -1,0 +1,7 @@
+Id: init007e
+Severity: ERROR
+Category: tigris
+Check: initdefs
+
+A required variable does not have a value.  This indicates either
+incomplete support this platform or a configuration error.

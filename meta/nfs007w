@@ -1,0 +1,10 @@
+Id: nfs007w
+Severity: WARN
+Category: network
+Check: check_exports
+
+Exporting a directory to everyone means that anyone can
+look at your files.  The information gained can possibly
+be used to gain further access to the machine.
+
+See `nfs013i'

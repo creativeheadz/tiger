@@ -1,0 +1,10 @@
+Id: lin035f
+Severity: FAIL
+Category: network
+Check: check_sysctl
+
+net.ipv6.conf.*.accept_source_route is 1, so the host accepts IPv6
+packets that dictate their own route. See lin016f for the IPv4
+equivalent:
+  # sysctl -w net.ipv6.conf.all.accept_source_route=0
+  # sysctl -w net.ipv6.conf.default.accept_source_route=0

@@ -1,0 +1,10 @@
+Id: sgid001a
+Severity: ALERT
+Category: filesystem
+Check: check_sgid
+
+A setgid file elsewhere on the disk has the same contents as a known
+system binary. As with its setuid twin above, a copied privileged
+program in an unexpected place is either a back door or a leftover.
+Compare the two files, find out who put the copy there, and remove it
+unless there is a documented reason for it to exist.

@@ -1,0 +1,9 @@
+Id: ssh003w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+The RhostsAuthentication directive determines if .rhosts or
+/etc/hosts.equiv is sufficient authentication.  This option
+only applies to protocol version 1 and is generally believed
+to be insecure.

@@ -1,0 +1,9 @@
+Id: aide003i
+Severity: INFO
+Category: integrity
+Check: aide_run
+
+Aide finished a run and found differences; this line carries the
+summary counts ("Total number of ...") from its report. It is context
+for the aide003w, aide004w and aide005w findings that follow it, which
+name the changed, removed and added files one by one.

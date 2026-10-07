@@ -1,0 +1,10 @@
+Id: perm018w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The root directory '/' is not owned by root, or its group is not the
+expected one. The top of the filesystem sets the tone for everything
+below it: the wrong owner there can rename, replace or re-permission
+system directories. Restore it with chown root:root /. (The ALERT-era
+entry perm018a below is kept so old reports still explain.)

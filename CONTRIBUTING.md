@@ -8,9 +8,11 @@ carries the mechanics.
 
 - One check does one thing. Read the documentation of the thing being
   checked and write from that; never copy from another auditor.
-- Every finding needs a stable id, a severity, and an explanation in
-  `doc/` (see `doc/apache.txt` for a recent example). `sh
-  tests/explain_check.sh` fails on any id without one.
+- Every finding needs a stable id and a metadata file, `meta/<id>`:
+  its severity, category, the checks that report it, and the
+  explanation (format in `doc/metadata.md`; `meta/lin039w` is a recent
+  example). `sh tests/explain_check.sh` fails on any id without one, and
+  on a file that disagrees with the code.
 - No check ships without a test. Fixture-driven checks take the command
   or the tree as a setting (`Tiger_Sysctl_Root`, `Tiger_SSHD_Cmd`),
   package-manager checks plant their problems in a real container; see

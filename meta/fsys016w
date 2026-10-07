@@ -1,0 +1,12 @@
+Id: fsys016w
+Severity: WARN
+Category: filesystem
+Check: find_files
+
+Dangling symbolic links were found in a directory where they are
+usually clutter rather than a risk (help and documentation trees, icon
+themes, home directories, runtime directories), so Tiger reports how
+many and where instead of listing each one. The directories where each
+dangling link is still listed individually (fsys013w) are set by
+Tiger_FSScan_DetailDirs in tigerrc; set it to '*' to list them all.
+To see the links themselves, run: find DIR -xdev -type l -xtype l

@@ -1,0 +1,7 @@
+Id: ssh001w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+The Protocol directive in the sshd_config file is not in the
+allowed protocol list.

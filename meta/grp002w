@@ -1,0 +1,8 @@
+Id: grp002w
+Severity: WARN
+Category: accounts
+Check: check_group
+
+The indicated group id (gid) exists multiple times in the same group file.
+This indicates a configuration problem which should be corrected.  Failure
+to do so could allow unexpected access to resources.

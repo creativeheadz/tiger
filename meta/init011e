@@ -1,0 +1,8 @@
+Id: init011e
+Severity: ERROR
+Category: tigris
+Check: tiger tigris
+
+--since compares the JSON Lines reports of two runs, and this run would
+not write one because Tiger_Output_JSON is N in the configuration file.
+Set it to Y, or run without --since and compare later with tigris-diff.

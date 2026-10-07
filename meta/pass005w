@@ -1,0 +1,8 @@
+Id: pass005w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The listed userid (uid) occurs in separate password sources, but the
+usernames are different.  This can lead to unexpected access to resources
+if not corrected.

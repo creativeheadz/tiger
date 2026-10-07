@@ -1,0 +1,8 @@
+Id: cron007i
+Severity: INFO
+Category: cron
+Check: check_crontabs
+
+Cron is restricted to a given user. This is usually good, since
+restricting cron prevents this system from being
+abused by either users or system crackers.

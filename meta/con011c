@@ -1,0 +1,10 @@
+Id: con011c
+Severity: CONFIG
+Category: tigris
+Check: gen_mounts
+
+The filesystem is of a local type but did not answer a df request
+within Tiger_Mount_Timeout seconds, so the filesystem scan leaves it out
+rather than hang on it. This is what a hung FUSE mount or a disk that has
+gone away looks like. Unmount it, or make it answer, and run again. Raise
+Tiger_Mount_Timeout if the filesystem is merely slow.

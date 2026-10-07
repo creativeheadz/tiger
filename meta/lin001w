@@ -1,0 +1,9 @@
+Id: lin001w
+Severity: WARN
+Category: packages
+Check: deb_nopackfiles pkg_integrity
+
+A program installed in your system has probably been not installed
+by a package of your Linux packaging system. If this binary has
+been installed by the administrator note that /usr/local/ is the
+place for this files.

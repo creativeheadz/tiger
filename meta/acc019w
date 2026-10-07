@@ -1,0 +1,8 @@
+Id: acc019w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The listed login ID may be missing a login program initialization
+file.  This file controls the behaviour of the login process and of
+many important environment variables.

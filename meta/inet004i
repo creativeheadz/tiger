@@ -1,0 +1,8 @@
+Id: inet004i
+Severity: INFO
+Category: services
+Check: check_services
+
+The indicated service has been added to the services database
+as distributed.  These are normal output, but you should be
+familiar with what is there, and note any changes.

@@ -1,0 +1,10 @@
+Id: pass022w
+Severity: WARN
+Category: accounts
+Check: gen_passwd_sets
+
+The password file contains '+' entries, the old NIS escape, while the
+name service is not in 'compat' mode. Outside compat mode those lines
+are meaningless at best; at worst they widen access in ways nobody
+asked for. Remove the '+' lines, or switch the passwd source to compat
+in /etc/nsswitch.conf if NIS netgroups are really in use.

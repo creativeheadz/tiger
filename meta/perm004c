@@ -1,0 +1,8 @@
+Id: perm004c
+Severity: CONFIG
+Category: filesystem
+Check: check_perms
+
+No file permissions database can be found.  This will prevent the
+checks of file ownerships to be performed.  This likely indicates
+that a complete port has not been done for this platform.

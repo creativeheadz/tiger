@@ -1,0 +1,10 @@
+Id: lin024w
+Severity: WARN
+Category: kernel
+Check: check_sysctl
+
+kernel.sysrq is 1, so every SysRq function is available from the console
+keyboard and /proc/sysrq-trigger, including rebooting, killing all
+processes and dumping memory. Distributions ship a restricted bitmask
+(Ubuntu 176, Debian 438); 0 disables it entirely:
+  # sysctl -w kernel.sysrq=176

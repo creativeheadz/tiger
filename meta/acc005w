@@ -1,0 +1,9 @@
+Id: acc005w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The listed login ID is disabled in some manner ('*' in passwd field, etc),
+but has a 'cron' file or 'cron' entries.  This allows commands to be executed
+on behalf of the login ID, potentially allowing access to the login ID.
+These should be removed unless specifically set up to provide a service.

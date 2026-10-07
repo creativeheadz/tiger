@@ -1,0 +1,7 @@
+Id: init008e
+Severity: ERROR
+Category: tigris
+Check: any
+
+An attempt was made to run one of the support scripts directly.
+These scripts can only be invoked by the top level scripts.

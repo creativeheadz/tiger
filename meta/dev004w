@@ -1,0 +1,11 @@
+Id: dev004w
+Severity: WARN
+Category: filesystem
+Check: check_devices
+
+The device can be read by any user. For most devices that is harmless
+and intended, but a few leak information: /dev/kmsg is the kernel log,
+which may show hardware, drivers and addresses an attacker would find
+useful (setting kernel.dmesg_restrict=1 only governs the dmesg call, not
+this file). Review whether the device needs to be world readable and
+restrict it with udev rules or group ownership if not.

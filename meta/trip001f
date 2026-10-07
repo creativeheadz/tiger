@@ -1,0 +1,8 @@
+Id: trip001f
+Severity: FAIL
+Category: integrity
+Check: tripwire_run
+
+Tripwire reports that a file it is watching has been modified since the
+database was last updated. If the change was expected (an upgrade),
+update the database; if not, treat it as a possible intrusion.

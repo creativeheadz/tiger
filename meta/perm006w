@@ -1,0 +1,8 @@
+Id: perm006w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The configuration files (.login, .profile, etc) should be not be writable
+by non-root users.  In addition, the .rhosts file should not be readable
+or writable by non-root users.

@@ -1,0 +1,10 @@
+Id: netw042f
+Severity: FAIL
+Category: network
+Check: check_ntp
+
+The NTP daemon is running but its configuration names no remote time
+server, so the clock is never corrected. A drifting clock breaks log
+correlation, Kerberos, DNSSEC and certificate checks. Add at least one
+"server" line pointing at a trustworthy source, for example the
+distribution's NTP pool, and restart the daemon.

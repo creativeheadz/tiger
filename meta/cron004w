@@ -1,0 +1,10 @@
+Id: cron004w
+Severity: WARN, INFO
+Category: cron
+Check: check_crontabs
+
+There is no crontab for the superuser account this is not in itself
+an error since many systems might ship without one and use other
+methods (/etc/cron* files) to run programs as root. However, if there
+is no method for root to run scripts some system checking scripts
+(like tiger) might not get executed at all.

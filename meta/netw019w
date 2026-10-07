@@ -1,0 +1,9 @@
+Id: netw019w
+Severity: WARN
+Category: network
+Check: check_sendmail
+
+The sendmail configuration file (sendmail.cf) has the default
+sendmail banner. This means that when the mail server is active
+it publishes the version you are currently running. Attackers can use this
+information to determine if you are running a vulnerable version.

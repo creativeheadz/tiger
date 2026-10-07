@@ -1,0 +1,6 @@
+Id: rootdir002f
+Severity: FAIL
+Category: filesystem
+Check: check_rootdir
+
+The permissions for the root directory are not secure.

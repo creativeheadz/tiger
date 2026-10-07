@@ -1,0 +1,10 @@
+Id: lin029f
+Severity: FAIL
+Category: kernel
+Check: check_sysctl
+
+fs.protected_symlinks is 0, so a symlink in a world-writable sticky
+directory such as /tmp is followed no matter who created it. Privileged
+programs that open files in /tmp by name can then be made to open
+anything:
+  # sysctl -w fs.protected_symlinks=1

@@ -1,0 +1,9 @@
+Id: rootkit004w
+Severity: WARN
+Category: intrusion
+Check: check_rootkit
+
+The 'chkrootkit' program has detected a possible rootkit installation
+A full analysis of the system is recommended to determine the
+presence of further signs of intrusion since a rootkit might have
+been installed.

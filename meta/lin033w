@@ -1,0 +1,9 @@
+Id: lin033w
+Severity: WARN
+Category: network
+Check: check_sysctl
+
+net.ipv4.icmp_ignore_bogus_error_responses is 0, so malformed ICMP error
+responses from broken routers are logged, which lets anyone fill the
+log:
+  # sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1

@@ -1,0 +1,12 @@
+Id: fire006i
+Severity: INFO
+Category: firewall
+Check: check_firewall
+
+Docker publishes ports to the network, and there are rules that may
+restrict them: rules in DOCKER-USER other than Docker's own "return", or
+a forward chain of the host's own that drops. This check does not
+evaluate what those rules match, so it does not say the ports are safe;
+the detail lists the ports and the rules found. Review them with
+'iptables -S DOCKER-USER' (or 'nft list ruleset') and make sure every
+published port is reachable only from where it should be.

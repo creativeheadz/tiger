@@ -1,0 +1,12 @@
+Id: acc025w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The user's home directory is on a filesystem that did not answer
+within Tiger_Mount_Timeout seconds, which is what a hard NFS or CIFS
+mount looks like when its server is down. The account's home-directory
+checks (permissions, dotfiles, dormancy) were skipped rather than hang.
+Other accounts with homes under the same parent directory are skipped
+without being asked again. Bring the server back, or unmount the share,
+and run again.

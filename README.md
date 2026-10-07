@@ -48,9 +48,8 @@ scripts owned by someone other than the user running it, with one
 exception: a tree owned by the person who ran `sudo` is theirs to run.
 A copy that cron runs, or an installed one, must belong to root. The
 report is written to
-`log/`. To look up what a message code in it means, build the message
-index once with `util/genmsgidx doc/*.txt`, then run, for example,
-`./tigexp lin005f`. Choose which checks run, and how, in `tigerrc`.
+`log/`. To look up what a message code in it means, run, for example,
+`./tigris explain lin005f`. Choose which checks run, and how, in `tigerrc`.
 In a hurry, run the quick profile instead: everything except the
 filesystem scan, about a minute where the full run takes three:
 

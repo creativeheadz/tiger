@@ -1,0 +1,7 @@
+Id: path009w
+Severity: WARN
+Category: accounts
+Check: check_path
+
+An initial setting of the PATH variable should be setup in the default
+locations for shell login programs (/etc/profile, /etc/csh.login, etc.).

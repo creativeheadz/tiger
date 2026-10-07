@@ -1,0 +1,8 @@
+Id: nfs003w
+Severity: WARN
+Category: network
+Check: check_exports
+
+Exporting the root file-system allows remote machines to
+access critical files such as /etc/passwd, possibly allowing
+the machine to be compromised.

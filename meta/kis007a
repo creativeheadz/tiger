@@ -1,0 +1,9 @@
+Id: kis007a
+Severity: ALERT
+Category: intrusion
+Check: check_known
+
+The setuid() system call succeeded even though the user was not
+root.  This most likely indicates that the system has been compromised
+and the OS altered.  A new kernel should be installed and the machine
+rebooted.

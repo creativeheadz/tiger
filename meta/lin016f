@@ -1,0 +1,13 @@
+Id: lin016f
+Severity: FAIL
+Category: network
+Check: check_network_config
+
+Source routing might permit an attacker to send packets through your
+host (if routing is enabled) to other hosts without following your
+network topology setup. It should be enabled only under very special
+circumstances or otherwise an attacker could try to bypass the traffic
+filtering that is done on the network:
+  # sysctl -w net.ipv4.conf.all.accept_source_route = 0
+and:
+  # sysctl -w net.ipv4.conf.default.accept_source_route = 0

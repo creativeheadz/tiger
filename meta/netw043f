@@ -1,0 +1,11 @@
+Id: netw043f
+Severity: FAIL
+Category: network
+Check: check_ntp
+
+The NTP daemon is running but its configuration restricts none of its
+remote servers, so any of them may reconfigure it. A rogue or
+compromised server can then shift the clock or turn the daemon into an
+amplifier for others. Add a "restrict" line for every server (and a
+"default ignore" style default where the daemon supports it) and
+restart it.

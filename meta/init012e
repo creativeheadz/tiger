@@ -1,0 +1,9 @@
+Id: init012e
+Severity: ERROR
+Category: tigris
+Check: tiger tigris
+
+The report named after --since cannot be read: it does not exist, or
+the user running Tigris may not read it. Reports are written readable by
+their owner only, so a run as an ordinary user cannot compare with a run
+made as root.

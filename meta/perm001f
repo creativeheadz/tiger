@@ -1,0 +1,7 @@
+Id: perm001f
+Severity: FAIL
+Category: filesystem
+Check: check_perms
+
+The owner of the indicated file is not correct.  With the incorrect ownership,
+a vulnerability may exist.  The owner of the file should be corrected.

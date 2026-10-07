@@ -1,0 +1,8 @@
+Id: boot006w
+Severity: WARN
+Category: boot
+Check: check_lilo
+
+LILO is not configured with a password, so anyone at the console can
+boot with init=/bin/sh or single and get a root shell. Add password=
+and restricted to lilo.conf, make the file 0600 and rerun lilo.

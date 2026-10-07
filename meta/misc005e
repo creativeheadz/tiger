@@ -1,0 +1,7 @@
+Id: misc005e
+Severity: ERROR
+Category: tigris
+Check: check_system initdefs
+
+The listed security check file from a check.d/ file does not
+exist.

@@ -1,0 +1,8 @@
+Id: perm001w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The owner of the indicated file is not what is considered best for security
+reasons.  Unless you have a specific reason for not changing the ownership,
+this should be corrected.

@@ -1,0 +1,8 @@
+Id: perm009f
+Severity: FAIL
+Category: filesystem
+Check: check_perms
+
+The /etc/group file should not be writable by anyone other than root.
+If a non-root user can modify the file, unauthorized privileges can
+be obtained.

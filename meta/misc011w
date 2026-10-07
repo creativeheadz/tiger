@@ -1,0 +1,8 @@
+Id: misc011w
+Severity: WARN
+Category: services
+Check: check_sendmail
+
+The local sendmail.cf is using the sendmail restricted shell (smrsh)
+for program delivery, but it appears to use a program which allows
+the vulnerabilities discussed in `misc010w' to be exploited.

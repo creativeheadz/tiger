@@ -1,0 +1,11 @@
+Id: perm008w
+Severity: WARN
+Category: filesystem
+Check: check_perms
+
+The /etc/exports (or equivalent) file should not be writable by anyone
+other than root.  If a non-root user can modify the file, unauthorized
+privileges can be obtained.  There is also no reason for this file
+to be readable by anyone other than root.  Making it unreadable, reduces
+the information available to an intruder attempting to gain privileged
+access.

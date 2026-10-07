@@ -1,0 +1,9 @@
+Id: acc004w
+Severity: WARN
+Category: accounts
+Check: check_accounts
+
+The listed login ID is disabled in some manner ('*' in passwd field, etc),
+but a non-zero length .rhosts file.  This can allow the login ID to continue
+to be used.  Unless this has been specifically set up to provide some
+service, it should be removed.

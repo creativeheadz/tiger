@@ -1,0 +1,7 @@
+Id: run001e
+Severity: ERROR
+Category: tigris
+Check: gen_passwd_sets
+
+A needed file cannot be read, probably due to insufficient privileges.
+Make sure that Tiger is run by the superuser (root) account.

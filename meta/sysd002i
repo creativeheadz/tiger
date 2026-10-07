@@ -1,0 +1,8 @@
+Id: sysd002i
+Severity: INFO
+Category: services
+Check: check_systemd
+
+The service listens on the network and systemd rates its sandboxing
+EXPOSED (exposure between 7.0 and 8.9). See sysd001w for how to read
+'systemd-analyze security UNIT' and tighten it.

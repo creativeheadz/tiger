@@ -1,0 +1,7 @@
+Id: pass016w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The listed login ID should not have "/" (system root directory)
+as its home drive. This is a possible security hole.

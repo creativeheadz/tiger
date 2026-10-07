@@ -1,0 +1,10 @@
+Id: pass014w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+
+The listed login ID is disabled in some manner ('*' in passwd field, etc),
+but the login shell for the login ID is a valid shell (from /etc/shells
+or the system equivalent).  A valid shell can potentially enable the
+login ID to continue to be used.  The login shell should be changed
+to something that doesn't exist, or to something like /bin/false.

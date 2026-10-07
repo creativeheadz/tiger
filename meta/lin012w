@@ -1,0 +1,15 @@
+Id: lin012w
+Severity: WARN
+Category: network
+Check: check_network_config
+
+The system is configured to accept ICMP redirects, this might or might
+not be necessary in your network topology. If you have multiple routers
+to which connect through to outside locations it might be necessary,
+otherwise remove it since an attacker could send bogus ICMP redirection
+messages to try to route the outgoing network packets to other systems
+(including his own) and thus allowing for man in the middle or
+denial of service attacks:
+ # sysctl -w net.ipv4.conf.all.accept_redirects = 0
+and:
+ # sysctl -w net.ipv4.conf.default.accept_redirects = 0

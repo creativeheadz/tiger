@@ -1,0 +1,9 @@
+Id: ssh005w
+Severity: FAIL, WARN
+Category: ssh
+Check: check_ssh
+
+The variable SSHD_CONFIG is not defined which means that you have
+not setup (or the system has been enable to find) your SSH configuration
+files. You should setup that variable in your site-`hostname`
+configuration file.

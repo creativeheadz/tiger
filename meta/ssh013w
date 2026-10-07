@@ -1,0 +1,7 @@
+Id: ssh013w
+Severity: WARN
+Category: ssh
+Check: check_ssh
+
+HostbasedAuthentication is yes, so a connection is accepted because of
+the client host's key rather than the user's. Set it to no.

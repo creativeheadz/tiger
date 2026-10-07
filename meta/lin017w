@@ -1,0 +1,10 @@
+Id: lin017w
+Severity: WARN
+Category: network
+Check: check_network_config
+
+Suspicious packets received by the kernel should be logged to detect
+incoming attacks. To activate this logging capability:
+  # sysctl -w net.ipv4.conf.all.log_martians = 1
+and:
+  # sysctl -w net.ipv4.conf.default.log_martians = 1

@@ -1,0 +1,9 @@
+Id: ali004
+Severity: FAIL, WARN, INFO
+Category: services
+Check: check_aliases
+
+The indicated alias is a program alias, but the executable has group
+write permission, world write permission or both.  This allows others
+to replace/modify the executable, possibly allowing them to gain
+unauthorized privileges.
