@@ -1,0 +1,195 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_units: what the enabled systemd services, and the services their
+#                 timers and sockets start, run, as check_crontabs looks
+#                 at what cron runs.
+#
+# 10/07/2026 atrimbitas - Initial version. The enabled units are the links
+#                 in the *.wants directories; a timer starts its Unit= or
+#                 the service of its name, a socket the service of its
+#                 name. Each service is read with systemctl cat, unit file
+#                 and drop-ins together: the files it is made of must be
+#                 root's alone (sysd006f), and each program its Exec*=
+#                 lines run, with every directory above it, goes through
+#                 pathmsg as cron's commands do, expected to belong to its
+#                 User= (root when there is none; sysd004, sysd005). Units
+#                 defined in /etc or /run, and vendor units replaced or
+#                 extended there, are listed (sysd007i, sysd008i).
+#                 Tiger_Sysctl_Root prefixes the *.wants directories and
+#                 Tiger_Systemctl_Cmd replaces systemctl, for the tests.
+#
+# References:
+#   man 5 systemd.unit, man 5 systemd.service, man 5 systemd.exec
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS SED SORT || exit 1
+
+root=${Tiger_Sysctl_Root:-}
+sc=${Tiger_Systemctl_Cmd:-}
+if [ -z "$sc" ]; then
+  [ -d /run/systemd/system ] || exit 0
+  for d in /usr/bin /bin
+  do
+    [ -x "$d/systemctl" ] && { sc="$d/systemctl"; break; }
+  done
+  [ -n "$sc" ] || exit 0
+fi
+
+echo
+echo "# Checking what enabled systemd services run..."
+
+units=$WORKDIR/units.$$
+safe_temp $units
+trap 'delete $units ; exit 1' 1 2 3 15
+
+# The enabled services, timers and sockets, one name each
+for d in /etc/systemd/system /run/systemd/system /usr/local/lib/systemd/system /usr/lib/systemd/system /lib/systemd/system
+do
+  for l in "$root$d"/*.wants/*.service "$root$d"/*.wants/*.timer "$root$d"/*.wants/*.socket
+  do
+    [ -e "$l" ] || [ -L "$l" ] && echo "${l##*/}"
+  done
+done | $SORT -u > $units
+
+# The services they come to: a timer's Unit= or its own name, a socket's
+# own name (unless it starts one per connection, Accept=yes)
+services=`while read u
+do
+  case "$u" in
+    *.service) echo "$u" ;;
+    *.timer)
+      t=\`$sc cat --no-pager "$u" 2>/dev/null | $SED -n 's/^Unit=[[:space:]]*//p' | $SED -n '$p'\`
+      echo "${t:-${u%.timer}.service}" ;;
+    *.socket)
+      $sc cat --no-pager "$u" 2>/dev/null | $GREP -qi '^Accept=[[:space:]]*\(yes\|true\|1\|on\)' || echo "${u%.socket}.service" ;;
+  esac
+done < $units | $SORT -u`
+
+local= changed=
+for svc in $services
+do
+  case "$svc" in *@.service) continue ;; esac
+  out=`$sc cat --no-pager "$svc" 2>/dev/null` || continue
+  [ -n "$out" ] || continue
+
+  # The files it is made of: a "# /path" line, alone, first or after an
+  # empty line (a comment can start "# /etc/..." too); the first is the
+  # unit file
+  files=`echo "$out" | $AWK '(NR == 1 || prev == "") && /^# \/[^ \t]*$/ { print substr($0, 3) } { prev = $0 }'`
+  main=`echo "$files" | $SED -n 1p`
+  case "$main" in
+    /etc/systemd/system/*|/run/systemd/system/*)
+      vendor=
+      for v in /usr/local/lib/systemd/system /usr/lib/systemd/system /lib/systemd/system
+      do
+        [ -e "$root$v/$svc" ] && vendor="$v/$svc"
+      done
+      if [ -n "$vendor" ]; then changed="$changed, $svc (replaces $vendor)"; else local="$local, $svc"; fi
+      ;;
+  esac
+  for f in $files
+  do
+    case "$f" in
+      "$main") ;;
+      /etc/*|/run/*) changed="$changed, $svc (drop-in $f)" ;;
+    esac
+    # Root's alone: the file and every directory above it
+    lgetpermit "$f" | while read comp owner group ur uw ux gr gw gx or ow ox suid sgid stk
+    do
+      why=
+      [ "$owner" != root ] && why="owned by $owner"
+      # a sticky directory (/tmp) lets nobody replace what is not theirs
+      [ "$stk" = 1 ] && [ "$comp" != "$f" ] && { gw=0; ow=0; }
+      [ "$gw" = 1 ] && why="${why:+$why, }writable by group \`$group'"
+      [ "$ow" = 1 ] && why="${why:+$why, }writable by anyone"
+      [ -n "$why" ] || continue
+      where="\`$f'"; [ "$comp" != "$f" ] && where="\`$f', through \`$comp',"
+      message FAIL sysd006f "Make it root's ('chown root:root', 'chmod go-w')." "The systemd unit $svc is made of $where which is $why: whoever can change it decides what the service runs, as root unless it says otherwise."
+      break
+    done
+  done
+
+  # Who it runs as, and what
+  user=`echo "$out" | $SED -n 's/^User=[[:space:]]*\([^[:space:]]*\).*/\1/p' | $SED -n '$p'`
+  echo "$out" | $GREP -qi '^DynamicUser=[[:space:]]*\(yes\|true\|1\|on\)' && user=.
+  user=${user:-root}
+  echo "$out" | $AWK '
+    /^Exec(Start|StartPre|StartPost|Condition|Reload|Stop|StopPost)=/ {
+      v = $0; sub(/^[^=]*=/, "", v)
+      sub(/^[-@:+!]+/, "", v)
+      split(v, w, /[ \t]/)
+      if (w[1] ~ /^\//) print w[1]
+    }' | $SORT -u | while read prog
+  do
+    [ -e "$prog" ] || continue
+    lgetpermit "$prog" | pathmsg sysd004 sysd005 "$prog" "$user" "The systemd unit $svc runs" ""
+  done
+done
+
+local=${local#, } changed=${changed#, }
+[ -n "$local" ] && message INFO sysd007i "$local." "Some enabled systemd services are defined in /etc or /run (by hand, or generated at boot) rather than shipped by a package."
+[ -n "$changed" ] && message INFO sysd008i "$changed." "Some enabled systemd services from packages are replaced or extended in /etc or /run."
+
+delete $units
+exit 0

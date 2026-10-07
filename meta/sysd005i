@@ -1,0 +1,19 @@
+Id: sysd005i
+Severity: INFO
+Category: services
+Check: check_units
+References: systemd.service(5)
+
+An enabled systemd service runs a program (an ExecStart= or another
+Exec*= line) that, or a directory above which, can be written by its
+group or by anyone. Whoever can write it can replace the program, and
+their code then runs as the service's account (User=, root when there
+is none) at its next start.
+
+It is INFO because the path named is a directory or a file that is
+not executable, though others can write it.
+
+To fix it, give the program and its directories to root (or to the
+service's user), take group and other write permission off them, and
+keep scripts that services run in a root-owned directory such as
+/usr/local/sbin.

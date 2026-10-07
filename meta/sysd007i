@@ -1,0 +1,13 @@
+Id: sysd007i
+Severity: INFO
+Category: services
+Check: check_units
+References: systemd.unit(5)
+
+Some enabled systemd services are not shipped by a package: their
+unit files are in /etc/systemd/system, written by hand or by a
+program's installer, or in /run/systemd/system, generated at boot
+(netplan writes some there). The detail lists them. They are worth
+knowing about, since no package update fixes them and no package
+database vouches for them: check what each runs, with 'systemctl cat
+NAME'. This is informational.

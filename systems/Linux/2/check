@@ -170,6 +170,10 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   $SYSTEMDIR/check_pam
 }
 
+[ "$Tiger_Check_UNITS" != 'N' ] && {
+  $SYSTEMDIR/check_units
+}
+
 [ "$Tiger_Check_PASSWD" != 'N' -a "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
   $SYSTEMDIR/check_passwdspec
 }

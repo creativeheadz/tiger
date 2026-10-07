@@ -32,6 +32,7 @@ echo "$D root root  1 1 1  1 0 1  1 1 1  0 0 0" | pathmsg tst001 tst002 "$D" roo
 echo "$X bin bin    1 1 1  1 0 1  1 0 1  0 0 0" | pathmsg tst001 tst002 "$X" root "Owner" ""
 echo "$D bin bin    1 1 1  1 0 1  1 0 1  0 0 0" | pathmsg tst001 tst002 "$D" root "Dirowner" ""
 echo "$X nobody nogroup  1 1 1  1 0 1  1 0 1  0 0 0" | pathmsg tst001 tst002 "$X" andrei "User" ""
+echo "$D root root  1 1 1  1 1 1  1 1 1  0 0 1" | pathmsg tst001 tst002 "$X" root "Sticky" ""
 EOF
 ( cd "$W" && TIGERHOMEDIR=$W sh ./drive.sh ) > "$W/out" 2>&1
 has() { grep -q "\"level\":\"$1\",\"id\":\"$2\",\"check\":\"drive.sh\",\"message\":\"$3 " "$W/out.jsonl"; }
@@ -43,6 +44,7 @@ has WARN tst001w Owner  && ok "executable not owned by root: WARN, w" || bad "ow
 has INFO tst001i Dirowner && ok "directory not owned by root: INFO, i" || bad "directory owner"
 has WARN tst001w User   && ok "not owned by the user expected (owned by nobody): WARN, w" || bad "user"
 [ "`grep -c '"id":"tst00[12]"' "$W/out.jsonl"`" = 0 ] && ok "no id without its letter" || bad "an id without its letter"
+grep -q '"message":"Sticky ' "$W/out.jsonl" && bad "a sticky directory above the file was reported" || ok "a sticky world-writable directory above the file (/tmp) is not reported"
 
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- out"; cat "$W/out" "$W/out.jsonl"; }
 exit $fail

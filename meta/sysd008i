@@ -1,0 +1,13 @@
+Id: sysd008i
+Severity: INFO
+Category: services
+Check: check_units
+References: systemd.unit(5), systemd-delta(1)
+
+Some enabled systemd services shipped by a package are changed
+locally: a unit file of the same name in /etc/systemd/system (or /run)
+replaces the package's, or a drop-in there adds to it. The detail
+lists each with the file. Such changes outlive package updates, so a
+fix the package later makes to its unit may not take effect. 'systemctl
+cat NAME' shows the result; 'systemd-delta' lists every such change.
+This is informational.

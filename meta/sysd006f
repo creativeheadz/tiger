@@ -1,0 +1,15 @@
+Id: sysd006f
+Severity: FAIL
+Category: services
+Check: check_units
+References: systemd.unit(5)
+
+A file an enabled systemd service is made of (its unit file or a
+drop-in, as 'systemctl cat' lists them), or a directory above it, is
+not root's alone: it belongs to another account, or its group or
+anyone can write it. Whoever can change the unit decides what the
+service runs, and as whom: an ExecStart= of their own runs as root at
+the next start or daemon-reload.
+
+To fix it, 'chown root:root' the file and 'chmod 644' it (go-w on the
+directory), and find out who changed it.

@@ -344,6 +344,17 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   length under 8 (pam002w), no lockout after failed logins (pam003w),
   over /etc/pam.d and openSUSE's /usr/lib/pam.d. Hera: andrei's
   NOPASSWD, Mint's four NOPASSWD helpers, neither PAM module.
+- [x] **`check_units`**, what check_crontabs does for cron, for the
+  enabled systemd services and those their timers and sockets start
+  (read with `systemctl cat`): the programs their Exec*= lines run, with
+  every directory above, through pathmsg against their User= (sysd004,
+  sysd005, with their letters), the unit files and drop-ins root's alone
+  (sysd006f), and lists of units defined in /etc or /run (sysd007i) and
+  of package units replaced or extended there (sysd008i). pathmsg now
+  passes over a sticky directory above the path, such as /tmp, which
+  lets nobody replace what is not theirs; that changes check_crontabs'
+  and check_aliases' findings the same way. Hera: Wegweiser, two backup
+  units and three others local, nothing writable.
 
 ## 3.2.x: maintenance
 
@@ -456,7 +467,8 @@ open items below ship from 3.4.0 on.
   accounts without passwords (`check_sudo`, sudo001w to sudo006e;
   `check_pam`, pam001w to pam003w; empty passwords were already
   pass011f; on master since 3.3.0).
-- [ ] systemd: enabled services and timers next to cron.
+- [x] systemd: enabled services and timers next to cron (`check_units`,
+  sysd004 to sysd008i; on master since 3.3.0).
 - [x] Firewall: incoming traffic denied by default, for IPv4 and IPv6,
   whatever wrote the rules (`check_firewall`, fire001w to fire004e; on
   master since 3.3.0).

@@ -383,7 +383,11 @@ pathmsg()
     [ "$__path" != "$__comp" ] && {
       __file="\`$__path' which contains \`$__comp'"
     }
-    
+
+    # A sticky directory above the path (/tmp) lets others add entries but
+    # not replace one they do not own, so its write bits do not matter
+    [ "$stk" = 1 ] && [ "$__path" != "$__comp" ] && [ -d "$__comp" ] && { gw=0; ow=0; }
+
     case "$gw$ow" in
       00) __access='';;
       01) {

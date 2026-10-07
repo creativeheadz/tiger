@@ -1,0 +1,19 @@
+Id: sysd005w
+Severity: WARN
+Category: services
+Check: check_units
+References: systemd.service(5)
+
+An enabled systemd service runs a program (an ExecStart= or another
+Exec*= line) that, or a directory above which, can be written by its
+group or by anyone. Whoever can write it can replace the program, and
+their code then runs as the service's account (User=, root when there
+is none) at its next start.
+
+It is a WARN because its group can write it and the program is
+executable.
+
+To fix it, give the program and its directories to root (or to the
+service's user), take group and other write permission off them, and
+keep scripts that services run in a root-owned directory such as
+/usr/local/sbin.
