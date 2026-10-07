@@ -1,6 +1,141 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
+Changes (v 3.3.0)
+--------------------
+
+This is the first release of Tigris, the independent fork of Tiger at
+https://github.com/creativeheadz/tigris. The entry point is ./tigris;
+tigerrc, the Tiger_* settings, the tiger command and /etc/tiger keep
+their names until 4.0.
+
+On the reference machine (Linux Mint 22.3, kernel 7.0, 2.4k packages,
+a 1.8 TB and a 3.6 TB disk), a full run as root under 3.2.4 took 7:16
+and 159 MB, and wrote a report of 49,651 lines in which 24 checks had
+refused to run. Under 3.3.0 it takes 1:58 and 34.6 MB and writes 218
+lines (12 FAIL, 50 WARN); the quick profile takes 0:58 and 13.9 MB.
+
+Runs properly on a modern Linux
+
+- config: on a kernel newer than the version symlinks, the fallback to
+  systems/Linux/default left REL set to the real version, so every
+  Linux-specific check silently did not run and the generic ones ran
+  in their place. The fallback now sets REL=default.
+
+- ./tigris runs from a checkout with sudo: the tree-ownership guard
+  accepts the sudo user's own checkout, and explains itself (init010e)
+  when it refuses. The log directory is created when missing; the rc
+  preprocessor uses mktemp.
+
+- scripts/find_files: one find with -fprintf classifies every file in
+  a single pass, instead of an ls | awk per file (about a million
+  processes on the reference machine). The old path stays for busybox.
+  Dangling symlinks and unusual file names are listed one by one only
+  under system directories (Tiger_FSScan_DetailDirs) and summarised per
+  directory elsewhere (fsys016w, fsys017w). Flatpak, Docker,
+  containerd, Podman and snap stores are pruned by default, as are a
+  pruned directory's own mount points.
+
+- Checks brought up to date with how systems look now: PATH and umask
+  set through pam_env, pam_umask and systemd; merged-/usr; service
+  accounts with nologin and no home; /var/log/syslog and the journal;
+  /dev as udev builds it, including systemd's inaccessible placeholder
+  nodes; su and passwd being setuid; the duplicate-port test against
+  the system's own services file.
+
+- egrep, tempfile and which are no longer called. util/realpath is a
+  shell stand-in for the C helper when that is not built. The
+  distribution is read from /etc/os-release, as text, never sourced.
+
+- The checks for services that are gone from a current Linux are
+  retired: inetd, xinetd and tcpd, rhosts and .netrc, anonymous FTP and
+  ftpusers, printcap, OmniBack, NIS+, inittab, and the static Debian
+  advisory list (17 files). The boot check stays; it covers GRUB 2.
+
+- The configurations for AIX, HP-UX, IRIX, NeXT, SunOS, Tru64, UNICOS
+  and Mac OS X moved out of the tree (364 files). They are in the git
+  history under the tag attic/other-unix-2026-10.
+
+- A dead network mount no longer hangs the audit. lsof runs with -b,
+  and every home directory, and every mount point before the scan, is
+  asked first with df under a kill timeout (Tiger_Mount_Timeout, 5 s);
+  one that does not answer is reported (acc025w, path010w, con011c)
+  and left alone.
+
+- check_path: the switch to check every user's PATH was read as
+  TIGER_Check_PATHALL, which nothing sets, so since 2002 only root's
+  PATH was checked. It now reads Tiger_Check_PATHALL, as tigerrc
+  spells it.
+
+- check_services, check_passwd, check_accounts, check_devices and
+  check_logfiles fixed for false positives found on the reference
+  machine; two assignments that ran as commands fixed; eight scripts
+  marked executable.
+
+New checks
+
+- systems/Linux/2/check_sysctl: kernel pointer and log restriction,
+  Yama, ASLR, SysRq, BPF, perf, fs.protected_*, IPv4 and IPv6 redirects
+  and source routing, and the kernel's own verdict on CPU speculation
+  flaws (lin020w to lin035f).
+
+- check_ssh reads the effective configuration with sshd -T: 15
+  directives and the cipher, MAC and key-exchange lists (ssh006f to
+  ssh019w).
+
+- systems/Linux/2/check_systemd: sandboxing of network-facing services,
+  scored by systemd-analyze security, naming the three unmet
+  protections that would help most (sysd001w to sysd003i).
+
+- systems/Linux/2/pkg_integrity: package integrity for rpm, apk and
+  pacman with the finding ids the dpkg checks use (lin005f, lin006f,
+  lin001w), plus lin038w for a mode or owner that differs from the
+  package. Honours pacman's NoExtract and NoUpgrade.
+
+- deb_checkmd5sums: one grep for the diversions instead of a dpkg -S
+  each (130 MB to 11 MB), and diversions matched without their
+  architecture, so multi-arch packages are checked again.
+
+Output and drift
+
+- A JSON Lines report next to the text report, written by message()
+  itself: a run record (schema 1, run id, tigerrc used, whether the
+  filesystem scan ran), one record per finding, and a summary with the
+  counts. The contract is doc/json-format.md, with a JSON Schema in
+  doc/tigris-report.schema.json.
+
+- tigris-diff: what is new, resolved and unchanged between two runs,
+  in text or JSON (-j), exit 1 when anything is new. When one of the
+  runs skipped the filesystem scan, its findings are set aside rather
+  than reported as resolved.
+
+- tigris-accept: acknowledge a finding with a reason and an expiry
+  date. It leaves the text report, is marked as accepted in the JSON,
+  and comes back (acpt001w) when the date passes.
+
+- tigerrc-quick: everything except the filesystem scan, in about a
+  minute. The text report says the scan was skipped.
+
+- Report file names carry seconds, so two runs in the same minute no
+  longer overwrite each other.
+
+- Every finding id is well-formed and explained: 308 emitted, 308 with
+  an entry for tigexp. Placeholder ids replaced (tig001e, suid002,
+  pass022w) and 22 malformed ones renumbered.
+
+Engineering
+
+- 12 fixture suites in tests/, plain sh, a full-run smoke test, and a
+  CI pipeline of 11 jobs: syntax and ShellCheck, a full run on Ubuntu,
+  the dpkg checks on Debian stable, sid and Ubuntu 24.04, and the
+  package checks on Fedora, Rocky Linux 9, openSUSE Tumbleweed, Alpine
+  and Arch.
+
+- ROADMAP.md, SECURITY.md, CONTRIBUTING.md and issue templates.
+
+- tigerrc-all and tigerrc-dist, which still carried the switches of
+  retired checks and which nothing installed, are dropped.
+
 Changes (v 3.2.4)
 --------------------
 

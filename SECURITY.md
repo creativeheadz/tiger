@@ -4,9 +4,9 @@
 
 | Version | Supported |
 | ------- | --------- |
-| `master` (towards 3.3) | Yes |
-| 3.2.4 | Yes, for security fixes |
-| Older, including all TIGER releases | No |
+| `master` | Yes |
+| 3.3.0 | Yes, for security fixes |
+| 3.2.4 and older, including all TIGER releases | No |
 
 Tigris is an independent fork. The official TIGER is maintained on
 GNU Savannah; vulnerabilities in TIGER itself belong to its maintainer

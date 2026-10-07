@@ -5,9 +5,9 @@ Tigris is a security auditor for Linux, descended from TIGER (Texas A&M,
 least as good as Lynis, and better where it counts. Lynis is the
 reference point because it is the tool people compare against.
 
-*Last updated 5 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
+*Last updated 7 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
 Everything marked done is on `master`; "released" means tagged (the last
-tag is `version_3_2_4`).
+tag is `version_3_3_0`).
 
 ## Contents
 
@@ -51,7 +51,7 @@ Settled, so they do not have to be argued again:
 
 ## Where things stand
 
-|                      | Tigris (master, October 2026)                                   | Lynis 3.1.7 (June 2026)                  |
+|                      | Tigris 3.3.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
@@ -68,19 +68,22 @@ Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
 other tools can use, on honest evidence, and on engineering quality.
 
-**Measured** on the reference machine (Linux Mint 22.3 desktop, 1.8 TB
-root disk plus a 1.9 TB data disk, 2.4k packages), full run as root:
+**Measured** on the reference machine (Linux Mint 22.3 desktop, kernel 7.0,
+12 threads, 62 GB, a 1.8 TB root disk and a 3.6 TB data disk holding
+1.9 TB, 2.4k packages), run as root on an otherwise idle machine:
 
-| | 3.2.4 as released | master, 5 Oct 2026 |
-|---|---|---|
-| Report | 49,651 lines; 24 checks refused to run | 222 lines, the false positives found so far removed |
-| Wall time | 7:16 | 1:55 to 3:21, depending on disk load |
-| Peak memory | 159 MB | 34 MB |
+| | 3.2.4 as released | 3.3.0, full | 3.3.0, `tigerrc-quick` |
+|---|---|---|---|
+| Report | 49,651 lines; 24 checks refused to run | 218 lines: 12 FAIL, 50 WARN | 176 lines: 12 FAIL, 34 WARN |
+| Wall time | 7:16 | 1:58 | 0:58 |
+| CPU (user + system) | not recorded | 105 s + 90 s | 62 s + 42 s |
+| Peak memory | 159 MB | 34.6 MB | 13.9 MB |
 
-Everything except the filesystem scan finishes in about a minute; the
-scan is bound by how fast the disks can be walked (a bare `find` over the
-same disks takes 146 s on a busy day). A **quick profile** that leaves the
-big data disks out is therefore the biggest remaining win (see 3.3).
+The full run took 3:11 when a second run was reading the same disks, and
+up to 3:21 on 5 October while other services were busy. Everything except
+the filesystem scan finishes in about a minute; the scan is bound by how
+fast the disks can be walked (a bare `find` over the same disks takes
+146 s on a busy day), which is why the quick profile leaves it out.
 
 ## Principles
 
@@ -112,13 +115,17 @@ big data disks out is therefore the biggest remaining win (see 3.3).
 
 ## What has shipped
 
+**Released: 3.3.0 (7 October 2026).** The first release as Tigris:
+everything in the lists below, from running properly on a modern Linux to
+the JSON report and drift. The full list is in `CHANGES`.
+
 **Released: 3.2.4 (4 October 2026).** Finishes the 3.2.4 release candidate
 TIGER left in 2018 and folds in the five Debian non-maintainer uploads
 that never reached the repository. Debian bugs #1111306 (merged-/usr),
 #505906 (prelink, md5sum parsing), #610785 (`Tiger_FSScan_PruneDirs`),
 #1105709 (parallel install), #1033743 (Romanian translation).
 
-**On master since 3.2.4 (unreleased):**
+**In 3.3.0** (on master since 3.2.4):
 
 *Runs properly on a modern Linux.*
 - [x] `sudo ./tigris` works from a checkout; the tree-ownership guard
@@ -250,10 +257,10 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
 
 ## 3.3: modern Linux baseline
 
-What the system looks like in 2026, not 2003. **Release gate for 3.3.0:**
-profiles (at least `quick`), the dead-service checks retired, every id
-explained and tested, `SECURITY.md`. Everything above under "shipped" is
-already in; the gate is what is left.
+What the system looks like in 2026, not 2003. **3.3.0 was released on
+7 October 2026** with its gate met: profiles (at least `quick`), the
+dead-service checks retired, every id explained and tested, `SECURITY.md`.
+The open items below ship as 3.3.x.
 
 **Clear out the old**
 - [x] Other Unixes to the attic.
