@@ -162,6 +162,14 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   $SYSTEMDIR/check_updates
 }
 
+[ "$Tiger_Check_SUDO" != 'N' ] && {
+  $SYSTEMDIR/check_sudo
+}
+
+[ "$Tiger_Check_PAM" != 'N' ] && {
+  $SYSTEMDIR/check_pam
+}
+
 [ "$Tiger_Check_PASSWD" != 'N' -a "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
   $SYSTEMDIR/check_passwdspec
 }

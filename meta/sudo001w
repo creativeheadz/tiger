@@ -1,0 +1,18 @@
+Id: sudo001w
+Severity: WARN
+Category: accounts
+Check: check_sudo
+References: sudoers(5)
+
+The named user or group (%group) may run any command as root through
+sudo without typing a password (NOPASSWD: ALL). The password prompt is
+what stands between a stolen session, a malicious script run by that
+user, or someone at an unlocked screen, and root: without it, any code
+running as that user is root whenever it likes. Cloud images often set
+this for their default user.
+
+To fix it, remove the NOPASSWD: tag from the rule (in /etc/sudoers or
+the file under /etc/sudoers.d that holds it, with visudo), or limit
+NOPASSWD to the specific commands that must run unattended. If the
+account is used only with a key and nothing else runs as it, accept the
+finding with tigris-accept.

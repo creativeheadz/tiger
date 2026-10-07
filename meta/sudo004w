@@ -1,0 +1,16 @@
+Id: sudo004w
+Severity: WARN
+Category: accounts
+Check: check_sudo
+References: sudoers(5)
+
+A sudo rule names a command with a wildcard (*). In sudoers a *
+matches any characters, spaces included, so a rule meant for one kind
+of call allows others: "/bin/cat /var/log/*" also runs
+"/bin/cat /var/log/../../etc/shadow", and "/usr/bin/systemctl
+restart *" accepts any further options. The sudoers manual warns
+against wildcards in arguments for this reason.
+
+To fix it, list the exact commands and arguments allowed, one per
+entry, or give the user a script of root's that does the one thing and
+accepts no arguments.

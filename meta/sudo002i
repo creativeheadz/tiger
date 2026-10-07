@@ -1,0 +1,13 @@
+Id: sudo002i
+Severity: INFO
+Category: accounts
+Check: check_sudo
+References: sudoers(5)
+
+Some sudo rules let their users run specific commands as root without
+a password; the detail lists them, as "who: command". Packages add
+such rules for helpers of their own (Linux Mint's driver and update
+tools, for instance). Each is as safe as the command it names: one that
+can be talked into running another program (an editor, a pager, a
+shell script others can write) gives root to whoever may run it. This
+is informational; worth a look when one is new.

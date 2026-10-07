@@ -336,6 +336,14 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   reboot pending (upd001w: /run/reboot-required, the running kernel's
   modules gone, a newer kernel-core installed). Hera: 12 security
   updates waiting, none installed automatically.
+- [x] **`check_sudo`**, from `cvtsudoers -e` (includes followed, aliases
+  expanded): NOPASSWD for every command (sudo001w), for named commands
+  (sudo002i, one list), `!authenticate` (sudo003w), wildcards in
+  commands (sudo004w), sudoers files not root's alone (sudo005w).
+  **`check_pam`**: no password quality module (pam001w), a minimum
+  length under 8 (pam002w), no lockout after failed logins (pam003w),
+  over /etc/pam.d and openSUSE's /usr/lib/pam.d. Hera: andrei's
+  NOPASSWD, Mint's four NOPASSWD helpers, neither PAM module.
 
 ## 3.2.x: maintenance
 
@@ -444,8 +452,10 @@ open items below ship from 3.4.0 on.
 - [x] SSH from `sshd -T`.
 - [x] systemd unit hardening of network-facing services.
 - [x] Kernel and file-system sysctl hardening; CPU vulnerability status.
-- [ ] sudo and `sudoers.d`, PAM (password quality, `faillock`), and
-  accounts without passwords.
+- [x] sudo and `sudoers.d`, PAM (password quality, `faillock`), and
+  accounts without passwords (`check_sudo`, sudo001w to sudo006e;
+  `check_pam`, pam001w to pam003w; empty passwords were already
+  pass011f; on master since 3.3.0).
 - [ ] systemd: enabled services and timers next to cron.
 - [x] Firewall: incoming traffic denied by default, for IPv4 and IPv6,
   whatever wrote the rules (`check_firewall`, fire001w to fire004e; on

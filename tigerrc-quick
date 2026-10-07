@@ -86,6 +86,8 @@ Tiger_Check_MAC=Y               # Fast - AppArmor or SELinux enforcing
 Tiger_Check_AUDIT=Y             # Fast - auditd with rules, logs kept across reboots
 Tiger_Check_TIMESYNC=Y          # Fast - one time daemon, and the clock synchronised
 Tiger_Check_UPDATES=Y           # Fast - security updates waiting, automatic, reboot (offline)
+Tiger_Check_SUDO=Y              # Fast - sudo rules without a password or with wildcards
+Tiger_Check_PAM=Y               # Fast - password quality and lockout in PAM
 Tiger_Check_PKGINTEGRITY=Y      # Installed files against the rpm, apk or pacman database
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       

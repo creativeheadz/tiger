@@ -63,6 +63,10 @@ jobs:
         run: sh tests/timesync_check.sh
       - name: check_updates against apt, dnf and zypper output and trees
         run: sh tests/updates_check.sh
+      - name: check_sudo against cvtsudoers output and sudoers files
+        run: sh tests/sudo_check.sh
+      - name: check_pam against PAM stacks
+        run: sh tests/pam_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: ShellCheck (errors)

@@ -1,0 +1,132 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_pam: does PAM check new passwords for quality, and lock an account
+#                 after repeated failed logins.
+#
+# 10/07/2026 atrimbitas - Initial version. The stacks are the files in
+#                 /etc/pam.d, and those in /usr/lib/pam.d that /etc/pam.d
+#                 does not override (openSUSE keeps its defaults there).
+#                 Quality is pam_pwquality, pam_cracklib or pam_passwdqc in
+#                 a password line; its minimum length is minlen= on that
+#                 line, else in pwquality.conf and its .d files, else 8.
+#                 Lockout is pam_faillock or pam_tally2 in an auth line.
+#                 Tiger_Sysctl_Root prefixes /etc and /usr for the tests.
+#
+# References:
+#   man 8 pam_pwquality, man 5 pwquality.conf, man 8 pam_faillock
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT SED || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT SED || exit 1
+
+root=${Tiger_Sysctl_Root:-}
+[ -d "$root/etc/pam.d" ] || [ -d "$root/usr/lib/pam.d" ] || exit 0
+
+echo
+echo "# Checking PAM's password quality and lockout..."
+
+stacks=
+for f in "$root"/etc/pam.d/* "$root"/usr/lib/pam.d/*
+do
+  [ -f "$f" ] || continue
+  case "$f" in
+    "$root"/usr/lib/pam.d/*) [ -e "$root/etc/pam.d/${f##*/}" ] && continue ;;
+  esac
+  stacks="$stacks $f"
+done
+[ -n "$stacks" ] || exit 0
+
+# The module lines in use: "type module args", comments left out
+# shellcheck disable=SC2086
+lines=`$CAT $stacks 2>/dev/null | $AWK '
+  { sub(/#.*/, "") }
+  NF >= 3 {
+    type = $1; sub(/^-/, "", type)
+    # the control may be [ ... ] with spaces in it
+    i = 2
+    if ($2 ~ /^\[/) while (i <= NF && $i !~ /\]$/) i++
+    mod = $(i + 1); sub(/.*\//, "", mod)
+    args = ""; for (j = i + 2; j <= NF; j++) args = args " " $j
+    print type, mod args
+  }'`
+
+quality=`echo "$lines" | $AWK '$1 == "password" && ($2 ~ /^pam_(pwquality|cracklib|passwdqc)\.so$/) { print; exit }'`
+if [ -z "$quality" ]; then
+  message WARN pam001w "Install libpam-pwquality (Debian, Ubuntu) or libpwquality (Fedora, RHEL usually has it); it adds itself to the password stack, and its settings are in /etc/security/pwquality.conf." "Passwords are not checked for quality when they are set: no pam_pwquality, pam_cracklib or pam_passwdqc in a password stack."
+else
+  case "$quality" in
+    *pam_passwdqc*) ;;
+    *)
+      minlen=`echo "$quality" | $SED -n 's/.* minlen=\([0-9]*\).*/\1/p'`
+      [ -z "$minlen" ] && minlen=`$CAT "$root/etc/security/pwquality.conf" "$root"/etc/security/pwquality.conf.d/*.conf 2>/dev/null |
+        $SED -n 's/^[[:space:]]*minlen[[:space:]]*=[[:space:]]*\([0-9]*\).*/\1/p' | $SED -n '$p'`
+      case "$quality" in *pam_cracklib*) minlen=${minlen:-9} ;; *) minlen=${minlen:-8} ;; esac
+      [ "$minlen" -lt 8 ] && message WARN pam002w "Set minlen = 14 in /etc/security/pwquality.conf (the CIS benchmarks' figure; NIST SP 800-63B asks for at least 8)." "New passwords may be as short as $minlen characters."
+      ;;
+  esac
+fi
+
+lockout=`echo "$lines" | $AWK '$1 == "auth" && ($2 == "pam_faillock.so" || $2 == "pam_tally2.so") { print; exit }'`
+[ -z "$lockout" ] && message WARN pam003w "Use pam_faillock: 'authselect enable-feature with-faillock' on Fedora and RHEL; elsewhere, pam_faillock.so preauth and authfail lines around pam_unix in the auth stack (common-auth on Debian and Ubuntu), as pam_faillock(8) shows. Settings are in /etc/security/faillock.conf." "Accounts are not locked after repeated failed logins: no pam_faillock or pam_tally2 in an auth stack, so passwords can be guessed for as long as it takes."
+
+exit 0

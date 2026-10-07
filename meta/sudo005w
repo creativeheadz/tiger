@@ -1,0 +1,14 @@
+Id: sudo005w
+Severity: WARN
+Category: accounts
+Check: check_sudo
+References: sudoers(5)
+
+A file holding sudo's rules (/etc/sudoers, /etc/sudoers.d or a file in
+it) is not owned by root, or can be written by its group or by anyone.
+Whoever can write those rules can grant themselves root. Recent sudo
+versions refuse to use such a file, which then breaks sudo for
+everyone instead.
+
+To fix it, 'chown root:root' the file and 'chmod 0440' it (0755 for
+the directory), and find out how it got that way.

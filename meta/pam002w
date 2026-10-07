@@ -1,0 +1,14 @@
+Id: pam002w
+Severity: WARN
+Category: accounts
+Check: check_pam
+References: pwquality.conf(5), NIST SP 800-63B
+
+Passwords are checked for quality, but the minimum length allowed is
+below 8 characters (minlen= on the pam_pwquality or pam_cracklib line,
+or in /etc/security/pwquality.conf). Length matters more than any
+other rule: each character multiplies the guesses needed.
+
+To fix it, set minlen = 14 in /etc/security/pwquality.conf (CIS); NIST
+SP 800-63B asks for at least 8. A minlen= on the module's line in
+/etc/pam.d overrides the file.

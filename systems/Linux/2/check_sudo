@@ -1,0 +1,186 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_sudo: what sudo's rules let people do without a password, or
+#                 with wildcards, and whether its drop-ins are root's alone.
+#
+# 10/07/2026 atrimbitas - Initial version. The rules are read through
+#                 cvtsudoers -e -f sudoers, which ships with sudo: it
+#                 follows the includes, expands the aliases and writes
+#                 every rule as "who hosts = (runas) TAGS: commands", so
+#                 nothing here parses sudoers' grammar. A NOPASSWD tag
+#                 holds for the commands after it until PASSWD. The files'
+#                 owners and modes are read with ls. pass021f (visudo -c)
+#                 in check_passwd stays where it is.
+#                 Tiger_Cvtsudoers_Cmd replaces the cvtsudoers call and
+#                 Tiger_Sysctl_Root prefixes /etc, for the tests.
+#
+# References:
+#   man 5 sudoers, man 1 cvtsudoers
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS SED SORT || exit 1
+
+root=${Tiger_Sysctl_Root:-}
+sudoers="$root/etc/sudoers"
+# Without sudo there is nothing to check
+[ -e "$sudoers" ] || exit 0
+
+echo
+echo "# Checking sudo's rules..."
+
+#
+# The files: root's, and written by root alone
+#
+for f in "$sudoers" "$root/etc/sudoers.d" "$root"/etc/sudoers.d/*
+do
+  [ -e "$f" ] || continue
+  set -- `$LS -lnd "$f" 2>/dev/null`
+  mode=$1 uid=$3
+  case "$mode" in
+    ?????w????*|????????w?*) bad="writable by others ($mode)" ;;
+    *) bad= ;;
+  esac
+  [ "$uid" != 0 ] && bad="${bad:+$bad, }owned by uid $uid"
+  [ -n "$bad" ] && message WARN sudo005w "Run 'chown root:root' and 'chmod 0440' on it (0755 for the directory)." "\`${f#$root}' is $bad: whoever can write sudo's rules can give themselves root."
+done
+
+#
+# The rules, flattened by cvtsudoers
+#
+cmd=${Tiger_Cvtsudoers_Cmd:-}
+if [ -z "$cmd" ]; then
+  for d in /usr/bin /bin /usr/sbin /sbin
+  do
+    [ -x "$d/cvtsudoers" ] && { cmd="$d/cvtsudoers -e -f sudoers $sudoers"; break; }
+  done
+fi
+if [ -z "$cmd" ]; then
+  message ERROR sudo006e "" "sudo's rules cannot be read: cvtsudoers, which comes with sudo 1.8.23 and later, is not installed."
+  exit 0
+fi
+rules=`$cmd 2>&1`
+if [ $? -ne 0 ]; then
+  message ERROR sudo006e "`echo "$rules" | $SED -n 1p`" "sudo's rules cannot be read ($cmd); reading /etc/sudoers needs root."
+  exit 0
+fi
+
+tmp=$WORKDIR/sudo.$$
+safe_temp $tmp
+trap 'delete $tmp ; exit 1' 1 2 3 15
+
+# One line per finding, "KIND who<TAB>command": the continuation lines
+# joined, comments left out, the runas lists dropped, each command with
+# the tags in force for it
+echo "$rules" | $AWK '
+  /\\$/ { sub(/\\$/, ""); buf = buf $0; next }
+  { line = buf $0; buf = "" }
+  line ~ /^[ \t]*(#|$)/ { next }
+  line ~ /^Defaults/ { if (line ~ /![ \t]*authenticate/) print "noauth " line "\t"; next }
+  line ~ /^(Cmnd|User|Host|Runas)_Alias/ { next }
+  {
+    who = line; sub(/[ \t].*/, "", who)
+    rest = line; sub(/^[^=]*=/, "", rest)
+    gsub(/\([^)]*\)/, "", rest)
+    n = split(rest, c, ",")
+    nopw = 0
+    for (i = 1; i <= n; i++) {
+      x = c[i]
+      while (match(x, /^[ \t]*[A-Z_]+:/)) {
+        t = substr(x, RSTART, RLENGTH); gsub(/[ \t:]/, "", t)
+        if (t == "NOPASSWD") nopw = 1
+        if (t == "PASSWD") nopw = 0
+        x = substr(x, RSTART + RLENGTH)
+      }
+      sub(/^[ \t]+/, "", x); sub(/[ \t]+$/, "", x)
+      if (x == "" || x ~ /^!/) continue
+      if (nopw && x == "ALL") print "nopwall " who "\t"
+      else if (nopw) print "nopw " who "\t" x
+      if (x ~ /\*/) print "wild " who "\t" x
+    }
+  }' > $tmp
+
+$AWK -F'\t' '$1 ~ /^nopwall / { sub(/^nopwall /, "", $1); print $1 }' $tmp | $SORT -u |
+while read who
+do
+  message WARN sudo001w "Take NOPASSWD off, or limit it to the commands that need it." "$who may run any command as root with sudo, without a password: whoever gets that account's session gets root."
+done
+
+$AWK -F'\t' '$1 ~ /^noauth / { sub(/^noauth /, "", $1); print $1 }' $tmp | $SORT -u |
+while read rule
+do
+  message WARN sudo003w "Remove !authenticate." "sudo asks nobody for a password: \"$rule\"."
+done
+
+$AWK -F'\t' '$1 ~ /^wild / { sub(/^wild /, "", $1); print $1 "\t" $2 }' $tmp | $SORT -u |
+while IFS='	' read who what
+do
+  message WARN sudo004w "A * matches spaces and further arguments too; name the exact commands and arguments instead." "$who may run \"$what\" with sudo: the wildcard lets them add arguments of their own."
+done
+
+nopw=`$AWK -F'\t' '$1 ~ /^nopw / { sub(/^nopw /, "", $1); print $1 ": " $2 }' $tmp | $SORT -u |
+  $AWK '{ printf "%s%s", (NR > 1 ? "; " : ""), $0 }'`
+[ -n "$nopw" ] && message INFO sudo002i "$nopw." "Some commands may be run with sudo without a password."
+
+delete $tmp
+exit 0

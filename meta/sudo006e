@@ -1,0 +1,10 @@
+Id: sudo006e
+Severity: ERROR
+Category: accounts
+Check: check_sudo
+
+sudo is installed, but its rules could not be read, so what they allow
+is unknown. They are read through cvtsudoers, which comes with sudo
+1.8.23 and later and follows the includes and aliases; it needs root to
+read /etc/sudoers. The detail gives its error. Run Tigris as root, or
+on an older sudo read the rules with 'sudo -l -U USER'.

@@ -1,0 +1,13 @@
+Id: sudo003w
+Severity: WARN
+Category: accounts
+Check: check_sudo
+References: sudoers(5)
+
+A Defaults line turns off authentication (!authenticate): sudo asks
+the users it applies to for no password at all, as if every rule had
+NOPASSWD. With a plain "Defaults !authenticate" that is everyone sudo
+lets in.
+
+To fix it, remove the line with visudo, or narrow it (Defaults:user
+!authenticate) to an account that truly needs it.

@@ -1,0 +1,17 @@
+Id: pam001w
+Severity: WARN
+Category: accounts
+Check: check_pam
+References: pam_pwquality(8), pwquality.conf(5)
+
+No PAM module checks the quality of new passwords: none of
+pam_pwquality, pam_cracklib or pam_passwdqc is in a password stack in
+/etc/pam.d (or /usr/lib/pam.d). Users can then set passwords that are
+short, a dictionary word or their user name, and those fall to a
+guessing attack first. (pam_unix's obscure option, Debian's default,
+makes only a few weak checks.)
+
+To fix it, install libpam-pwquality on Debian and Ubuntu (it adds
+itself to common-password) or libpwquality on Fedora, RHEL and SUSE,
+and set its rules in /etc/security/pwquality.conf: minlen = 14 is the
+CIS benchmarks' figure.

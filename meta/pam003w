@@ -1,0 +1,17 @@
+Id: pam003w
+Severity: WARN
+Category: accounts
+Check: check_pam
+References: pam_faillock(8), faillock.conf(5)
+
+No PAM module locks an account after repeated failed logins: neither
+pam_faillock nor the older pam_tally2 is in an auth stack. Passwords
+can then be guessed at whatever rate the service allows, for as long
+as it takes. (SSH logins with keys alone are not affected.)
+
+To fix it, use pam_faillock: 'authselect enable-feature with-faillock'
+on Fedora and RHEL; elsewhere, pam_faillock.so preauth and authfail
+lines around pam_unix in the auth stack (common-auth on Debian and
+Ubuntu), as pam_faillock(8) shows. deny=5 and unlock_time=900 in
+/etc/security/faillock.conf are common settings. Locking can be used to
+lock users out on purpose, which is why root is exempt by default.
