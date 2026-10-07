@@ -166,6 +166,7 @@ TAIL=`findcmd tail`
 IFCONFIG=`findcmd ifconfig`
 IP=`findcmd ip`
 NETSTAT=`findcmd netstat`
+SS=`findcmd ss`
 IPTABLES=`findcmd iptables`
 HEAD=`findcmd head`
 MV=`findcmd mv`
@@ -235,7 +236,7 @@ export SORT COMM TAIL MV TR JOIN GROUPSS FILECMD UNIQ BASENAME HEAD
 export CHMOD CHOWN LN PASTE LSOF MD5SUM CUT COLUMN CMP
 export SNEFRU MD5 REALPATH PWCK GRPCK CHAGE MESG DIFF WC
 export PWD DPKG RPM AUTORPM APT ID EXPAND LASTLOG TEST TEE 
-export IFCONFIG IP IPTABLES NETSTAT
+export IFCONFIG IP IPTABLES NETSTAT SS
 
 
 UNAME=`findcmd uname`

@@ -47,7 +47,7 @@ jobs:
         run: sh tests/mounts_check.sh
       - name: Exit status, -q and --since
         run: sh tests/exit_check.sh
-      - name: check_listeningprocs against lsof fixtures
+      - name: check_listeningprocs against ss, lsof and netstat fixtures
         run: sh tests/listening_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh

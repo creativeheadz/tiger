@@ -152,6 +152,7 @@ RM rm
 SED sed
 SNEFRU snefru
 SORT sort
+SS ss
 STRINGS strings
 TAIL tail
 TCPD tcpd

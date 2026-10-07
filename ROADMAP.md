@@ -239,6 +239,19 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   nftables-only firewall made it fail. Fixtures captured from real
   rulesets in containers with their own network namespace (ufw on
   Ubuntu, firewalld on Fedora, nft on Debian); 15 assertions.
+- [x] `check_listeningprocs` reports IPv6 listeners. It kept only lsof's
+  IPv4 records, so a daemon on `[::]` or on a dual-stack socket was never
+  seen (on Hera: Syncthing's sync port, 22000); the netstat fallback cut
+  `:::22` at the first colon and misread every `udp6` line. The sockets
+  now come from `ss` when there is one (iproute2, on every current
+  distribution, where lsof often is not), then lsof, then netstat. A
+  process on `0.0.0.0` and on `::` is one finding, `::1` is loopback,
+  and the user is each process's effective uid from `/proc`, as lsof
+  has it, so the findings do not depend on the tool: on Hera ss and
+  lsof give the same 12. A host without lsof no longer gets an
+  `init001e` error from the check when netstat is there.
+  `tests/listening_check.sh` has fixtures for all three tools and
+  passes under mawk, gawk and busybox awk.
 
 ## 3.2.x: maintenance
 

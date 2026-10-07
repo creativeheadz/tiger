@@ -14,6 +14,13 @@ once for each protocol and address as "listening on ephemeral ports",
 with the ports themselves in the detail. Those ports are usually chosen
 by the kernel and change from run to run, so naming them in the message
 would make the finding look new every time.
+
+IPv4 and IPv6 sockets are both reported. A process listening on 0.0.0.0
+and on :: (or on one dual-stack socket) is one finding "on every
+interface"; ::1 counts as loopback, like 127.0.0.0/8. A socket bound to
+one device (SO_BINDTODEVICE, as DHCP clients do) is reported on that
+interface. The sockets are read with ss, or lsof or netstat where ss is
+missing.
 %lin003w
 Processes that have not been run by a valid user are listening on interfaces
 open to external networks. This processes might have been run by a valid user
@@ -47,9 +54,11 @@ that later on are closed this might be a false positive.
 You can fix these false positives by adjusting the tiger.ignore configuration
 file.
 %lin004i
-Netstat can be used instead of lsof in order to provide information
-on listening processes, however it will provide less info since it
-cannot determine the process (or PID) associated with the open socket
+Neither ss nor lsof was found, so the listening processes were read with
+netstat. It gives less: the process name is cut from its command line
+(an "avahi-daemon: r" rather than "avahi-daemon"), so the findings can
+differ from a run on a system with ss, and it may not be able to name
+the process at all. Installing iproute2, which provides ss, avoids this.
 or the user that runs it.
 %lin005f
 An installed file differs from what the package that provided it
