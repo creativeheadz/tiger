@@ -53,6 +53,7 @@ results = [
     ok("an acceptance with no expiry", dict(finding, accepted={"reason": "r", "until": "-"})),
     ok("a summary", summary),
     ok("a record with a field the schema does not know (forward compatibility)", dict(finding, future="x")),
+    ok("a finding with a seven-letter prefix, as TIGER's rootkit and rootdir ids have", dict(finding, id="rootkit001f", level="FAIL")),
     rejected("a run without the schema version", {k: v_ for k, v_ in run.items() if k != "schema"}),
     rejected("a newer schema version than this file describes", dict(run, schema=2)),
     rejected("a finding with an unknown level", dict(finding, level="NOTICE")),

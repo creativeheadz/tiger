@@ -109,7 +109,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^[a-z]{3,6}[0-9]{3}[a-z]$",
+          "pattern": "^[a-z]{3,7}[0-9]{3}[a-z]$",
           "description": "Stable message id, e.g. lin016f; the last letter repeats the level (a alert, f fail, w warn, i info, e error, c config)."
         },
         "check": {

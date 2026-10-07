@@ -35,7 +35,7 @@ order:
 | field | meaning |
 |---|---|
 | `level` | `ALERT`, `FAIL`, `WARN`, `INFO` or `ERROR`. Most to least urgent, `ERROR` meaning the check could not run. |
-| `id` | The message id, e.g. `lin016f`. Stable: `tigexp lin016f` explains it. The last letter repeats the level. |
+| `id` | The message id, e.g. `lin016f`: three to seven lower-case letters, three digits, and a last letter that repeats the level. Stable: `tigexp lin016f` explains it. |
 | `check` | The script that reported it. |
 | `message` | The text, on one line. |
 | `detail` | Optional. Extra lines the check printed (for example a file listing), joined with `\n`. |

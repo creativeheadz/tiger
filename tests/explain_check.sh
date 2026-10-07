@@ -92,13 +92,14 @@ grep -r "" $CODE 2>/dev/null | grep -v "^[^:]*:[ 	]*#" | grep -v "^scripts/check
         }
       }
     }' | sort -u > "$W/msg_ids.txt"
-deformed=$(grep -v '\$' "$W/msg_ids.txt" | grep -vE "^[a-z]+[0-9]{3}[a-z]$" || true)
+# The shape doc/tigris-report.schema.json requires of an id
+deformed=$(grep -v '\$' "$W/msg_ids.txt" | grep -vE "^[a-z]{3,7}[0-9]{3}[a-z]$" || true)
 if [ -z "$deformed" ]; then
   ok "every message id is well-formed"
 else
   bad "malformed message ids:"; echo "$deformed" | sed 's/^/     /'
 fi
-deformed=$(grep -vE "^[a-z]+[0-9]{3}[a-z]?$" "$W/pathmsg_ids.txt" || true)
+deformed=$(grep -vE "^[a-z]{3,7}[0-9]{3}[a-z]?$" "$W/pathmsg_ids.txt" || true)
 if [ -z "$deformed" ]; then
   ok "every pathmsg id is well-formed"
 else
@@ -111,7 +112,7 @@ fi
 grep -r "" $CODE 2>/dev/null | grep -v "^scripts/check_network:" \
   | grep -oE -- "--(WARN|FAIL|ALERT|ERROR|INFO|CONFIG)-- +\[[^]]*\]" \
   | sed -E "s/.*\[([^]]*)\].*/\1/" | sort -u > "$W/echo_ids.txt"
-deformed=$(grep -v '\$' "$W/echo_ids.txt" | grep -vE "^[a-z]+[0-9]{3}[a-z]?$" || true)
+deformed=$(grep -v '\$' "$W/echo_ids.txt" | grep -vE "^[a-z]{3,7}[0-9]{3}[a-z]?$" || true)
 if [ -z "$deformed" ]; then
   ok "every echoed finding id is well-formed"
 else
