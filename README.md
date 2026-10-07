@@ -184,7 +184,7 @@ package databases. Nothing in the image is run.
 
 | Reads an offline root | Skipped there, with the reason |
 |---|---|
-| Accounts and passwords (the root's passwd, shadow and group files, homes, dot files, every account's PATH, root's access), cron, package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, kernel settings, Secure Boot), and the checks that cannot read an offline root yet |
+| Accounts and passwords (the root's passwd, shadow and group files, homes, dot files, every account's PATH, root's access), cron, systemd units, package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, kernel settings, Secure Boot), and the checks that cannot read an offline root yet |
 
 On Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch the package
 checks report the same of a copy of a system as of the system itself, and

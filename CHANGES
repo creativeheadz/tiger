@@ -17,7 +17,8 @@ Changes since 3.4.0 (unreleased)
   is run. A check marks itself "# Tigris: offline" when it can read an
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
   deb_statoverride, check_updates (without the reboot question),
-  check_pam, check_ssh, check_sudo, the account checks and cron. Those marked "# Tigris: live system" (processes, sockets,
+  check_pam, check_ssh, check_sudo, the account checks, cron and
+  check_units. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -65,6 +66,11 @@ Changes since 3.4.0 (unreleased)
   accounts); its group pattern's A-z also took [, \, ], ^ and the
   backquote. Without column it prints the duplicates one a line instead
   of stopping.
+
+- check_units reads an offline root: systemctl cat refuses --root, so
+  units are read with systemd-analyze --root cat-config, which gives the
+  unit file and its drop-ins as systemctl cat does and resolves links
+  inside the root; an instance (getty@tty1) is read as its template.
 
 - cron: gen_cron and check_crontabs rewritten. /etc/crontab and
   /etc/cron.d, where most of a system's cron jobs are today, were never
