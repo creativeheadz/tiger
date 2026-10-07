@@ -38,6 +38,10 @@
 # ARC check_path - 05/10/99  Fixed problem with parse_csh
 #
 #
+# Tigris: offline
+#   every account's PATH from its dot files inside the root, and the
+#   directories and commands on it, owners named from the root's passwd.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir="."
@@ -107,8 +111,8 @@ checkcmds()
   okgroup=$Tiger_ROOT_PATH_OK_Group_Write
   [ "$_user" != 'root' ] && okgroup=$Tiger_PATH_OK_Group_Write
 
-  [ -d $_dir ] &&
-  $LS -Ld $_dir/*  2>/dev/null|
+  [ -d "`__here "$_dir"`" ] &&
+  if [ -n "$TIGRIS_ROOT" ]; then rootls "$_dir"; else $LS -Ld $_dir/* 2>/dev/null; fi |
   getpermit |
   while read _execfile _owner _group ur uw ux gr gw gx or ow ox suid sgid stk
   do
@@ -182,7 +186,7 @@ parse_path()
       [ "$user" = 'root' ] && {
 	message WARN path004w "" "PATH in $user's $file contains '.'"
       }
-    elif [ -d "$comp" ]; then
+    elif [ -d "`__here "$comp"`" ]; then
       lgetpermit "$comp" |
       pathmsg path011 path012 "$comp" "$user" "The PATH set in $user's $file contains"
     fi
@@ -200,19 +204,31 @@ parse_path()
 # it.  We try to strip out command substitions or anything else
 # that might execute a command, but...
 #
+# safe_assignments: of the lines on standard input, the plain assignments
+# that are safe to source: XXX_NAME=value, the value without whitespace,
+# redirections, pipes, &, ;, parentheses or backquotes. What is kept is
+# sourced, as root, and the files it comes from are users' own (or, on an
+# offline root, an image's): "PATH=x>/etc/passwd" in a .profile used to be
+# kept, and sourcing it truncated /etc/passwd.
+safe_assignments()
+{
+  $GREP '^XXX_[a-zA-Z_][a-zA-Z0-9_]*=[^<>|&;()`[:space:]]*$'
+}
+
 parse_bsh()
 {
   user="$1"
   dir="$2"
   file="$3"
-  [ ! -f "$dir/$file" ] && return
+  rcfile=`__here "$dir/$file"`
+  [ ! -f "$rcfile" ] && return
   
   $AWK '
   BEGIN {LINE="";}
   $0 ~ /\\$/ {printf("%s ", substr($0, 1, length($0)-1));}
   $0 !~ /\\$/ {printf("%s\n", $0);}
   END {printf("\n");}
-  ' $dir/$file |
+  ' "$rcfile" |
   $GREP -v '".*;.*"' |
   $TR ';' '\012' |
   # Bob Hall suggests chaging the SED from
@@ -235,7 +251,7 @@ parse_bsh()
   $GREP -v '\$(' |
   $GREP -v '^.*=[^ 	]*[ 	]' |
   $GREP -v 'DISPLAY' |
-  $GREP '^XXX_[a-zA-Z_][a-zA-Z0-9]*=' > $WORKDIR/pth.$$
+  safe_assignments > $WORKDIR/pth.$$
   #
   # Now, source the file to get variable values.
   # Use a subshell so we don't contaminate.  Everything
@@ -266,13 +282,14 @@ parse_csh()
   dir="$2"
   file="$3"
 
-  [ ! -f "$dir/$file" ] && return
+  rcfile=`__here "$dir/$file"`
+  [ ! -f "$rcfile" ] && return
   
   $AWK '
   $0 ~ /\\$/ {printf("%s ", substr($0, 1, length($0)-1));}
   $0 !~ /\\$/ {print}
   END {printf("\n");}
-  ' $dir/$file |
+  ' "$rcfile" |
   $GREP -v '".*;.*"' |
   $TR ';' '\012' |
   $SED -e 's/#.*$//' \
@@ -292,7 +309,7 @@ parse_csh()
   $GREP -v '`' |
   $GREP -v 'DISPLAY' |
   $GREP -v '^.*=[^ 	]*[ 	]' |
-  $GREP '^XXX_[a-zA-Z_][a-zA-Z0-9]*=' > $WORKDIR/pth.$$
+  safe_assignments > $WORKDIR/pth.$$
   #
   # Now, source the file to collect variable values.  Use
   # a subshell so we don't contaminate.  Everything should
@@ -321,16 +338,17 @@ check_user()
     return
   }
 
-  [ -s $dir/.profile ] && parse_bsh $user $dir .profile
-  [ -s $dir/.cshrc ] && parse_csh $user $dir .cshrc
-  [ -s $dir/.login ] && parse_csh $user $dir .login
-  [ -s $dir/.tcshrc ] && parse_csh $user $dir .tcshrc
-  [ -s $dir/.bashrc ] && parse_bsh $user $dir .bashrc
-  [ "$user" = 'root' -a ! -f $dir/.profile ] && {
+  h=`__here "$dir"`
+  [ -s "$h/.profile" ] && parse_bsh $user $dir .profile
+  [ -s "$h/.cshrc" ] && parse_csh $user $dir .cshrc
+  [ -s "$h/.login" ] && parse_csh $user $dir .login
+  [ -s "$h/.tcshrc" ] && parse_csh $user $dir .tcshrc
+  [ -s "$h/.bashrc" ] && parse_bsh $user $dir .bashrc
+  [ "$user" = 'root' -a ! -f "$h/.profile" ] && {
     parse_path $user default $SYSDEFAULTPATH
   }
   # Only do this if no /bin/csh config files, but there IS a /bin/sh config
-  [ "$user" = 'root' -a ! -f $dir/.cshrc -a ! -f $dir/.login -a -f $dir/.profile ] && {
+  [ "$user" = 'root' -a ! -f "$h/.cshrc" -a ! -f "$h/.login" -a -f "$h/.profile" ] && {
     parse_path $user default $SYSDEFAULTPATH
   }
 }
@@ -345,28 +363,30 @@ test ! -n "$REALPATH" -o ! $TESTEXEC "$REALPATH" && realpath="echo"
 # On Linux the initial PATH usually comes from /etc/environment through
 # pam_env, not from /etc/profile; when it does, /etc/profile need not set it
 pamenvpath=
-[ -r /etc/environment ] && [ -r /etc/pam.d/login ] &&
-  $GREP -q '^PATH=' /etc/environment &&
-  $GREP -q '^[^#]*pam_env\.so' /etc/pam.d/login && pamenvpath=Y
+environment=`__here /etc/environment` pamlogin=`__here /etc/pam.d/login`
+[ -r "$environment" ] && [ -r "$pamlogin" ] &&
+  $GREP -q '^PATH=' "$environment" &&
+  $GREP -q '^[^#]*pam_env\.so' "$pamlogin" && pamenvpath=Y
 [ -n "$Tiger_Global_PATH" ] && {
   for file in $Tiger_Global_PATH
     do
-      [ -r $file ] && {
+      fh=`__here $file`
+      [ -r "$fh" ] && {
         case $file in
           /etc/profile|/etc/bashrc)
-            found=`$GREP -v \# $file | $GREP PATH | $GREP export 2>/dev/null`
+            found=`$GREP -v \# "$fh" | $GREP PATH | $GREP export 2>/dev/null`
             if [ -z "$found" ] && [ -z "$pamenvpath" ]; then
                 message WARN path009w "" "$file does not export an initial setting for PATH."
             fi
             ;;
           /etc/csh.login)
-            found="`$GREP -v \# $file | $GREP PATH | $GREP setenv 2>/dev/null`" 
+            found="`$GREP -v \# "$fh" | $GREP PATH | $GREP setenv 2>/dev/null`" 
             if [ -z "$found" ]; then
                 message WARN path009w "" "$file does not setenv an initial setting for PATH."
             fi
             ;;
          *)
-            found="`$GREP -v \# $file | $GREP PATH `"
+            found="`$GREP -v \# "$fh" | $GREP PATH `"
             if [ -z "$found" ]; then
                 message WARN path009w "" "$file does not have an initial setting for PATH."
             fi
@@ -392,8 +412,13 @@ pamenvpath=
 	echo
 	echo "# Checking accounts from `$CAT $passwd_set.src`..."
   
+	# which host each home is on; on an offline root, all its own
 	$AWK -F: '{print $1, $6}' $passwd_set |
-	$BASEDIR/util/${GETFSHOST:=getfs-std} > $WORKDIR/home.hosts.$$
+	if [ -n "$TIGRIS_ROOT" ]; then
+	  $AWK -v h="$HOSTNAME" '{ print $1, $2, h }'
+	else
+	  $BASEDIR/util/${GETFSHOST:=getfs-std}
+	fi > $WORKDIR/home.hosts.$$
       
 	$AWK -F: '{ printf("%s %s\n", $1, $6); }' $passwd_set |
 	$JOIN -o 1.1 1.2 2.3 - $WORKDIR/home.hosts.$$ |

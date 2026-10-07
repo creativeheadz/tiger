@@ -15,7 +15,7 @@
   <br>
   <img src="https://img.shields.io/badge/finding%20ids-393-e8833a?style=flat-square&labelColor=0f1822" alt="393 finding ids">
   <img src="https://img.shields.io/badge/categories-15-e8833a?style=flat-square&labelColor=0f1822" alt="15 categories">
-  <img src="https://img.shields.io/badge/test%20suites-30-e8833a?style=flat-square&labelColor=0f1822" alt="30 test suites">
+  <img src="https://img.shields.io/badge/test%20suites-31-e8833a?style=flat-square&labelColor=0f1822" alt="31 test suites">
   <img src="https://img.shields.io/badge/CI-Debian%20%C2%B7%20Ubuntu%20%C2%B7%20Fedora%20%C2%B7%20Rocky%20%C2%B7%20openSUSE%20%C2%B7%20Alpine%20%C2%B7%20Arch-c6d6e2?style=flat-square&labelColor=0f1822" alt="Tested on Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch">
 </p>
 
@@ -177,13 +177,14 @@ sudo ./tigris --root /mnt/image
 A disk mounted from another machine, a container image unpacked into a
 directory, a VM snapshot: Tigris reads its files under that directory and
 follows its symbolic links inside it, so an absolute link in the image
-never leads to this machine's files. This machine's dpkg, apt, rpm, dnf,
-zypper, apk or pacman are pointed at the image's package databases.
-Nothing in the image is run.
+never leads to this machine's files, and file owners are named by the
+image's own passwd and group files, not this machine's. This machine's
+dpkg, apt, rpm, dnf, zypper, apk or pacman are pointed at the image's
+package databases. Nothing in the image is run.
 
 | Reads an offline root | Skipped there, with the reason |
 |---|---|
-| Package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, kernel settings, Secure Boot), and the checks that cannot read an offline root yet |
+| Accounts and passwords (the root's passwd, shadow and group files, homes, dot files, every account's PATH, root's access), package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, kernel settings, Secure Boot), and the checks that cannot read an offline root yet |
 
 On Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch the package
 checks report the same of a copy of a system as of the system itself, and

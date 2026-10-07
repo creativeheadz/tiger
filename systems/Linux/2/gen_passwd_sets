@@ -51,6 +51,10 @@
 #      Apply patch by Timo Lindfors to add support for SHA-512 passwords
 #      (This is the default used in Debian GNU/Linux squeeze and later releases)
 #      Corresponds to patch #7186
+# Linux/2/gen_passwd_sets - 10/07/2026 - atrimbitas
+#      An offline root (--root): its own /etc/passwd and /etc/shadow,
+#      resolved inside it, and nothing from NIS or LDAP, which would be
+#      asked over the network and are not the image.
 #
 #-----------------------------------------------------------------------------
 #
@@ -67,7 +71,22 @@
 [ -z "$GETENT" ] && GETENT=`command -v getent`
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
+# The files read: this system's, or those of the offline root (--root),
+# resolved inside it. The sets still name them by their own paths.
+etcfile()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then
+    printf '%s\n' "$1" | AWK=$AWK sh "$BASEDIR/util/rootpath" "$TIGRIS_ROOT" "$TIGRIS_LINKS"
+  else
+    echo "$1"
+  fi
+}
+PASSWD=`etcfile /etc/passwd`
+SHADOW=`etcfile /etc/shadow`
+NSSWITCH=`etcfile /etc/nsswitch.conf`
+
 local=0
+[ -n "$TIGRIS_ROOT" ] && local=1
 for parm
 do
   case "$parm" in
@@ -114,9 +133,9 @@ zappasswd()
   done
 }
 
-if [ -f /etc/nsswitch.conf ]
+if [ -f "$NSSWITCH" ]
 then
-    INPUTS=` $GREP '^passwd' /etc/nsswitch.conf | $AWK '{
+    INPUTS=` $GREP '^passwd' "$NSSWITCH" | $AWK '{
 	for(i=2;i<=NF;i++)
           print $i
       }' `
@@ -128,18 +147,18 @@ for source in $INPUTS
 do
   case $source in
     files|compat)
-	if [ -f /etc/shadow ] 
+	if [ -f "$SHADOW" ] 
 	    then
-		if [ -r /etc/shadow ] 
+		if [ -r "$SHADOW" ] 
 		then
-		$CAT /etc/passwd /etc/shadow | 
+		$CAT "$PASSWD" "$SHADOW" | 
 		$AWK -F : '{ print $1 } ' | $SORT -u >$WORKDIR/u.$$
 		>$WORKDIR/p.$$
 		>$WORKDIR/s.$$
 		$CAT $WORKDIR/u.$$ |
 		while read user; do
-			$GREP "^$user:" /etc/passwd >>$WORKDIR/p.$$
-			$GREP "^$user:" /etc/shadow >>$WORKDIR/s.$$
+			$GREP "^$user:" "$PASSWD" >>$WORKDIR/p.$$
+			$GREP "^$user:" "$SHADOW" >>$WORKDIR/s.$$
 		done
 		$JOIN -t: -e " " -o 2.1 1.2 2.3 2.4 2.5 2.6 2.7 $WORKDIR/s.$$ $WORKDIR/p.$$ |
 		{
@@ -162,7 +181,7 @@ do
 		fi
 
 	    else
-                $CAT /etc/passwd |
+                $CAT "$PASSWD" |
                 {
                         if [ "$passwordflag" = 'Y' ]; then
                                 $CAT
@@ -179,7 +198,7 @@ do
 	     echo "--WARN-- [pass022w] The '+' key in the /etc/passwd file should only be used in nsswitch 'compat' mode."
 	   }
 
-	    [ "$source" = "compat" ] && [ -n "$YPCAT" ] && {
+	    [ "$source" = "compat" ] && [ "$local" != 1 ] && [ -n "$YPCAT" ] && {
 		$YPCAT passwd > $WORKDIR/nis_passwd.$$ 2>/dev/null
 		if [ $? -eq 0 ] ; then
 		echo "NIS" > $WORKDIR/nis_passwd.$$.src

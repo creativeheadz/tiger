@@ -359,7 +359,10 @@ aidepid=
   run_script check_passwd >> $logtmp
 }
 
-[ "$Tiger_Check_PASSWD_FORMAT" != 'N' ] && {
+# The password files' format: off by default, since pwck says the same;
+# on an offline root pwck is not run (it would read this host's files),
+# so it comes on with the passwd check
+[ "$Tiger_Check_PASSWD_FORMAT" != 'N' ] || { [ -n "$TIGRIS_ROOT" ] && [ "$Tiger_Check_PASSWD" != 'N' ]; } && {
   echo "`$TIMECMD`> Checking password format..."
   run_script check_passwdformat >> $logtmp
 }

@@ -67,6 +67,10 @@
 # Tigris: needs root
 #   /etc/shadow is root's to read.
 #
+# Tigris: offline
+#   the root's password files, shells and login.defs; this host's pwck and
+#   visudo are not run on it (check_passwdformat and check_sudo read the root's).
+#
 #-----------------------------------------------------------------------------
 # TODO:
 # - Some 'valid' shells such as nologin or noshell might be listed under
@@ -249,8 +253,8 @@ if [ "$OS" = "SunOS" ] ; then
 	shcase="$shcase|/sbin/sh|/usr/bin/bash"
 fi
 
-[ -n "$ETCSHELLS" -a -s "$ETCSHELLS" ] && {
-  shells=`$GREP -v '^#' $ETCSHELLS`
+[ -n "$ETCSHELLS" ] && [ -s "`__here $ETCSHELLS`" ] && {
+  shells=`$GREP -v '^#' "\`__here $ETCSHELLS\`"`
   shcase=`echo $shells | $TR ' ' '|'`
 }
 
@@ -322,13 +326,16 @@ done < $WORKDIR/pass.list.$$
 
 # See if the system is configured for shadow passwords.
 [ "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
-  [ -s /etc/passwd ] && [ -s /etc/shadow ] || {
+  [ -s "`__here /etc/passwd`" ] && [ -s "`__here /etc/shadow`" ] || {
     message WARN pass007w "" "System is not properly configured for shadow passwords."
   }
 }
 
-# Verify the password file format.
-[ -n "$PWCK" ] && {
+# Verify the password file format. On an offline root this host's pwck
+# would check this host's files (pwck -R chroots, and glibc may then load
+# the root's NSS modules: the root's code, run as root), so it is left to
+# check_passwdformat, which reads the root's.
+[ -n "$PWCK" ] && [ -z "$TIGRIS_ROOT" ] && {
   pwckerr=`$PWCK 2>&1`
   if [ -n "$pwckerr" ] ; then
     message WARN pass006w "" "Integrity of password files questionable ($PWCK)."
@@ -338,7 +345,8 @@ done < $WORKDIR/pass.list.$$
 }
 
 # Verify the sudo file format.
-if [ -n "`command -v visudo`" ] && [ -r /etc/sudoers ] ; then
+# (on an offline root, check_sudo reads its sudoers)
+if [ -z "$TIGRIS_ROOT" ] && [ -n "`command -v visudo`" ] && [ -r /etc/sudoers ] ; then
     if ! `visudo -cq` ; then
         message FAIL pass021f "" "Integrity of sudoers files questionable (run 'visudo -c')."
     fi
@@ -346,11 +354,11 @@ fi
         
 
 # Check the password constraints.
-[ -r "$LOGINDEF" ] && [ -z "$PAMLOGINDEF" -o ! -f "$PAMLOGINDEF" ] && \
+[ -r "`__here $LOGINDEF`" ] && { [ -z "$PAMLOGINDEF" ] || [ ! -f "`__here $PAMLOGINDEF`" ]; } && \
 [ -n "$Tiger_Passwd_Constraints" ]  && {
   for param in $Tiger_Passwd_Constraints
     do
-    if [ ! `$GREP -v '#' $LOGINDEF | $GREP "$param"` ] >/dev/null 2>&1
+    if [ ! `$GREP -v '#' "\`__here $LOGINDEF\`" | $GREP "$param"` ] >/dev/null 2>&1
       then
         message WARN pass007w "" "Password control $param missing from $LOGINDEF."
     fi

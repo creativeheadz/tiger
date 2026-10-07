@@ -38,6 +38,9 @@
 # 07/25/2002 jfs  Changed TigerInstallDir to .
 # 05/30/1999  Added feature to check for no console root logins
 #
+# Tigris: offline
+#   the root's login and access files; sshd's configuration is check_ssh's.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'
@@ -90,54 +93,64 @@ echo "# Performing common access checks for root (in /etc/default/login, /secure
 haveallcmds AWK GREP CAT GEN_PASSWD_SETS JOIN LS RM || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
-if [ -f /etc/default/login ]; then
-  if [ -z "`$GREP '^CONSOLE' /etc/default/login`" ]; then
+# The files read: this system's, or an offline root's (--root), resolved in it
+deflogin=`__here /etc/default/login`
+securetty=`__here /etc/securetty`
+ttytab=`__here /etc/ttytab`
+accessconf=`__here /etc/security/access.conf`
+ftpusers=`__here /etc/ftpusers`
+xresources=`__here /etc/X11/xdm/Xresources`
+gdmconf=`__here /etc/X11/gdm/gdm.conf`
+
+if [ -f "$deflogin" ]; then
+  if [ -z "`$GREP '^CONSOLE' "$deflogin"`" ]; then
      message WARN root001w "" "Remote root login allowed in /etc/default/login."
      echo
   fi
 fi
 
-if [ -f /etc/securetty ]; then
-  if [ -n "`$GREP '^ttyp' /etc/securetty`" ]; then
+if [ -f "$securetty" ]; then
+  if [ -n "`$GREP '^ttyp' "$securetty"`" ]; then
      message WARN root001w "" "Remote root login allowed in /etc/securetty"
      echo
   fi
 fi   
 
-if [ -f /etc/ttytab ]; then
-  if [ -n "`$GREP ' secure' /etc/ttytab | $GREP -v console`" ]; then
+if [ -f "$ttytab" ]; then
+  if [ -n "`$GREP ' secure' "$ttytab" | $GREP -v console`" ]; then
      message WARN root001w "" "Remote root login allowed in /etc/ttytab"
      echo
   fi
 fi   
-if [ -f /etc/security/access.conf ]; then
-  if [ -n "`$GREP '^+:root' /etc/security/access.conf`" ]; then
+if [ -f "$accessconf" ]; then
+  if [ -n "`$GREP '^+:root' "$accessconf"`" ]; then
      message WARN root001w "" "Remote root login allowed in /etc/security/access.conf"
      echo
   fi
 fi
-if [ -f /etc/ftpusers ]; then
-  if [ -z "`$GREP '^root' /etc/ftpusers`" ]; then
+if [ -f "$ftpusers" ]; then
+  if [ -z "`$GREP '^root' "$ftpusers"`" ]; then
      message WARN root002w "" "Remote root access allowed in /etc/ftpusers"
      echo
   fi
 fi
-if [ -f /etc/X11/xdm/Xresources ]; then
-  if [ "`$GREP ^xlogin.Login.allowRootLogin /etc/X11/xdm/Xresources | $CUT -d : -f 2`" = "true" ]; then
+if [ -f "$xresources" ]; then
+  if [ "`$GREP ^xlogin.Login.allowRootLogin "$xresources" | $CUT -d : -f 2`" = "true" ]; then
      message WARN root004w "" "Root access allowed for xdm"
      echo
   fi
 fi
-if [ -f /etc/X11/gdm/gdm.conf ]; then
-  [ "`$GREP ^AllowRoot /etc/X11/gdm/gdm.conf | $CUT -d = -f 2`" = "true" ] || \
-  [ "`$GREP ^AllowRemoteRoot /etc/X11/gdm/gdm.conf | $CUT -d = -f 2`" = "true" ] &&
+if [ -f "$gdmconf" ]; then
+  [ "`$GREP ^AllowRoot "$gdmconf" | $CUT -d = -f 2`" = "true" ] || \
+  [ "`$GREP ^AllowRemoteRoot "$gdmconf" | $CUT -d = -f 2`" = "true" ] &&
   {
      message WARN root004w "" "Root access allowed for gdm"
      echo
   }
 fi
 
-[ -n "$MESG" -a -x "$MESG" ] && {
+# (the terminal Tigris runs on: nothing to do with an offline root)
+[ -z "$TIGRIS_ROOT" ] && [ -n "$MESG" -a -x "$MESG" ] && {
   tty >/dev/null 2>&1 && {
   if $MESG | $GREP "is y" >/dev/null
   then
@@ -145,6 +158,10 @@ fi
   fi
   }
 }
+
+# On an offline root check_ssh works out sshd's configuration from its
+# files; this host's sshd_config is not the root's
+[ -n "$TIGRIS_ROOT" ] && exit 0
 
 [ -z "$SSHD_CONFIG" ] && {
 if [ -f /usr/local/etc/sshd_config ]; then

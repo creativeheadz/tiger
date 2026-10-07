@@ -29,6 +29,10 @@
 # 08/09/2003 jfs - Renamed to check_passwdspec and added CHAGE to dependancies.
 # 07/10/2003 rbradetich@uswest.net - Initial release
 #
+# Tigris: offline
+#   the root's passwd and shadow, password aging worked out from the root's
+#   shadow as chage would (this host's chage reads this host's).
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'
@@ -66,37 +70,55 @@ done
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
   haveallfiles BASEDIR || exit 1
-  haveallcmds CUT CHAGE || exit 1
+  haveallcmds AWK CUT || exit 1
   
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
   exit 0
 }
 #------------------------------------------------------------------------
 haveallfiles BASEDIR || exit 1
-haveallcmds CUT CHAGE || exit 1
+haveallcmds AWK CUT || exit 1
 
 echo
 echo "# Verifying system specific password checks..."
 
+# The files: this system's, or an offline root's (--root), resolved in it
+passwd=`__here /etc/passwd`
+shadow=`__here /etc/shadow`
+
+# never_expires USER: what chage -l calls "Password expires: never", worked
+# out from the shadow file the way chage does it: no date of last change,
+# or a maximum age that is unset, negative or ten thousand days or more.
+# (This used to grep chage's output for "Password Expires:" and "Never",
+# which chage has not printed in years, so pass019w never fired; reading
+# the shadow file also works on an offline root, where chage would read
+# this host's.)
+never_expires()
+{
+  $AWK -F: -v u="$1" '$1 == u { found = 1; never = ($3 == "" || $5 == "" || $5 < 0 || $5 >= 10000) } END { exit !(found && never) }' "$shadow" 2>/dev/null
+}
+
 saveifs=$IFS
 IFS=:
 # Check for password aging
-[ -r /etc/passwd ] && {
-  $CUT -d: -f1,2 /etc/passwd |
+[ -r "$passwd" ] && {
+  $CUT -d: -f1,2 "$passwd" |
   while read user pwd
   do
  
-    [ "$Tiger_Check_PASSWD_SHADOW" = 'Y' ] && [ -s /etc/passwd ] && [ "x$pwd" != "xx" ] && {
+    [ "$Tiger_Check_PASSWD_SHADOW" = 'Y' ] && [ -s "$passwd" ] && [ "x$pwd" != "xx" ] && {
       message WARN pass020w "" "Login ID $user is not configured to use shadow passwords."
     }
 
    # For expiration, pull the password string from /etc/shadow if it exists
-   [ -r /etc/shadow ] && { 
-        pwd=`$GREP "^$user:" /etc/shadow | $CUT -d: -f2`
+   [ -r "$shadow" ] && { 
+        pwd=`$GREP "^$user:" "$shadow" | $CUT -d: -f2`
    }
-   # Skip this check if the user account is locked
-   [ "x$pwd" != 'x!' ] && [ "x$pwd" != 'x*' ] && {
-    	if $CHAGE -l $user 2>/dev/null | $GREP "Password Expires:" | $GREP Never >/dev/null 2>&1
+   # Skip this check if the user account is locked: '!' or '*' and what
+   # follows them ("!*" for systemd's accounts, "!!" on Fedora, "!$6$..."
+   # for a locked password), or no password at all (pass011f)
+   case "$pwd" in '!'*|'*'*|'') false ;; esac && {
+    	if never_expires $user
     	then
           message WARN pass019w "" "Login ID $user does not have password aging enabled."
     	fi

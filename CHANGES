@@ -17,7 +17,7 @@ Changes since 3.4.0 (unreleased)
   is run. A check marks itself "# Tigris: offline" when it can read an
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
   deb_statoverride, check_updates (without the reboot question),
-  check_pam, check_ssh and check_sudo. Those marked "# Tigris: live system" (processes, sockets,
+  check_pam, check_ssh, check_sudo and the account checks. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -30,6 +30,41 @@ Changes since 3.4.0 (unreleased)
   the copy as of the system; tests/offline_check.sh covers the rest.
   Mounted read-only, dnf 4 and zypper cannot answer (they must write
   into the root) and upd004i quotes them.
+
+- The account checks read an offline root: check_passwd, check_group,
+  check_passwdformat, check_passwdspec, check_accounts, check_root,
+  check_issue, check_rootdir and check_path, with the password and group
+  sets built from the root's own files (NIS and LDAP, which would be
+  asked over the network, are left out). getpermit and pathmsg, which
+  most of the old checks go through, take the root's paths, resolve them
+  inside it and name owners and groups from its passwd and group files,
+  so a file owned by uid 1000 is reported as the image's user 1000, not
+  this host's. Neither this host's pwck, grpck, visudo nor chage is run
+  on an image's files (pwck -R would chroot, and glibc can then load the
+  image's NSS modules: the image's code, as root); check_passwdformat
+  runs in pwck's place.
+
+- Security: check_path sourced NAME=value lines taken from users' dot
+  files to learn their PATH, and its filters let a redirection through,
+  so "PATH=x>/etc/passwd" in any user's .profile truncated /etc/passwd
+  when Tigris ran as root with Tiger_Check_PATHALL=Y (or root's own
+  .profile, always). Only assignments without whitespace, redirections,
+  pipes, &, ;, parentheses or backquotes are sourced now.
+
+- pass019w (password aging off) never fired: it looked for "Password
+  Expires:" and "Never" in chage's output, which chage has not printed in
+  years. It is worked out from the shadow file now, as chage does, and
+  accounts locked with "!*" (systemd's) or "!!" (Fedora) are not counted.
+  A system whose users have no maximum password age reports them again.
+
+- acc005w (a disabled account with a crontab) never looked where Debian
+  keeps crontabs, /var/spool/cron/crontabs.
+
+- check_passwdformat accepts names that start with an underscore
+  (Debian's _apt and _ssh), contain dots or end in $ (Samba's machine
+  accounts); its group pattern's A-z also took [, \, ], ^ and the
+  backquote. Without column it prints the duplicates one a line instead
+  of stopping.
 
 - check_ssh reads an offline root too: sshd is not run there (it would
   be the host's, with the host's keys), so the effective configuration

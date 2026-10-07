@@ -587,9 +587,10 @@ what scripts and cron see.
   dpkg, rpm, apk and pacman; updates waiting; PAM; dpkg's overrides;
   sshd's configuration, worked out from its files as sshd would (the
   same findings as `sshd -T` on five distributions); sudo's rules, its
-  includes read inside the root. Still to read one: systemd units
-  (`systemctl --root`), the file system scan, accounts and passwords,
-  cron, the sysctl.d files, storage's fstab and crypttab.
+  includes read inside the root; accounts and passwords, owners named by
+  the root's own passwd. Still to read one: systemd units (`systemctl
+  --root`), the file system scan, cron, the sysctl.d files, storage's
+  fstab and crypttab.
 - [ ] **A transparent summary**: counts by severity and category, and any
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old

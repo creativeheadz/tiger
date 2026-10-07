@@ -343,10 +343,11 @@ pathmsg()
   __trailer="$6"
 
   __dir=0
-  [ -d "$__path" ] && __dir=1
+  __phere=`__here "$__path"`
+  [ -d "$__phere" ] && __dir=1
   
   __exec=0
-  [ -f "$__path" ] && {	
+  [ -f "$__phere" ] && {	
     set X `getpermit "$__path"`
     shift 4
 
@@ -386,7 +387,7 @@ pathmsg()
 
     # A sticky directory above the path (/tmp) lets others add entries but
     # not replace one they do not own, so its write bits do not matter
-    [ "$stk" = 1 ] && [ "$__path" != "$__comp" ] && [ -d "$__comp" ] && { gw=0; ow=0; }
+    [ "$stk" = 1 ] && [ "$__path" != "$__comp" ] && [ -d "`__here "$__comp"`" ] && { gw=0; ow=0; }
 
     case "$gw$ow" in
       00) __access='';;
@@ -481,8 +482,42 @@ __getpermit()
    }'
 }
 
+# __rootpermit: getpermit for an offline root (--root). The paths are the
+# audited system's, given as arguments or one a line; each is resolved
+# inside the root, and its owner and group are named from that system's
+# passwd and group files, not this host's. The path printed is the one
+# given, so messages name the system's own paths.
+__rootpermit()
+{
+  __rootpw=`rootfile /etc/passwd`
+  __rootgr=`rootfile /etc/group`
+  if [ -n "$1" ]; then printf '%s\n' "$@"; else cat; fi |
+  while IFS= read -r __rp
+  do
+    __rh=`rootfile "$__rp"`
+    [ -n "$__rh" ] && printf '%s\t%s\n' "$__rp" "`$LS -ldn \"$__rh\" 2>/dev/null`"
+  done |
+  $AWK -F'\t' -v pw="$__rootpw" -v gr="$__rootgr" '
+    BEGIN {
+      while ((getline l < pw) > 0) { split(l, f, ":"); if (!(f[3] in u)) u[f[3]] = f[1] }
+      while ((getline l < gr) > 0) { split(l, f, ":"); if (!(f[3] in g)) g[f[3]] = f[1] }
+    }
+    {
+      if (split($2, a, " ") < 4) next
+      printf("%s %s %s ", $1, (a[3] in u) ? u[a[3]] : a[3], (a[4] in g) ? g[a[4]] : a[4])
+      for (i = 2; i < 11; i++) {
+        c = substr(a[1], i, 1)
+        printf("%s ", (c != "-" && c != "S" && c != "T") ? 1 : 0)
+      }
+      printf("%s ", (substr(a[1], 4, 1) == "s" || substr(a[1], 4, 1) == "S") ? 1 : 0)
+      printf("%s ", (substr(a[1], 7, 1) == "s" || substr(a[1], 4, 1) == "S") ? 1 : 0)
+      printf("%s \n", (substr(a[1], 10, 1) == "t" || substr(a[1], 10, 1) == "T") ? 1 : 0)
+    }'
+}
+
 getpermit()
 {
+  [ -n "$TIGRIS_ROOT" ] && { __rootpermit "$@"; return; }
   gp="$GETPERMIT"
   [ ! -n "$gp" ] && gp="__getpermit"
   if [ -n "$1" ]; then
@@ -510,7 +545,14 @@ lgetpermit()
 {
   _file="$1"
   _saveifs=$IFS
-  __decomp="`$realpath \"$_file\"`"
+  # Offline, the components are the audited system's paths, each resolved
+  # inside the root by getpermit: this host's realpath would follow links
+  # out of it
+  if [ -n "$TIGRIS_ROOT" ]; then
+    __decomp=$_file
+  else
+    __decomp="`$realpath \"$_file\"`"
+  fi
 
   for __acomp in $__decomp
   do
@@ -573,6 +615,8 @@ cleanup()
 #
 mount_alive()
 {
+  # an offline root's mounts are not this host's to probe
+  [ -n "$TIGRIS_ROOT" ] && return 0
   [ -n "$TIMEOUT" ] || return 0
   __probe=${Tiger_Mount_Probe_Cmd:-$DF}
   [ -n "$__probe" ] || return 0
@@ -618,6 +662,14 @@ rootpaths()
 rootfile()
 {
   printf '%s\n' "$1" | rootpaths
+}
+# __here PATH: where PATH of the audited system is on this host: itself on
+# the running system, resolved inside the root when auditing an offline
+# one. Unlike rootfile it never prefixes the tests' Tiger_Sysctl_Root, so
+# the old checks that call it behave as they always have on a live system.
+__here()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then rootfile "$1"; else printf '%s\n' "$1"; fi
 }
 rootls()
 {

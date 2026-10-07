@@ -80,6 +80,10 @@ jobs:
         run: sh tests/nonroot_check.sh
       - name: tigris --root on an offline root, and util/rootpath
         run: sh tests/offline_check.sh
+      - name: the account checks on an offline root, as a user and as root
+        run: |
+          sh tests/offline_accounts_check.sh
+          sudo sh tests/offline_accounts_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: ShellCheck (errors)

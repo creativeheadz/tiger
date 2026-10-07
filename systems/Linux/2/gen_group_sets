@@ -20,6 +20,9 @@
 # 01/15/2004 - jfs - Added some defaults to test the script standalon
 #                    and avoid errors when using YPCAT even if its not defined.
 #
+# 10/07/2026 - atrimbitas - An offline root (--root): its own /etc/group,
+#                    resolved inside it, and nothing from NIS.
+#
 #-----------------------------------------------------------------------------
 #
 
@@ -34,12 +37,17 @@
 [ -z "$WORKDIR" ] && WORKDIR=/tmp
 
 
-$GREP -v '^[-+]' /etc/group |
+# The group file: this system's, or the offline root's, resolved inside it
+GROUP=/etc/group
+[ -n "$TIGRIS_ROOT" ] &&
+  GROUP=`printf '/etc/group\n' | AWK=$AWK sh "$BASEDIR/util/rootpath" "$TIGRIS_ROOT" "$TIGRIS_LINKS"`
+
+$GREP -v '^[-+]' "$GROUP" |
 $SORT > $WORKDIR/etc_group.$$
 echo "/etc/group" > $WORKDIR/etc_group.$$.src
 echo $WORKDIR/etc_group.$$
 
-[ -n "$YPCAT" ] && {
+[ -z "$TIGRIS_ROOT" ] && [ -n "$YPCAT" ] && {
   $YPCAT group >$WORKDIR/nis_group.orig.$$ 2>/dev/null
   if [ $? -eq 0 ] ; then
   $SORT < $WORKDIR/nis_group.orig.$$ |
@@ -52,7 +60,7 @@ echo $WORKDIR/etc_group.$$
   $RM $WORKDIR/nis_group.orig.$$
 }
 
-[ "$SERVERCHECK" = "Y" ] && {
+[ -z "$TIGRIS_ROOT" ] && [ "$SERVERCHECK" = "Y" ] && {
   $GETCLIENTDIRS |
   while read client dir
   do

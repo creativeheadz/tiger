@@ -97,6 +97,11 @@
 #               Now checks *all* accounts, not just disabled ones
 #               and checks config files in home directories for
 #               writability.
+#
+# Tigris: offline
+#   the root's accounts, their homes, dot files and crontabs inside it,
+#   owners named from the root's passwd and group (getpermit).
+#
 #-----------------------------------------------------------------------------
 # TODO:
 # - Some 'valid' shells such as nologin or noshell might be listed under
@@ -189,15 +194,16 @@ check_disabled()
     message WARN acc005w "" "Login ID $user is disabled, but has a 'cron' file or cron entries."
 
   # Return if home directory is not local or does not exists.
-  ([ ! -d "$home/" ] || [ "$host" != "$HOSTNAME" ]) && return
+  ([ ! -d "`__here "$home"`/" ] || [ "$host" != "$HOSTNAME" ]) && return
 
   # Check the .forward file.
-  [ -s $home/.forward ] && $GREP -F '|' $home/.forward >/dev/null 2>&1 && 
+  fwd=`__here "$home/.forward"`
+  [ -s "$fwd" ] && $GREP -F '|' "$fwd" >/dev/null 2>&1 && 
     message WARN acc003w "" "Login ID $user is disabled, but has a .forward file which executes commands."
 
-  # Check the .rhosts file.
-  [ -s $home/.rhosts ] && {
-    owner=`$LS -ld $home/.rhosts | $AWK '{print $3}'`
+  # Check the .rhosts file (its owner named as the audited system names it)
+  [ -s "`__here "$home/.rhosts"`" ] && {
+    owner=`getpermit "$home/.rhosts" | $AWK '{print $2}'`
     [ "$owner" = "$user" ] && {
       message WARN acc004w "" "Login ID $user is disabled, but has a .rhosts file"
     }
@@ -231,8 +237,10 @@ check_users()
      case "$shell" in
        */nologin|*/false) continue ;;
      esac
-     # Verify the home directory is accessable.
-     [ ! -d "$home/" ] && {
+     # Verify the home directory is accessable. (On an offline root, where
+     # it is in that root.)
+     h=`__here "$home"`
+     [ ! -d "$h/" ] && {
        [ -n "$uid" ] && [ $Tiger_Accounts_Trust -lt $uid ] && [ "$host" = "$HOSTNAME" ] && {
          message WARN acc022w "" "Login ID $user home directory ($home) is not accessible."
        }
@@ -305,12 +313,12 @@ check_users()
      [ "$home" != / -a -n "$home" -a "$Tiger_Dormant_Limit" != 0 -a $uid -gt $Tiger_Accounts_Trust ] && {
        notadmin=`eval "case \"$user\" in $Tiger_Admin_Accounts) ;; *) echo $user;; esac"`
        [ -n "$notadmin" ] &&  \
-       [ `$FIND "$home/" -mtime -$Tiger_Dormant_Limit 2>/dev/null | $HEAD -n 1 | $WC -l` -eq 0 ] && 
+       [ `$FIND "$h/" -mtime -$Tiger_Dormant_Limit 2>/dev/null | $HEAD -n 1 | $WC -l` -eq 0 ] && 
            message WARN acc021w "" "Login ID $user appears to be a dormant account."
      }
 
      # Non-zero sized .hushlogin
-     [ -s "$home/.hushlogin" ] &&
+     [ -s "`__here "$home/.hushlogin"`" ] &&
        message ALERT acc007a '' "Login ID $user has a non-zero length .hushlogin"
 
      # Check shell initialization files.
@@ -321,11 +329,12 @@ check_users()
      # A secure approach has to be determined for this to work properly.
 
      [ -z "$shell" ] && shell=/bin/sh
-     test $TESTEXEC $shell && [ -n "$uid" ] && [ $uid -gt $Tiger_Accounts_Trust ] && {
+     test $TESTEXEC "`__here $shell`" && [ -n "$uid" ] && [ $uid -gt $Tiger_Accounts_Trust ] && {
+       rc=`__here "${home}/.${shell##*/}rc"`
        eval "
          case \"$shell\" in
            $shcase)
-             [ ! -r \"${home}/.${shell##*/}rc\" ] && {
+             [ ! -r \"$rc\" ] && {
                message WARN acc019w \"\" \"Login ID $user may be missing a shell initialization file ${home}/.${shell##*/}rc.\"
              }
              ;;
@@ -339,7 +348,7 @@ check_users()
      dotfiles=${USERDOTFILES:-".cshrc .bashrc .kshrc .profile .login .exrc .forward"}
      for file in $dotfiles
      do
-       [ -f "$home/$file" ] && {
+       [ -f "`__here "$home/$file"`" ] && {
          getpermit "$home/$file" | {
            read _f owner group ur uw ux gr gw gx or ow ox suid sgid stk
 
@@ -371,8 +380,8 @@ check_users()
 # Define shcase to be a list of valid shells, so we can check for
 # shell initilization files.
 shcase='/bin/sh|/bin/csh|/bin/bash|/bin/tcsh|/bin/ksh'
-[ -n "$ETCSHELLS" -a -s "$ETCSHELLS" ] && {
-  shells=`$GREP -v '^#' $ETCSHELLS`
+[ -n "$ETCSHELLS" ] && [ -s "`__here $ETCSHELLS`" ] && {
+  shells=`$GREP -v '^#' "\`__here $ETCSHELLS\`"`
   shcase=`echo $shells | $TR ' ' '|'`
 }
 
@@ -388,8 +397,13 @@ do
   source=`$CAT $passwd_set.src`
   echo "# Checking accounts from $source."
 
+  # Which host each home is on; on an offline root all of them are its own
   $AWK -F: '{print $1, $6}' $passwd_set |
-  $BASEDIR/util/${GETFSHOST:=getfs-std} |
+  if [ -n "$TIGRIS_ROOT" ]; then
+    $AWK -v h="$HOSTNAME" '{ print $1, $2, h }'
+  else
+    $BASEDIR/util/${GETFSHOST:=getfs-std}
+  fi |
   $TR ' ' : | $SORT > $WORKDIR/home.hosts.$$
 
   $SORT $passwd_set  > $WORKDIR/passwd.set.$$
