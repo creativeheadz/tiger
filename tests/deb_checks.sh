@@ -3,9 +3,11 @@
 # tests/deb_checks.sh - the Debian package checks against planted problems
 #
 # Run as root in a throwaway Debian or Ubuntu container. It modifies one
-# packaged binary, deletes another and adds a stray file to /usr/sbin, then
-# runs deb_checkmd5sums and deb_nopackfiles from a root-owned copy of this
-# tree and checks that exactly those three are reported.
+# packaged binary, deletes another, adds a stray file to /usr/sbin and an
+# override (dpkg-statoverride, without --update) that a binary does not
+# match, then runs deb_checkmd5sums, deb_nopackfiles and deb_statoverride
+# from a root-owned copy of this tree and checks that exactly those four
+# are reported.
 #
 # Exit 0 when every assertion holds, 1 otherwise, 2 when it cannot run.
 #
@@ -26,9 +28,10 @@ mkdir -p "$W/run" "$W/log"
 echo tampered >> /usr/bin/xargs
 rm -f /usr/bin/sdiff
 echo x > /usr/sbin/zz-tiger-stray
+dpkg-statoverride --add root root 0700 /usr/bin/cmp
 
 cd "$W"
-for check in deb_checkmd5sums deb_nopackfiles
+for check in deb_checkmd5sums deb_nopackfiles deb_statoverride
 do
   TIGERHOMEDIR=$W sh systems/Linux/2/$check
 done 2>&1 |
@@ -48,6 +51,12 @@ expect()
 expect "lin005f.*/usr/bin/xargs"       "modified binary reported (lin005f)"
 expect "lin006f.*/usr/bin/sdiff"       "deleted binary reported (lin006f)"
 expect "lin001w.*/usr/sbin/zz-tiger-stray" "stray file reported (lin001w)"
+expect "lin039w.*/usr/bin/cmp.*sets root:root 700; the file is root:root 755" "file not matching its override reported (lin039w)"
+if [ "`grep -c lin039w "$W/report"`" = 1 ]; then
+  echo "ok   no other override mismatches"
+else
+  echo "FAIL other override mismatches:"; grep lin039w "$W/report"; fail=1
+fi
 
 # Docker drops /usr/sbin/policy-rc.d into images; nothing else may be unowned
 unowned=`grep -c 'lin001w' "$W/report"`

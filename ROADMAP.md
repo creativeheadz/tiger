@@ -270,6 +270,14 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   IPv4. Fixtures from Hera and docker:dind (Docker 29.8.2 with both
   backends, 27.5.1, ufw); `tests/firewall_check.sh` makes 28
   assertions, under mawk, gawk and busybox awk.
+- [x] **`deb_statoverride`** (lin039w): on Debian and Ubuntu, files whose
+  mode or owner differs from what `dpkg-statoverride` sets for them
+  (crontab and plocate setgid, the D-Bus launch helper, `/etc/ssl/private`),
+  with the chown and chmod that restore them. It is what remains of
+  `lin038w` for dpkg, which records no other modes. Silent on Hera, whose
+  six overrides all match; `tests/statoverride_check.sh` needs no root,
+  and `tests/deb_checks.sh` plants a real override in Debian stable, sid
+  and Ubuntu 24.04. `Tiger_Deb_StatOverride` turns it off.
 
 ## 3.2.x: maintenance
 
@@ -363,8 +371,9 @@ open items below ship from 3.4.0 on.
 - [ ] Setuid and setgid files compared with what the package manager says
   should be setuid, not only with Tigris's own lists. rpm, apk and
   pacman only: dpkg records no modes (below).
-- [ ] dpkg: the entries of `dpkg-statoverride --list`, the one place
-  dpkg records a mode and owner, compared with the files themselves.
+- [x] dpkg: the entries of `dpkg-statoverride --list`, the one place
+  dpkg records a mode and owner, compared with the files themselves
+  (`deb_statoverride`, lin039w; on master since 3.3.0).
 - `lin038w` for dpkg: **not possible, dropped** (decided 7 October
   2026). dpkg records no mode or owner for the files it installs:
   `dpkg --verify` checks md5 sums only, and the database holds file

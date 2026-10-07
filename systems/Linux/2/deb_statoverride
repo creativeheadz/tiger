@@ -1,0 +1,123 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# deb_statoverride: files whose mode or owner differs from what
+#                 dpkg-statoverride sets for them.
+#
+# 10/07/2026 atrimbitas - Initial version. dpkg records no mode or owner for
+#                 the files it installs (dpkg --verify checks md5 sums
+#                 only), so lin038w cannot be had on Debian. The one place
+#                 it does record them is the override list, which packages
+#                 (crontab, dbus-daemon-launch-helper, /etc/ssl/private)
+#                 and administrators set: those entries are compared with
+#                 the files. An entry whose file is gone is left alone.
+#                 Tiger_Deb_StatOverride_Cmd replaces the dpkg-statoverride
+#                 call, so the tests can feed a list of their own.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds SED || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds SED || exit 1
+
+so_cmd=${Tiger_Deb_StatOverride_Cmd:-}
+if [ -z "$so_cmd" ]; then
+  # dpkg-statoverride sits next to dpkg; without it there is nothing to read
+  so=${DPKG%/*}/dpkg-statoverride
+  [ -n "$DPKG" ] && [ -x "$so" ] || exit 0
+  so_cmd="$so --list"
+fi
+stat=
+for d in /usr/bin /bin
+do
+  [ -x "$d/stat" ] && { stat=$d/stat; break; }
+done
+[ -n "$stat" ] || exit 0
+
+echo
+echo "# Checking files against dpkg's mode and owner overrides (dpkg-statoverride)..."
+
+# Each entry is "user group mode path"; a user or group written "#N" is a
+# number. The path is the rest of the line.
+$so_cmd 2>/dev/null |
+while read user group mode path
+do
+  [ -n "$path" ] || continue
+  set -- `$stat -c '%u %g %a %U %G' "$path" 2>/dev/null`
+  [ $# -eq 5 ] || continue
+  uid=$1 gid=$2 have=$3 uname=$4 gname=$5
+  want=`echo "$mode" | $SED 's/^0*//'`
+  [ -n "$want" ] || want=0
+  ok=Y
+  [ "$have" = "$want" ] || ok=N
+  case "$user" in
+    \#*) [ "#$uid" = "$user" ] || ok=N ;;
+    *) [ "$uname" = "$user" ] || ok=N ;;
+  esac
+  case "$group" in
+    \#*) [ "#$gid" = "$group" ] || ok=N ;;
+    *) [ "$gname" = "$group" ] || ok=N ;;
+  esac
+  [ "$ok" = Y ] && continue
+  # chown takes a number without the "#"
+  message WARN lin039w "dpkg-statoverride sets $user:$group $mode; the file is $uname:$gname $have. To restore it: chown ${user#\#}:${group#\#} '$path' && chmod $mode '$path' (in that order: chown clears the setuid and setgid bits)." "\`$path' has a different mode or owner than dpkg-statoverride sets for it."
+done
+
+exit 0

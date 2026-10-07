@@ -49,6 +49,8 @@ jobs:
         run: sh tests/exit_check.sh
       - name: check_listeningprocs against ss, lsof and netstat fixtures
         run: sh tests/listening_check.sh
+      - name: deb_statoverride against an override list
+        run: sh tests/statoverride_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: ShellCheck (errors)

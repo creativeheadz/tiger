@@ -85,6 +85,7 @@ Tiger_Check_PKGINTEGRITY=Y      # Installed files against the rpm, apk or pacman
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       
 Tiger_Deb_NoPackFiles=Y
+Tiger_Deb_StatOverride=Y       # Fast - files against dpkg-statoverride's modes and owners
 # End of Debian-specific checks
 # - HPUX specific
 Tiger_Check_TRUSTED=N
