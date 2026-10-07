@@ -1,0 +1,183 @@
+table ip docker-bridges {
+	map filter-forward-in-jumps {
+		type ifname : verdict
+		elements = { "docker0" : jump filter-forward-in__docker0,
+			     "br-cff60ae07f59" : jump filter-forward-in__br-cff60ae07f59 }
+	}
+
+	map filter-forward-out-jumps {
+		type ifname : verdict
+		elements = { "docker0" : jump filter-forward-out__docker0,
+			     "br-cff60ae07f59" : jump filter-forward-out__br-cff60ae07f59 }
+	}
+
+	map nat-postrouting-in-jumps {
+		type ifname : verdict
+		elements = { "docker0" : jump nat-postrouting-in__docker0,
+			     "br-cff60ae07f59" : jump nat-postrouting-in__br-cff60ae07f59 }
+	}
+
+	map nat-postrouting-out-jumps {
+		type ifname : verdict
+		elements = { "docker0" : jump nat-postrouting-out__docker0,
+			     "br-cff60ae07f59" : jump nat-postrouting-out__br-cff60ae07f59 }
+	}
+
+	chain filter-FORWARD {
+		type filter hook forward priority filter; policy accept;
+		oifname vmap @filter-forward-in-jumps
+		iifname vmap @filter-forward-out-jumps
+	}
+
+	chain nat-OUTPUT {
+		type nat hook output priority dstnat; policy accept;
+		ip daddr != 127.0.0.0/8 fib daddr type local counter packets 0 bytes 0 jump nat-prerouting-and-output
+	}
+
+	chain nat-POSTROUTING {
+		type nat hook postrouting priority srcnat; policy accept;
+		iifname vmap @nat-postrouting-out-jumps
+		oifname vmap @nat-postrouting-in-jumps
+	}
+
+	chain nat-PREROUTING {
+		type nat hook prerouting priority dstnat; policy accept;
+		fib daddr type local counter packets 0 bytes 0 jump nat-prerouting-and-output
+	}
+
+	chain nat-prerouting-and-output {
+		iifname != "docker0" tcp dport 8080 counter packets 0 bytes 0 dnat to 172.18.0.2:80 comment "DNAT"
+		iifname != "docker0" udp dport 5353 counter packets 0 bytes 0 dnat to 172.18.0.2:5353 comment "DNAT"
+		iifname != "docker0" ip daddr 127.0.0.1 tcp dport 8081 counter packets 0 bytes 0 dnat to 172.18.0.3:80 comment "DNAT"
+		iifname != "docker0" ip daddr 172.17.0.3 tcp dport 8082 counter packets 0 bytes 0 dnat to 172.18.0.4:80 comment "DNAT"
+		iifname != "br-cff60ae07f59" tcp dport 8443 counter packets 0 bytes 0 dnat to 172.19.0.2:443 comment "DNAT"
+	}
+
+	chain raw-PREROUTING {
+		type filter hook prerouting priority raw; policy accept;
+		ip daddr 172.18.0.2 iifname != "docker0" counter packets 0 bytes 0 drop comment "DROP DIRECT ACCESS"
+		ip daddr 172.18.0.3 iifname != "docker0" counter packets 0 bytes 0 drop comment "DROP DIRECT ACCESS"
+		iifname != "lo" ip daddr 127.0.0.1 tcp dport 8081 counter packets 0 bytes 0 drop comment "DROP REMOTE LOOPBACK"
+		ip daddr 172.18.0.4 iifname != "docker0" counter packets 0 bytes 0 drop comment "DROP DIRECT ACCESS"
+		ip daddr 172.19.0.2 iifname != "br-cff60ae07f59" counter packets 0 bytes 0 drop comment "DROP DIRECT ACCESS"
+	}
+
+	chain filter-forward-in__docker0 {
+		ct state established,related counter packets 0 bytes 0 accept
+		iifname "docker0" counter packets 0 bytes 0 accept comment "ICC"
+		ip daddr 172.18.0.2 tcp dport 80 counter packets 0 bytes 0 accept
+		ip daddr 172.18.0.2 udp dport 5353 counter packets 0 bytes 0 accept
+		ip daddr 172.18.0.3 tcp dport 80 counter packets 0 bytes 0 accept
+		ip daddr 172.18.0.4 tcp dport 80 counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 drop comment "UNPUBLISHED PORT DROP"
+	}
+
+	chain filter-forward-out__docker0 {
+		ct state established,related counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 accept comment "OUTGOING"
+	}
+
+	chain nat-postrouting-in__docker0 {
+	}
+
+	chain nat-postrouting-out__docker0 {
+		oifname != "docker0" ip saddr 172.18.0.0/16 counter packets 0 bytes 0 masquerade comment "MASQUERADE"
+	}
+
+	chain filter-forward-in__br-cff60ae07f59 {
+		ct state established,related counter packets 0 bytes 0 accept
+		iifname "br-cff60ae07f59" counter packets 0 bytes 0 accept comment "ICC"
+		ip daddr 172.19.0.2 tcp dport 443 counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 drop comment "UNPUBLISHED PORT DROP"
+	}
+
+	chain filter-forward-out__br-cff60ae07f59 {
+		ct state established,related counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 accept comment "OUTGOING"
+	}
+
+	chain nat-postrouting-in__br-cff60ae07f59 {
+	}
+
+	chain nat-postrouting-out__br-cff60ae07f59 {
+		oifname != "br-cff60ae07f59" ip saddr 172.19.0.0/16 counter packets 0 bytes 0 masquerade comment "MASQUERADE"
+	}
+}
+table ip6 docker-bridges {
+	map filter-forward-in-jumps {
+		type ifname : verdict
+		elements = { "br-cff60ae07f59" : jump filter-forward-in__br-cff60ae07f59 }
+	}
+
+	map filter-forward-out-jumps {
+		type ifname : verdict
+		elements = { "br-cff60ae07f59" : jump filter-forward-out__br-cff60ae07f59 }
+	}
+
+	map nat-postrouting-in-jumps {
+		type ifname : verdict
+		elements = { "br-cff60ae07f59" : jump nat-postrouting-in__br-cff60ae07f59 }
+	}
+
+	map nat-postrouting-out-jumps {
+		type ifname : verdict
+		elements = { "br-cff60ae07f59" : jump nat-postrouting-out__br-cff60ae07f59 }
+	}
+
+	chain filter-FORWARD {
+		type filter hook forward priority filter; policy accept;
+		oifname vmap @filter-forward-in-jumps
+		iifname vmap @filter-forward-out-jumps
+	}
+
+	chain nat-OUTPUT {
+		type nat hook output priority dstnat; policy accept;
+		ip6 daddr != ::1 fib daddr type local counter packets 0 bytes 0 jump nat-prerouting-and-output
+	}
+
+	chain nat-POSTROUTING {
+		type nat hook postrouting priority srcnat; policy accept;
+		iifname vmap @nat-postrouting-out-jumps
+		oifname vmap @nat-postrouting-in-jumps
+	}
+
+	chain nat-PREROUTING {
+		type nat hook prerouting priority dstnat; policy accept;
+		fib daddr type local counter packets 0 bytes 0 jump nat-prerouting-and-output
+	}
+
+	chain nat-prerouting-and-output {
+		iifname != "br-cff60ae07f59" ip6 saddr != fe80::/10 tcp dport 8443 counter packets 0 bytes 0 dnat to [fd00:dead::2]:443 comment "DNAT"
+	}
+
+	chain raw-PREROUTING {
+		type filter hook prerouting priority raw; policy accept;
+		ip6 daddr fd00:dead::2 iifname != "br-cff60ae07f59" counter packets 0 bytes 0 drop comment "DROP DIRECT ACCESS"
+	}
+
+	chain filter-forward-in__br-cff60ae07f59 {
+		ct state established,related counter packets 0 bytes 0 accept
+		iifname "br-cff60ae07f59" counter packets 0 bytes 0 accept comment "ICC"
+		ip6 daddr fd00:dead::2 tcp dport 443 counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 drop comment "UNPUBLISHED PORT DROP"
+	}
+
+	chain filter-forward-out__br-cff60ae07f59 {
+		ct state established,related counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 accept comment "OUTGOING"
+	}
+
+	chain nat-postrouting-in__br-cff60ae07f59 {
+	}
+
+	chain nat-postrouting-out__br-cff60ae07f59 {
+		oifname != "br-cff60ae07f59" ip6 saddr fd00:dead::/64 counter packets 0 bytes 0 masquerade comment "MASQUERADE"
+	}
+}
+table inet docker-filter {
+	chain forward {
+		type filter hook forward priority filter - 1; policy accept;
+		ct state established,related accept
+		iifname "eth0" ip saddr != 192.168.0.0/16 drop
+	}
+}

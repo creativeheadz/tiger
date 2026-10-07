@@ -31,9 +31,20 @@
 #                 Legacy iptables tables are read too when they exist.
 #                 Neither nft nor iptables is run unless its tables are
 #                 already in the kernel, since both would load modules.
-#                 Tiger_NFT_Cmd, Tiger_IPT_Legacy_Cmd, Tiger_IP6T_Legacy_Cmd
-#                 and Tiger_Firewall_Frontends let the tests feed fixtures;
-#                 Tiger_Sysctl_Root prefixes /proc and /sys.
+#                 Tiger_NFT_Cmd, Tiger_IPT_Cmd, Tiger_IP6T_Cmd (iptables
+#                 when there is no nft), Tiger_IPT_Legacy_Cmd,
+#                 Tiger_IP6T_Legacy_Cmd and Tiger_Firewall_Frontends let the
+#                 tests feed fixtures; Tiger_Sysctl_Root prefixes /proc,
+#                 /sys and /run.
+# 10/07/2026 atrimbitas - Ports Docker publishes (fire005w, fire006i). They
+#                 are DNAT-ed before the input hook and forwarded, so an
+#                 input policy drop, ufw or firewalld does not filter them,
+#                 and fire003i alone would call such a host closed. Read
+#                 from the same ruleset: the DNAT rules of Docker's nat
+#                 DOCKER chain (iptables backend) or of its docker-bridges
+#                 tables (nftables backend), and what could restrict them:
+#                 rules in DOCKER-USER other than a bare return, or a
+#                 forward chain of the host's own that drops.
 #
 # References:
 #   https://wiki.nftables.org/wiki-nftables/index.php/Configuring_chains
@@ -110,9 +121,16 @@ v6=Y
 
 rules=$WORKDIR/fw.rules.$$
 errs=$WORKDIR/fw.errs.$$
-safe_temp $rules $errs
-trap 'delete $rules $errs ; exit 1' 1 2 3 15
+docker=$WORKDIR/fw.docker.$$
+safe_temp $rules $errs $docker
+trap 'delete $rules $errs $docker ; exit 1' 1 2 3 15
 : > $rules
+: > $docker
+
+# Docker's chains are read with iptables only when Docker is running:
+# listing a nat table that does not exist would create it
+docker_up=N
+[ -e "$root/run/docker.sock" ] || [ -e "$root/var/run/docker.sock" ] && docker_up=Y
 
 # One line per input chain: "deny|open v4|v6 description"
 nft_chains()
@@ -172,18 +190,94 @@ ipt_chain()
   }'
 }
 
+# Ports Docker publishes are DNAT-ed in prerouting and forwarded, so they
+# never reach the input hook. One line each to $docker:
+#   pub v4|v6 PROTO PORT ADDRESS DESTINATION
+# (ADDRESS "every" when the rule names none, DESTINATION "?" when the tool
+# does not print it), "user v4|v6 N" for a DOCKER-USER chain with N rules
+# other than a bare return, and "fwd v4|v6 DESCRIPTION" for a forward chain
+# of the host's own that drops. Docker's own forward chains, and ufw's and
+# firewalld's, which accept what Docker publishes, are not counted.
+docker_nft()
+{
+  $AWK '
+  /^table / { fam = $2; tbl = $3; next }
+  /^[ \t]*chain / {
+    chain = $2; fwd = 0; pol = ""; drops = 0
+    user = (chain == "DOCKER-USER" && tbl == "filter")
+    if (user) users[fam] += 0
+    dnat = (tbl == "nat" && chain == "DOCKER") || (tbl == "docker-bridges" && chain == "nat-prerouting-and-output")
+    next
+  }
+  chain != "" && /hook forward/ {
+    fwd = !((tbl == "filter" && chain == "FORWARD") || tbl == "docker-bridges" || tbl == "firewalld")
+    pol = "accept"
+    if (match($0, /policy [a-z]+/)) pol = substr($0, RSTART + 7, RLENGTH - 7)
+    next
+  }
+  chain != "" && /^[ \t]*}/ {
+    if (fwd && (pol == "drop" || drops) && (fam == "inet" || fam == "ip" || fam == "ip6")) {
+      desc = "nftables " fam " " tbl " " chain
+      if (fam != "ip6") print "fwd v4", desc
+      if (fam != "ip") print "fwd v6", desc
+    }
+    chain = ""; next
+  }
+  chain == "" || !NF { next }
+  user {
+    if ($0 !~ /^[ \t]*(counter( packets [0-9]+ bytes [0-9]+)? )?return$/) users[fam]++
+    next
+  }
+  fwd { if ($0 ~ /(^|[ \t])(drop|reject)([ \t]|$)/) drops++; next }
+  dnat && (fam == "ip" || fam == "ip6") && /dnat (ip6? )?to |xt target "DNAT"/ {
+    if (!match($0, /(tcp|udp|sctp) dport [0-9]+/)) next
+    split(substr($0, RSTART, RLENGTH), p, " ")
+    addr = "every"
+    if (match($0, /ip6? daddr [^ !][^ ]*/)) { addr = substr($0, RSTART, RLENGTH); sub(/.* /, "", addr) }
+    dest = "?"
+    if (match($0, /dnat (ip6? )?to [^ ]+/)) { dest = substr($0, RSTART, RLENGTH); sub(/.* /, "", dest) }
+    print "pub", (fam == "ip" ? "v4" : "v6"), p[1], p[3], addr, dest
+  }
+  END { for (f in users) print "user", (f == "ip" ? "v4" : "v6"), users[f] }
+  '
+}
+
+# The same with iptables (-nft or -legacy) as $2, for family $1
+docker_ipt()
+{
+  { echo '#nat'; $2 -t nat -S DOCKER 2>/dev/null
+    echo '#user'; $2 -S DOCKER-USER 2>/dev/null; } |
+  $AWK -v fam="$1" '
+  /^#nat$/ { part = "nat"; next }
+  /^#user$/ { part = "user"; next }
+  part == "nat" && /^-A DOCKER .* -j DNAT / {
+    proto = ""; port = ""; addr = "every"; dest = "?"
+    for (i = 2; i < NF; i++) {
+      if ($i == "-p" && $(i - 1) != "!") proto = $(i + 1)
+      else if ($i == "--dport") port = $(i + 1)
+      else if ($i == "-d" && $(i - 1) != "!") { addr = $(i + 1); sub(/\/(32|128)$/, "", addr) }
+      else if ($i == "--to-destination") dest = $(i + 1)
+    }
+    if (proto != "" && port ~ /^[0-9]+$/) print "pub", fam, proto, port, addr, dest
+  }
+  part == "user" && /^-N DOCKER-USER$/ { seen = 1 }
+  part == "user" && /^-A DOCKER-USER / && $0 != "-A DOCKER-USER -j RETURN" { n++ }
+  END { if (seen) print "user", fam, n + 0 }'
+}
+
 #
 # nftables (and iptables-nft, whose tables are nftables tables)
 #
 nft_cmd=${Tiger_NFT_Cmd:-}
-if [ -z "$nft_cmd" ] && [ -d "$root/sys/module/nf_tables" ]; then
+ipt=${Tiger_IPT_Cmd:-}
+ip6t=${Tiger_IP6T_Cmd:-}
+if [ -z "$nft_cmd$ipt" ] && [ -d "$root/sys/module/nf_tables" ]; then
   if nft=`findtool nft`; then
     nft_cmd="$nft list ruleset"
   elif ipt=`findtool iptables`; then
-    # no nft: iptables-nft shows its own tables, which is what it can
-    nft_cmd=
-    $ipt -S INPUT 2>$errs | ipt_chain v4 iptables >> $rules
-    [ "$v6" = Y ] && ip6t=`findtool ip6tables` && $ip6t -S INPUT 2>>$errs | ipt_chain v6 ip6tables >> $rules
+    # no nft (Ubuntu installs iptables-nft without it): iptables-nft
+    # shows its own tables, which is what it can
+    ip6t=`findtool ip6tables`
   else
     message ERROR fire004e "" "nf_tables is loaded in the kernel but neither nft nor iptables is installed to read its rules, so whether incoming traffic is filtered is unknown."
   fi
@@ -191,12 +285,20 @@ fi
 if [ -n "$nft_cmd" ]; then
   if $nft_cmd > $WORKDIR/fw.nft.$$ 2>$errs; then
     nft_chains < $WORKDIR/fw.nft.$$ >> $rules
+    docker_nft < $WORKDIR/fw.nft.$$ >> $docker
   else
     message ERROR fire004e "`$SED -n 1p $errs`" "The nftables ruleset could not be read ($nft_cmd), so whether incoming traffic is filtered is unknown."
-    delete $WORKDIR/fw.nft.$$ $rules $errs
+    delete $WORKDIR/fw.nft.$$ $rules $errs $docker
     exit 0
   fi
   delete $WORKDIR/fw.nft.$$
+elif [ -n "$ipt" ]; then
+  $ipt -S INPUT 2>$errs | ipt_chain v4 iptables >> $rules
+  [ "$v6" = Y ] && [ -n "$ip6t" ] && $ip6t -S INPUT 2>>$errs | ipt_chain v6 ip6tables >> $rules
+  if [ "$docker_up" = Y ]; then
+    docker_ipt v4 "$ipt" >> $docker
+    [ "$v6" = Y ] && [ -n "$ip6t" ] && docker_ipt v6 "$ip6t" >> $docker
+  fi
 fi
 
 #
@@ -206,15 +308,24 @@ fi
 #
 ipt_legacy=${Tiger_IPT_Legacy_Cmd:-}
 if [ -z "$ipt_legacy" ] && $GREP -qx filter "$root/proc/net/ip_tables_names" 2>/dev/null; then
-  if t=`findtool iptables-legacy`; then ipt_legacy="$t -S INPUT"; fi
+  if t=`findtool iptables-legacy`; then ipt_legacy=$t; fi
 fi
-[ -n "$ipt_legacy" ] && $ipt_legacy 2>/dev/null | ipt_chain v4 iptables-legacy >> $rules
+if [ -n "$ipt_legacy" ]; then
+  $ipt_legacy -S INPUT 2>/dev/null | ipt_chain v4 iptables-legacy >> $rules
+  # the nat table only when it is loaded: listing it would load it
+  [ "$docker_up" = Y ] && $GREP -qx nat "$root/proc/net/ip_tables_names" 2>/dev/null &&
+    docker_ipt v4 "$ipt_legacy" >> $docker
+fi
 
 ip6t_legacy=${Tiger_IP6T_Legacy_Cmd:-}
 if [ -z "$ip6t_legacy" ] && $GREP -qx filter "$root/proc/net/ip6_tables_names" 2>/dev/null; then
-  if t=`findtool ip6tables-legacy`; then ip6t_legacy="$t -S INPUT"; fi
+  if t=`findtool ip6tables-legacy`; then ip6t_legacy=$t; fi
 fi
-[ "$v6" = Y ] && [ -n "$ip6t_legacy" ] && $ip6t_legacy 2>/dev/null | ipt_chain v6 ip6tables-legacy >> $rules
+if [ "$v6" = Y ] && [ -n "$ip6t_legacy" ]; then
+  $ip6t_legacy -S INPUT 2>/dev/null | ipt_chain v6 ip6tables-legacy >> $rules
+  [ "$docker_up" = Y ] && $GREP -qx nat "$root/proc/net/ip6_tables_names" 2>/dev/null &&
+    docker_ipt v6 "$ip6t_legacy" >> $docker
+fi
 
 #
 # What would turn one on, for the advice
@@ -249,5 +360,43 @@ do
   fi
 done
 
-delete $rules $errs
+#
+# Ports Docker publishes to the network (not on a loopback address). With
+# rules in DOCKER-USER, or a forward chain of the host's own that drops,
+# something may restrict them: that is said once, since what the rules
+# match is not evaluated. With neither, each port is open whatever the
+# input chain says.
+#
+for fam in v4 v6
+do
+  [ "$fam" = v6 ] && [ "$v6" = N ] && continue
+  case $fam in v4) name=IPv4 tool=iptables ;; v6) name=IPv6 tool=ip6tables ;; esac
+  pubs=`$AWK -v f=$fam '$1 == "pub" && $2 == f && $5 !~ /^127\./ && $5 != "::1" { print $4 "/" $3, $5, $6 }' $docker | $SORT -u`
+  [ -n "$pubs" ] || continue
+  users=`$AWK -v f=$fam '$1 == "user" && $2 == f { n += $3; seen = 1 } END { if (seen) print n }' $docker`
+  fwds=`$AWK -v f=$fam '$1 == "fwd" && $2 == f { $1 = ""; $2 = ""; sub(/^ +/, ""); printf "%s%s", (n++ ? "; " : ""), $0 }' $docker`
+  if [ "${users:-0}" -gt 0 ] || [ -n "$fwds" ]; then
+    ports=`echo "$pubs" | $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $1 }'`
+    what=
+    case "${users:-0}" in 0) ;; 1) what=" DOCKER-USER has 1 rule." ;; *) what=" DOCKER-USER has $users rules." ;; esac
+    [ -n "$fwds" ] && what="$what Forward chains of the host's own that drop: $fwds."
+    message INFO fire006i "Ports: $ports.$what Make sure they drop what is not meant to be reachable from the network." "Docker publishes $name ports to the network, and there are rules that may restrict them, which this check does not evaluate."
+  else
+    echo "$pubs" | while read port addr dest
+    do
+      if [ "$addr" = every ]; then where="on every $name address"; else where="on $addr"; fi
+      to= cport=PORT
+      [ "$dest" != "?" ] && to="Forwarded to $dest. " cport=${dest##*:}
+      bind="publish it on one address only (-p 127.0.0.1:${port%/*}:$cport keeps it on the host)"
+      if [ -n "$users" ]; then
+        how="DOCKER-USER is empty. To restrict it, $bind, or drop what should not reach it in DOCKER-USER, e.g. '$tool -I DOCKER-USER -i eth0 ! -s YOUR-NETWORK -j DROP'."
+      else
+        how="Docker's nftables backend has no DOCKER-USER chain. To restrict it, $bind, or drop what should not reach it in a forward chain of a table of your own."
+      fi
+      message WARN fire005w "$to$how" "Port $port, published by Docker $where, is open to the network: Docker forwards it before the input chain, and no rule restricts it."
+    done
+  fi
+done
+
+delete $rules $errs $docker
 exit 0

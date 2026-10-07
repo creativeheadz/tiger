@@ -252,6 +252,24 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   `init001e` error from the check when netstat is there.
   `tests/listening_check.sh` has fixtures for all three tools and
   passes under mawk, gawk and busybox awk.
+- [x] **`check_firewall` reports the ports Docker publishes.** Docker
+  rewrites their destination in prerouting and forwards them, so they
+  never reach the input hook: with ufw enabled in a container, a
+  listener on the host did not answer from outside and the published
+  port did, while fire003i said incoming traffic was denied. Each port
+  published on every address (or on one non-loopback address) is a
+  WARN (fire005w) unless something may restrict it: rules in
+  DOCKER-USER other than Docker's own `return`, or a forward chain of
+  the host's own that drops, which give one INFO per family (fire006i)
+  since what they match is not evaluated. Read from the ruleset already
+  taken, for Docker's iptables backend (the nat `DOCKER` chain, as
+  `dnat to` or nft's `xt target "DNAT"`) and its nftables backend
+  (`docker-bridges`); on a host without nft (Ubuntu ships iptables-nft
+  alone) from `iptables -S`, only while Docker runs, since listing a nat
+  table that does not exist creates it. On Hera: Immich's 2283 over
+  IPv4. Fixtures from Hera and docker:dind (Docker 29.8.2 with both
+  backends, 27.5.1, ufw); `tests/firewall_check.sh` makes 28
+  assertions, under mawk, gawk and busybox awk.
 
 ## 3.2.x: maintenance
 
@@ -365,6 +383,8 @@ open items below ship from 3.4.0 on.
 - [x] Firewall: incoming traffic denied by default, for IPv4 and IPv6,
   whatever wrote the rules (`check_firewall`, fire001w to fire004e; on
   master since 3.3.0).
+- [x] Ports Docker publishes, which bypass the input chain (fire005w,
+  fire006i; on master since 3.3.0).
 - [ ] Kernel lockdown and Secure Boot.
 - [ ] AppArmor or SELinux enforcing, auditd, journald persistence.
 - [ ] Time sync (chrony, timesyncd) instead of the NTP-only check.
