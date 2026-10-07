@@ -590,8 +590,8 @@ what scripts and cron see.
   includes read inside the root; accounts and passwords, owners named by
   the root's own passwd; cron; systemd units (`systemd-analyze --root
   cat-config`); the kernel and network settings it applies at boot.
-  Still to read one: the file system scan, storage's fstab and
-  crypttab.
+  mount options and encryption from fstab and crypttab. Still to read
+  one: the file system scan.
 - [ ] **A transparent summary**: counts by severity and category, and any
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old

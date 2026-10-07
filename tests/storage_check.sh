@@ -108,5 +108,48 @@ EOF
 go ctr
 [ "`count .`" = 0 ] && ok "a container (overlay root): nothing said" || { bad "container"; cat "$W/out"; }
 
+# Offline roots (TIGRIS_ROOT, as tigris --root sets it): what they set up at
+# boot. A: /tmp in fstab without nodev, no crypttab, no core_pattern (the
+# kernel's "core") and no limit. B: /tmp from systemd's tmp.mount, a
+# crypttab and a swap partition outside it, a core_pattern piped to a
+# handler, usb-storage blacklisted.
+offline() {
+  cp "$W/tigerrc.base" "$W/tigerrc" 2>/dev/null || true
+  { echo "Tiger_Show_INFO_Msgs=Y"; echo "Tiger_Storage_NoUSB=Y"; } >> "$W/tigerrc"
+  ( cd "$W" && TIGRIS_ROOT=$1 TIGERHOMEDIR=$W sh ./systems/Linux/2/check_storage ) 2>&1 < /dev/null |
+    awk '/^--/ { if (l != "") print l; l = $0; next } /^ / { sub(/^ +/, " "); l = l $0; next } { if (l != "") print l; l = "" } END { if (l != "") print l }' |
+    tr -s ' ' | grep '^--' | grep -v '^--CONFIG--' > "$W/out"
+}
+A=$W/rootA B=$W/rootB
+mkdir -p "$A/etc" "$B/etc/sysctl.d" "$B/etc/modprobe.d" "$B/usr/lib/systemd/system/local-fs.target.wants"
+cat > "$A/etc/fstab" <<'EOF'
+UUID=1111 / ext4 defaults 0 1
+tmpfs /tmp tmpfs nosuid,size=2G 0 0
+EOF
+cat > "$B/etc/fstab" <<'EOF'
+/dev/mapper/root / ext4 defaults 0 1
+/dev/sda3 none swap sw 0 0
+/dev/mapper/cswap none swap sw 0 0
+EOF
+printf 'root UUID=2222 none luks\ncswap /dev/sda4 /dev/urandom swap\n' > "$B/etc/crypttab"
+printf '[Mount]\nWhat=tmpfs\nWhere=/tmp\nType=tmpfs\nOptions=mode=1777,strictatime,nosuid,nodev,size=50%%\n' > "$B/usr/lib/systemd/system/tmp.mount"
+ln -s ../tmp.mount "$B/usr/lib/systemd/system/local-fs.target.wants/tmp.mount"
+echo 'kernel.core_pattern=|/usr/lib/systemd/systemd-coredump %P %u %g %s %t' > "$B/etc/sysctl.d/50-coredump.conf"
+echo 'blacklist usb-storage' > "$B/etc/modprobe.d/usb.conf"
+
+offline "$A"
+has '[stor001w] /tmp is mounted without nodev' && ok "offline root: /tmp in fstab without nodev: stor001w" || { bad "offline stor001w"; cat "$W/out"; }
+has '[stor009i] /etc/crypttab names no encrypted device' && ok "offline root: no crypttab: stor009i" || { bad "offline stor009i"; cat "$W/out"; }
+has "[stor007w] A program that crashes" && has "the kernel's default: nothing in its sysctl.d sets it" &&
+  ok "offline root: core_pattern unset (the kernel's core) and no limit: stor007w" || { bad "offline stor007w"; cat "$W/out"; }
+has '[stor008w]' && ok "offline root: usb-storage not blacklisted, with the policy on: stor008w" || { bad "offline stor008w"; cat "$W/out"; }
+
+offline "$B"
+[ "`count 'stor001w'`" = 0 ] && has "[stor002i] /tmp is mounted without noexec" && has "by systemd's tmp.mount" &&
+  ok "offline root: /tmp from tmp.mount, nosuid and nodev: only stor002i" || { bad "offline tmp.mount"; cat "$W/out"; }
+has '[stor006w]' && has 'Swap: /dev/sda3' && [ "`count 'cswap'`" = 0 ] &&
+  ok "offline root: a swap partition outside crypttab: stor006w; the crypttab one is fine" || { bad "offline stor006w"; cat "$W/out"; }
+[ "`count stor007w`" = 0 ] && [ "`count stor008w`" = 0 ] && [ "`count stor009i`" = 0 ] && ok "offline root: a core handler, usb-storage blacklisted, a crypttab: nothing" || { bad "offline B"; cat "$W/out"; }
+
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

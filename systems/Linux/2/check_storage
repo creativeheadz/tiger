@@ -35,8 +35,18 @@
 # References:
 #   man 8 mount, man 5 tmpfs, man 8 cryptsetup, man 5 core
 #
-# Tigris: live system
-#   Under --root it is skipped: it reads what is mounted and swapped to now (/proc).
+# 10/07/2026 atrimbitas - An offline root (--root): what it sets up at boot
+#                 instead of what is mounted now. Mount options from its
+#                 /etc/fstab (/tmp also from systemd's tmp.mount); disk and
+#                 swap encryption from its /etc/crypttab (stor009i when it
+#                 names no device: an INFO, since ZFS and others encrypt
+#                 without it); core dumps from the core_pattern its sysctl.d
+#                 sets, the kernel's "core" when nothing does; USB storage
+#                 from its modprobe.d. What only the hardware says (a
+#                 battery) is not asked.
+#
+# Tigris: offline
+#   what the root sets up at boot: fstab, crypttab, sysctl.d, modprobe.d.
 #
 #-----------------------------------------------------------------------------
 #
@@ -88,6 +98,111 @@ done
 haveallcmds AWK CAT GREP LS SED || exit 1
 
 root=${Tiger_Sysctl_Root:-}
+
+# usb_blocked: whether a modprobe.d file blacklists usb-storage, or makes
+# loading it run something else
+usb_blocked()
+{
+  # shellcheck disable=SC2046
+  # (/dev/null first: with no files, cat would read standard input)
+  $CAT /dev/null $({ rootls /etc/modprobe.d; rootls /usr/lib/modprobe.d; rootls /lib/modprobe.d; } | $GREP '\.conf$' | rootpaths) 2>/dev/null |
+    $AWK '!/^[ \t]*#/ && (($1 == "blacklist" || $1 == "install") && ($2 == "usb-storage" || $2 == "usb_storage")) { y = 1 } END { exit !y }'
+}
+
+# core_limited: whether limits.conf, or a file of limits.d, sets a hard
+# limit of 0 on core files for everyone
+core_limited()
+{
+  # shellcheck disable=SC2046
+  $CAT /dev/null $({ echo /etc/security/limits.conf; rootls /etc/security/limits.d | $GREP '\.conf$'; } | rootpaths) 2>/dev/null |
+    $AWK '!/^[ \t]*#/ && $1 == "*" && $2 == "hard" && $3 == "core" && $4 == "0" { y = 1 } END { exit !y }'
+}
+
+if [ -n "$TIGRIS_ROOT" ]; then
+  echo
+  echo "# Checking the mount options, encryption and core dumps $TIGRIS_ROOT sets up at boot..."
+  fstab=`rootfile /etc/fstab`
+  crypttab=`rootfile /etc/crypttab`
+  # fstab's entries, "device mountpoint type options", comments left out
+  entries=`$AWK '!/^[ \t]*#/ && NF >= 4 { print $1, $2, $3, $4 }' "$fstab" 2>/dev/null`
+  # crypttab's mapping names
+  crypted=`$AWK '!/^[ \t]*#/ && NF >= 2 { print $1 }' "$crypttab" 2>/dev/null`
+
+  # The world-writable file systems, as fstab (or tmp.mount) mounts them
+  if [ -n "$entries" ]; then
+    for m in /tmp /dev/shm /var/tmp
+    do
+      o=`echo "$entries" | $AWK -v m="$m" '$2 == m { o = $4 } END { print o }'`
+      src=/etc/fstab
+      if [ -z "$o" ] && [ "$m" = /tmp ]; then
+        # systemd's tmp.mount, when it is enabled and not masked
+        mask=`rootfile /etc/systemd/system/tmp.mount` null=`rootfile /dev/null`
+        for w in /etc/systemd/system/local-fs.target.wants/tmp.mount /usr/lib/systemd/system/local-fs.target.wants/tmp.mount
+        do
+          u=`rootfile $w`
+          [ -f "$u" ] && [ "$mask" != "$null" ] || continue
+          o=`$SED -n 's/^Options=//p' "$u" | $SED -n '$p'`
+          src="systemd's tmp.mount"
+          [ -n "$o" ] && break
+        done
+      fi
+      if [ -z "$o" ]; then
+        [ "$m" = /tmp ] && message INFO stor003i "Make /tmp a tmpfs of its own ('systemctl enable tmp.mount' where systemd ships it, or a tmpfs line in /etc/fstab) with nosuid,nodev,noexec." "/tmp is not a file system of its own (neither /etc/fstab nor systemd's tmp.mount makes it one), so it cannot be mounted nosuid, nodev or noexec on its own."
+        continue
+      fi
+      missing=
+      for want in nosuid nodev
+      do
+        case ",$o," in *",$want,"*) ;; *) missing="$missing,$want" ;; esac
+      done
+      [ -n "$missing" ] && message WARN stor001w "Mounted with $o, by $src. Add ${missing#,} to its options." "$m is mounted without ${missing#,}: anyone may leave files there, and ${missing#,} is what stops them being setuid programs or device files."
+      case ",$o," in
+        *,noexec,*) ;;
+        *) message INFO stor002i "Mounted with $o, by $src. Adding noexec stops programs being run from it directly; some software (installers, JIT runtimes) expects to." "$m is mounted without noexec." ;;
+      esac
+    done
+
+    # Encryption: crypttab's devices. Swap is reported when the system
+    # encrypts something and a swap partition is a raw device, not a
+    # mapping crypttab makes (a swap file lives in whatever file system
+    # holds it; a UUID or LABEL cannot be told apart here).
+    if [ -z "$crypted" ]; then
+      echo "$entries" | $AWK '$2 == "/" { f = 1 } END { exit !f }' &&
+        message INFO stor009i "" "/etc/crypttab names no encrypted device: unless its disks are encrypted another way (ZFS, a self-encrypting drive), whoever has them has the data."
+    else
+      echo "$entries" | $AWK '$3 == "swap" { print $1 }' | while read sw
+      do
+        case "$sw" in
+          /dev/mapper/*) echo "$crypted" | $GREP -qx "${sw#/dev/mapper/}" && continue ;;
+          /dev/zram*|UUID=*|LABEL=*|PARTUUID=*|PARTLABEL=*|/dev/disk/by-uuid/*) continue ;;
+          /dev/*) ;;
+          *) continue ;;
+        esac
+        message WARN stor006w "Swap: $sw. Put it on LUKS too (or a crypttab entry with a random key, for swap that need not survive a reboot)." "Disks are encrypted (/etc/crypttab) but swap is not: what the kernel swaps out of memory, passwords and keys among it, is written to the disk in clear."
+      done
+    fi
+  fi
+
+  # Core dumps: the core_pattern it sets at boot, the kernel's "core"
+  # when nothing does
+  SYSCTL_CONF=$WORKDIR/sysctl.conf.$$
+  safe_temp $SYSCTL_CONF
+  trap 'delete $SYSCTL_CONF; exit 1' 1 2 3 15
+  sysctl_configured > $SYSCTL_CONF
+  pattern=`sysctl_value kernel.core_pattern | $AWK -F'\t' '{ print $1 }'`
+  delete $SYSCTL_CONF
+  if [ -n "$pattern" ]; then where="set by its sysctl.d"; else pattern=core where="the kernel's default: nothing in its sysctl.d sets it"; fi
+  case "$pattern" in
+    '|'*) ;;
+    *) core_limited || message WARN stor007w "kernel.core_pattern is \"$pattern\" ($where). Add '* hard core 0' to /etc/security/limits.conf, or install systemd-coredump, which keeps them where only root reads them." "A program that crashes writes its memory to a core file beside it, passwords and keys included, and nothing limits that." ;;
+  esac
+
+  if [ "$Tiger_Storage_NoUSB" = Y ]; then
+    usb_blocked || message WARN stor008w "Add 'install usb-storage /bin/false' and 'blacklist usb-storage' to a file in /etc/modprobe.d (and uas likewise), then rebuild the initramfs." "USB storage can be used, and the policy (Tiger_Storage_NoUSB) is to have none."
+  fi
+  exit 0
+fi
+
 mounts=`$CAT "$root/proc/mounts" 2>/dev/null`
 [ -n "$mounts" ] || exit 0
 # A container's file systems are its host's business
@@ -196,9 +311,7 @@ pattern=`$CAT "$root/proc/sys/kernel/core_pattern" 2>/dev/null`
 case "$pattern" in
   ''|'|'*) ;;
   *)
-    limited=`$CAT "$root/etc/security/limits.conf" "$root"/etc/security/limits.d/*.conf 2>/dev/null |
-      $AWK '!/^[ \t]*#/ && $1 == "*" && $2 == "hard" && $3 == "core" && $4 == "0" { print "y" }'`
-    [ -z "$limited" ] && message WARN stor007w "kernel.core_pattern is \"$pattern\". Add '* hard core 0' to /etc/security/limits.conf, or install systemd-coredump, which keeps them where only root reads them." "A program that crashes writes its memory to a core file beside it, passwords and keys included, and nothing limits that."
+    core_limited || message WARN stor007w "kernel.core_pattern is \"$pattern\". Add '* hard core 0' to /etc/security/limits.conf, or install systemd-coredump, which keeps them where only root reads them." "A program that crashes writes its memory to a core file beside it, passwords and keys included, and nothing limits that."
     ;;
 esac
 
@@ -206,9 +319,7 @@ esac
 # USB storage, when the policy is to have none
 #
 if [ "$Tiger_Storage_NoUSB" = Y ]; then
-  blocked=`$CAT "$root"/etc/modprobe.d/*.conf "$root"/usr/lib/modprobe.d/*.conf "$root"/lib/modprobe.d/*.conf 2>/dev/null |
-    $AWK '!/^[ \t]*#/ && (($1 == "blacklist" || $1 == "install") && ($2 == "usb-storage" || $2 == "usb_storage")) { print "y" }'`
-  [ -z "$blocked" ] && message WARN stor008w "Add 'install usb-storage /bin/false' and 'blacklist usb-storage' to a file in /etc/modprobe.d (and uas likewise), then rebuild the initramfs." "USB storage can be used, and the policy (Tiger_Storage_NoUSB) is to have none."
+  usb_blocked || message WARN stor008w "Add 'install usb-storage /bin/false' and 'blacklist usb-storage' to a file in /etc/modprobe.d (and uas likewise), then rebuild the initramfs." "USB storage can be used, and the policy (Tiger_Storage_NoUSB) is to have none."
 fi
 
 exit 0

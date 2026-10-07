@@ -13,7 +13,7 @@
   <a href="COPYING"><img src="https://img.shields.io/badge/licence-GPL--2.0--or--later-52c7e8?style=flat-square&labelColor=0f1822" alt="Licence: GPL-2.0-or-later"></a>
   <img src="https://img.shields.io/badge/written%20in-POSIX%20sh%20%2B%20awk-4fd67f?style=flat-square&labelColor=0f1822" alt="Written in POSIX sh and awk">
   <br>
-  <img src="https://img.shields.io/badge/finding%20ids-398-e8833a?style=flat-square&labelColor=0f1822" alt="398 finding ids">
+  <img src="https://img.shields.io/badge/finding%20ids-399-e8833a?style=flat-square&labelColor=0f1822" alt="399 finding ids">
   <img src="https://img.shields.io/badge/categories-15-e8833a?style=flat-square&labelColor=0f1822" alt="15 categories">
   <img src="https://img.shields.io/badge/test%20suites-32-e8833a?style=flat-square&labelColor=0f1822" alt="32 test suites">
   <img src="https://img.shields.io/badge/CI-Debian%20%C2%B7%20Ubuntu%20%C2%B7%20Fedora%20%C2%B7%20Rocky%20%C2%B7%20openSUSE%20%C2%B7%20Alpine%20%C2%B7%20Arch-c6d6e2?style=flat-square&labelColor=0f1822" alt="Tested on Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch">
@@ -78,7 +78,7 @@ Nothing in the image is ever run.
 
 **A contract for machines.** Every run also writes JSON Lines with a
 versioned schema and a category per finding, and `tigris explain ID`
-says what any of the 398 finding ids means and how to fix it.
+says what any of the 399 finding ids means and how to fix it.
 
 </td>
 </tr>
@@ -184,7 +184,7 @@ package databases. Nothing in the image is run.
 
 | Reads an offline root | Skipped there, with the reason |
 |---|---|
-| Accounts and passwords (the root's passwd, shadow and group files, homes, dot files, every account's PATH, root's access), cron, systemd units, the kernel and network settings it applies at boot (its sysctl.d, layered as systemd-sysctl layers it), package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, Secure Boot, the CPU's flaws), and the checks that cannot read an offline root yet |
+| Accounts and passwords (the root's passwd, shadow and group files, homes, dot files, every account's PATH, root's access), cron, systemd units, the kernel and network settings it applies at boot (its sysctl.d, layered as systemd-sysctl layers it), mount options and encryption from its fstab and crypttab, core dumps, USB storage, package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, Secure Boot, the CPU's flaws), and the checks that cannot read an offline root yet |
 
 On Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch the package
 checks report the same of a copy of a system as of the system itself, and

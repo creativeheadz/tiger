@@ -1,0 +1,17 @@
+Id: stor009i
+Severity: INFO
+Category: filesystem
+Check: check_storage
+References: crypttab(5), cryptsetup(8)
+
+Auditing a system that is not running (tigris --root), its disk
+encryption is read from what it sets up at boot: /etc/crypttab, which
+names the encrypted devices it unlocks. This one names none, and its
+/etc/fstab mounts a root file system, so unless the disks are encrypted
+some other way (ZFS's native encryption, a self-encrypting drive, an
+encrypted volume the hypervisor provides), whoever has them has the
+data. The running system's check (stor004w, stor005i) looks at the
+devices themselves; an image has only its configuration to go by.
+
+Encrypting means reinstalling onto LUKS, which every installer offers,
+or converting in place with cryptsetup reencrypt, after a backup.

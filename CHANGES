@@ -18,7 +18,7 @@ Changes since 3.4.0 (unreleased)
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
   deb_statoverride, check_updates (without the reboot question),
   check_pam, check_ssh, check_sudo, the account checks, cron,
-  check_units, check_sysctl and check_network_config. Those marked "# Tigris: live system" (processes, sockets,
+  check_units, check_sysctl, check_network_config and check_storage. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -66,6 +66,17 @@ Changes since 3.4.0 (unreleased)
   accounts); its group pattern's A-z also took [, \, ], ^ and the
   backquote. Without column it prints the duplicates one a line instead
   of stopping.
+
+- check_storage reads an offline root: what it sets up at boot rather
+  than what is mounted now. /tmp, /dev/shm and /var/tmp's options from
+  its /etc/fstab (/tmp also from systemd's tmp.mount, when enabled and
+  not masked); encryption from its /etc/crypttab (stor009i, an INFO, when
+  it names no device and fstab mounts a root: ZFS and self-encrypting
+  drives do without it), swap partitions outside crypttab under a system
+  that encrypts (stor006w); core dumps from the core_pattern its
+  sysctl.d sets, the kernel's "core" when nothing does; USB storage from
+  its modprobe.d. Whether it runs on a battery is the hardware's to say,
+  and is not asked.
 
 - check_sysctl and check_network_config read an offline root: with no
   /proc/sys of its own, its settings are the ones it applies at boot,
