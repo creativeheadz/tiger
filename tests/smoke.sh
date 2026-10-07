@@ -2,9 +2,10 @@
 #
 # tests/smoke.sh - a full Tiger run from a root-owned copy of this tree
 #
-# Checks that tiger exits 0, writes a report, runs every check it was asked
-# to (no misc024e/misc025e/misc005e), that every id in the JSON has an
-# explanation, and prints how long it took and what it found. Run as root.
+# Checks that tiger writes a report, exits with the worst level in it,
+# runs every check it was asked to (no misc024e/misc025e/misc005e), that
+# every id in the JSON has an explanation, and prints how long it took and
+# what it found. Run as root.
 #
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 
@@ -27,8 +28,12 @@ end=`date +%s`
 
 fail=0
 report=`ls "$W"/log/security.report.* 2>/dev/null | head -1`
-[ "$status" -eq 0 ] && echo "ok   tiger exited 0" || { echo "FAIL tiger exited $status"; fail=1; }
 [ -n "$report" ] && echo "ok   report written: ${report#$W/}" || { echo "FAIL no report in log/"; fail=1; }
+if [ -n "$report" ]; then
+  want=0
+  for l in ERROR:2 WARN:3 FAIL:4 ALERT:5; do grep -q "^--${l%:*}-- " "$report" && want=${l#*:}; done
+  [ "$status" -eq "$want" ] && echo "ok   tiger exited $status, the worst level in its report" || { echo "FAIL tiger exited $status, the report says $want"; fail=1; }
+fi
 
 if [ -n "$report" ]; then
   skipped=`grep -c 'misc024e\|misc025e\|misc005e' "$report"`

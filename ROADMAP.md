@@ -202,6 +202,23 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   GitHub's private vulnerability reporting switched on so the route the
   policy names actually works.
 
+**On master since 3.3.0 (unreleased):**
+- [x] **Exit status** from the worst finding: 0 nothing at WARN or
+  above, 2 a check could not run, 3 WARN, 4 FAIL, 5 ALERT; 1 still means
+  the audit did not run. Accepted findings do not count. An incompatible
+  change for anything that expected 0: it goes in the next release's
+  notes as such.
+- [x] **`tigris --since RUN`** (a `.jsonl` report or `last`) prints only
+  what changed and takes its status from the new findings; `-q` now
+  silences the run itself, so `tigris -q --since last` in cron mails
+  only when something changed.
+- [x] A check `run_script` cannot run (`misc005e`, `misc024e`,
+  `misc025e`) is a `message()` now, so it is in the JSON and shows in a
+  diff instead of its findings silently looking resolved.
+- [x] `tigris-diff` marks a new finding that is already accepted and
+  does not count it for its exit status.
+- [x] ShellCheck blocks the build (see 3.2.x).
+
 ## 3.2.x: maintenance
 
 - [x] Replace `egrep`, `tempfile` and `which`.
@@ -316,11 +333,10 @@ The open items below ship as 3.3.x.
 
 ## 4.0: where Tigris beats Lynis
 
-- [~] **A report other tools can rely on.** Done: JSON Lines, a schema
-  version, a JSON Schema, a documented contract. To do: **exit codes** CI
-  and cron can act on (`tigris` exits 0 whatever it finds today; only
-  `tigris-diff` has a meaningful status), and a `diff`-aware mode of the
-  main command.
+- [x] **A report other tools can rely on.** JSON Lines, a schema
+  version, a JSON Schema, a documented contract, an exit status from the
+  worst finding (0, 2 ERROR, 3 WARN, 4 FAIL, 5 ALERT; 1 did not run), and
+  `--since` for a diff-aware run of the main command.
 - [ ] **One metadata file per check**: id, severity, category, controls,
   fix, references. The docs, `tigris explain ID` (replacing `tigexp`) and
   the JSON are generated from it, and the rule that every id has an
@@ -328,9 +344,9 @@ The open items below ship as 3.3.x.
 - [ ] **Open compliance mapping**, free: CIS Controls v8, ISO 27001:2022
   Annex A, NIST 800-53 and UK Cyber Essentials, kept as data files and
   carried in the JSON. Lynis offers this only in its paid edition.
-- [x] **Drift**: `tigris-diff` and `tigris-accept`. Still to do: the
-  main command takes `--since RUN` and reports only what is new, so cron
-  needs no wrapper.
+- [x] **Drift**: `tigris-diff` and `tigris-accept`, and the main
+  command takes `--since RUN` (a report, or `last`) and prints only what
+  changed, so cron needs no wrapper: `tigris -q --since last`.
 - [ ] **Offline audit**: `tigris --root /mnt/image` audits a mounted disk,
   a container image's root filesystem or a VM snapshot without booting
   it. Lynis cannot do this.

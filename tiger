@@ -45,6 +45,10 @@
 #
 #-----------------------------------------------------------------------------
 #
+# The banner comes before config reads the options, so -q is looked for here
+case " $* " in
+  *" -q "*) ;;
+  *)
 echo "Tigris security checking system"
 echo "   Based on Tiger, developed by Texas A&M University, 1993-1994"
 echo "   Updated by the Advanced Research Corporation, 1999-2002"
@@ -53,6 +57,8 @@ echo "   Contributions by Francisco Manuel Garcia Claramonte, 2009-2010"
 echo "   Continued as Tigris by Andrei Trimbitas, 2026"
 echo "   Covered by the GNU General Public License (GPL)"
 echo
+  ;;
+esac
 TigerInstallDir="."
 #
 # Set default base directory.
@@ -160,6 +166,33 @@ haveallfiles BASEDIR SCRIPTDIR CONFIG_DIR LOGDIR WORKDIR || exit 1
   }
 }
 haveallvars HOSTNAME OS REL REV ARCH || exit 1
+
+#
+# --since: the run to compare with is settled before this one starts, so
+# the new report can never be its own baseline. With 'last' and no earlier
+# run, since_file stays empty and every finding counts as new.
+#
+since_file=
+[ -n "$SINCE_RUN" ] && {
+  [ "$Tiger_Output_JSON" = 'N' ] && {
+    echo "--ERROR-- [init011e] --since compares JSON reports, and Tiger_Output_JSON is N in $RCFILE."
+    exit 1
+  }
+  if [ "$SINCE_RUN" = 'last' ]; then
+    # newest last, by name: the date stamp sorts
+    since_file=`$LS "$LOGDIR"/security.report."$HOSTNAME".*.jsonl 2>/dev/null | $SORT | $TAIL -1`
+  else
+    since_file=$SINCE_RUN
+    [ -r "$since_file" ] || {
+      echo "--ERROR-- [init012e] Cannot read $since_file, the run to compare with."
+      exit 1
+    }
+  fi
+}
+
+# -q: nothing on the terminal while the checks run. What --since finds is
+# printed at the end, through the descriptor kept here.
+[ "$QUIET" = 'Y' ] && exec 3>&1 >/dev/null
 
 version="$TIGERVERSION"
 
@@ -523,6 +556,18 @@ naccepted=`$GREP -c . $Tiger_Accepted_Log 2>/dev/null`
   echo "# $naccepted accepted findings were left out of this report (tigris-accept -l lists them; they are in the JSON report marked accepted)." >> $logtmp
 }
 delete $Tiger_Accepted_Log
+
+# The exit status is the worst finding in the report, so cron and CI can
+# act on it: 0 nothing at WARN or above, 2 a check could not run (ERROR),
+# 3 WARN, 4 FAIL, 5 ALERT. 1 stays "the audit did not run". Accepted
+# findings are not in the report, so they do not count.
+tiger_status=0
+for _lvl in ERROR:2 WARN:3 FAIL:4 ALERT:5
+do
+  $GREP -e "^--${_lvl%:*}-- " -e "<I>${_lvl%:*}</I>" $logtmp >/dev/null 2>&1 &&
+    tiger_status=${_lvl#*:}
+done
+
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}."
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}." >>$logtmp
@@ -562,11 +607,44 @@ delete $Tiger_Accepted_Log
     echo "Security report is in \`$logfile'."
   }
 
- 
+  # --since: what changed since that run. The exit status then counts the
+  # new findings only; with -q, nothing is printed unless something
+  # changed, so cron mails only then.
+  [ -n "$SINCE_RUN" ] && [ -n "$Tiger_JSON_File" ] && {
+    [ "$QUIET" = 'Y' ] && exec 1>&3 3>&-
+    if [ -z "$since_file" ]; then
+      echo "No earlier run of $HOSTNAME in $LOGDIR to compare with: every finding of this run is new. The report is in \`$logfile'."
+    else
+      # one line: the status from the new findings that are not accepted,
+      # then how many are new and how many were resolved
+      set -- `$BASEDIR/tigris-diff -j "$since_file" "$Tiger_JSON_File" | $AWK '
+      {
+        s = $0
+        i = index(s, "\"new\":["); j = index(s, "],\"resolved\":[")
+        k = index(s, "],\"unchanged\":")
+        new = substr(s, i + 7, j - i - 7); res = substr(s, j + 14, k - j - 14)
+        n = (new == "" ? 0 : split(new, r, "{\"type\":\"finding\",") - 1)
+        w = 0
+        for (m = 2; m <= n + 1; m++) {
+          if (index(r[m], "\"accepted\":{")) continue
+          l = 0
+          if (r[m] ~ /^"level":"ALERT"/) l = 5
+          else if (r[m] ~ /^"level":"FAIL"/) l = 4
+          else if (r[m] ~ /^"level":"WARN"/) l = 3
+          else if (r[m] ~ /^"level":"ERROR"/) l = 2
+          if (l > w) w = l
+        }
+        print w, n, (res == "" ? 0 : split(res, x, "{\"type\":\"finding\",") - 1)
+      }'`
+      tiger_status=${1:-0}
+      [ "$QUIET" != 'Y' ] || [ "${2:-0}" -gt 0 ] || [ "${3:-0}" -gt 0 ] &&
+        $BASEDIR/tigris-diff "$since_file" "$Tiger_JSON_File"
+    fi
+  }
 }
 
 # Cleanup now before exiting
 tigercleanup
 
 #
-exit 0
+exit $tiger_status

@@ -95,6 +95,18 @@ act on it, and `-j` gives the same as one JSON object:
     ./tigris-diff                      # the last two runs
     ./tigris-diff old.jsonl new.jsonl  # any two
 
+`tigris` itself does the same with `--since`: the run happens and is
+recorded in full, and what is printed is only what changed. With `-q` it
+prints nothing at all when nothing changed, so a nightly cron job needs
+no wrapper and mails only when there is news:
+
+    sudo ./tigris -q --since last
+
+The exit status of `tigris` is the worst finding in the report (with
+`--since`, the worst new one), for CI and monitoring: 0 nothing at WARN
+or above, 2 a check could not run, 3 WARN, 4 FAIL, 5 ALERT, and 1 when
+the audit did not run at all.
+
 A finding you have looked at and decided to live with can be accepted,
 with a reason and, if you want, an expiry date:
 

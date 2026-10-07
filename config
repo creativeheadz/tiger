@@ -123,7 +123,7 @@ do_siggen()
 do_usage()
 {
 echo "Tigris, version $TIGERVERSION"
-echo "Usage: ./tiger [-vthqGSH]  [-B dir] [-l dir|@host] [-w dir] [-b dir] [-e|-E] [-c config] [-A arch] [-O os] [-R release]"
+echo "Usage: ./tigris [-vthqGSH] [-B dir] [-l dir|@host] [-w dir] [-b dir] [-e|-E] [-c config] [--since run] [-A arch] [-O os] [-R release]"
 echo ""
 echo "       -v     Show the Tiger version."
 echo ""
@@ -131,8 +131,8 @@ echo "       -t     Run in test mode."
 echo ""
 echo "       -h     Show usage (this help)."
 echo ""
-echo "       -q     Supress messages to be as quiet as possible, only "
-echo "              security messages will be shown."
+echo "       -q     Print nothing while running. The report is still"
+echo "              written; with --since, what changed is printed."
 echo ""
 echo "       -B name"
 echo "              Specify  the directory where tiger is installed.  If"
@@ -186,6 +186,19 @@ echo "              the  configuration  files  of  any diskless clients"
 echo "              served by this machine should  be  checked  at  the"
 echo "              same  time.   The checks will not be as in depth as"
 echo "              they would be if run on the client itself."
+echo ""
+echo "       --since run"
+echo "              Compare this run with an earlier one and print only"
+echo "              what is new and what was resolved (tigris-diff)."
+echo "              The run is the .jsonl file of an earlier report, or"
+echo "              'last' for the most recent one of this host in the"
+echo "              log directory. The exit status then counts only the"
+echo "              new findings. Cron: tigris -q --since last"
+echo ""
+echo "Exit status: 0 nothing at WARN or above; 1 the audit did not run"
+echo "(usage or configuration error); 2 a check could not run (ERROR) and"
+echo "nothing worse was found; 3 WARN, 4 FAIL, 5 ALERT is the worst"
+echo "finding. Accepted findings (tigris-accept) do not count."
 echo ""
 echo "Overrides for values detected  by the configuration system:"
 echo "       -A arch"
@@ -251,6 +264,7 @@ checkfile()
   export BASEDIR LOGDIR WORKDIR BINDIR EXPLAINREPORT SERVERCHECK 
   export TIGERHOMEDIR RCFILE IGNORE_FILE ACCEPT_FILE
   export Tiger_TESTMODE TigerCleanup HTML
+  SINCE_RUN=
   doversion=0
   
   while [ $# != 0 ]
@@ -273,6 +287,9 @@ checkfile()
      -t) Tiger_TESTMODE=Y;;
      -H) HTML=Y;;
      -q) QUIET=Y;;
+     --since)
+        [ $# -ge 2 ] || { echo "--ERROR-- [con012e] --since needs the run to compare with: a .jsonl report, or 'last'."; exit 1; }
+        SINCE_RUN=$2; shift;;
       *) echo "--ERROR-- [con006e] Unknown option $1"; do_usage; exit 1;;
     esac
     shift;

@@ -116,5 +116,14 @@ EOF
 grep -q 'Tigris diff: box 2026-10-04T10:00:30Z -> box 2026-10-04T10:01:05Z' "$W/mix.txt" && ok "mixed old and new names: the two newest are picked" || bad "mixed lookup: `head -1 "$W/mix.txt"`"
 grep -q -- '- WARN  ssh009w' "$W/mix.txt" && grep -q '+ WARN  ssh012w' "$W/mix.txt" && ! grep -q 'ssh008w' "$W/mix.txt" && ok "mixed lookup compares the right pair" || bad "mixed pair"
 
+# A new finding that is already accepted is listed, marked, and is not
+# "something new" for the exit status; an open one next to it still is.
+{ sed '$d' "$B"; echo '{"type":"finding","level":"FAIL","id":"lin005f","check":"deb_checkmd5sums","message":"/usr/bin/x differs","accepted":{"reason":"local build","until":"-"}}'; tail -1 "$B"; } > "$W/acc.jsonl"
+sh "$D" "$B" "$W/acc.jsonl" > "$W/acc.txt"; st=$?
+[ $st -eq 0 ] && grep -q '+ FAIL  lin005f /usr/bin/x differs (accepted)' "$W/acc.txt" && ok "an accepted new finding is marked and does not make the exit 1" || bad "accepted new finding: status $st, `grep lin005f "$W/acc.txt"`"
+{ sed '$d' "$W/acc.jsonl"; echo '{"type":"finding","level":"WARN","id":"ssh012w","check":"check_ssh","message":"open one"}'; tail -1 "$B"; } > "$W/acc2.jsonl"
+sh "$D" "$B" "$W/acc2.jsonl" > /dev/null; st=$?
+[ $st -eq 1 ] && ok "an open new finding next to it still does" || bad "open next to accepted: status $st"
+
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- out.txt"; cat "$W/out.txt"; }
 exit $fail

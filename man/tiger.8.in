@@ -14,6 +14,8 @@ tiger \- UNIX Security Checker
 .RB [ -e | -E ]
 .RB [ -c
 .IR config ]
+.RB [ --since
+.IR run ]
 .RB [ -A
 .IR arch ]
 .RB [ -O
@@ -122,8 +124,26 @@ at the same time.  The checks will not be as in depth as they would be
 if run on the client itself.
 .TP
 .B "\-q"
-Suppress messages to be as quiet as possible, only
-security messages will be shown.
+Print nothing while the checks run. The report is written as usual,
+and with
+.B \-\-since
+the changes are printed at the end, so that cron sends mail only when
+something has changed.
+.TP
+.BI "\-\-since " run
+Compare this run with an earlier one and print only what is new and
+what was resolved, as
+.B tigris-diff
+does.
+.I run
+is the JSON Lines report of the earlier run (a
+.I security.report.*.jsonl
+file), or
+.B last
+for the most recent run of this host in the log directory. With no
+earlier run, every finding counts as new. The exit status then counts
+only the new findings. For a nightly job:
+.B tigris \-q \-\-since last
 .TP
 .I "\-A arch"
 This option overrides the default value obtained for the current architecture
@@ -320,6 +340,36 @@ Changes in these files might be an indication of a compromised system
 Looks for files installed in the system's directories that are not provided
 by any installed Debian packages (Debian-specific).
 .LP
+.SH "EXIT STATUS"
+The exit status is the worst finding in the report, so that cron and CI
+can act on it. Accepted findings (see
+.BR tigris-accept )
+do not count; with
+.BR \-\-since ,
+only the new findings count.
+.TP
+.B 0
+Nothing at WARN or above.
+.TP
+.B 1
+The audit did not run: a usage or configuration error.
+.TP
+.B 2
+A check could not run (an ERROR in the report), and nothing worse was
+found.
+.TP
+.B 3
+The worst finding is a WARN.
+.TP
+.B 4
+The worst finding is a FAIL.
+.TP
+.B 5
+The worst finding is an ALERT.
+.LP
+A CI step that fails on a FAIL or worse, and on a run that did not
+happen, but not on warnings:
+.B "tigris; s=$?; [ $s -ne 1 ] && [ $s -lt 4 ]"
 .SH FILES
 .TP
 .I @tigerconfigdir@/tigerrc

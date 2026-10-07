@@ -33,6 +33,10 @@ The indicated option was not recognized.  The valid options are:
    -S                Perform partial checks of disk-less client
 
                      configuration files on server.
+
+   --since run       Report only what changed since an earlier run
+
+'./tigris -h' lists them all.
 %con007c
 Generic configuration files for this system do not exist.  The
 checking system will continue on, attempting to locate items it
@@ -130,6 +134,19 @@ skipped and the report would be empty. A tree owned by the person who
 ran sudo is the exception: no privilege boundary is crossed, so it runs.
 Otherwise make the tree root's, for example with 'chown -R root:root' on
 the Tiger directory, or run it from an installed copy.
+%con012e
+--since was given without the run to compare with. Name the JSON Lines
+report of an earlier run (a security.report.*.jsonl file), or 'last' for
+the most recent run of this host in the log directory.
+%init011e
+--since compares the JSON Lines reports of two runs, and this run would
+not write one because Tiger_Output_JSON is N in the configuration file.
+Set it to Y, or run without --since and compare later with tigris-diff.
+%init012e
+The report named after --since cannot be read: it does not exist, or
+the user running Tigris may not read it. Reports are written readable by
+their owner only, so a run as an ordinary user cannot compare with a run
+made as root.
 %util001e
 The attempt to compile the signature checking program (SNEFRU) failed.
 This will prevent the tests of the integrity of system binaries from

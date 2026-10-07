@@ -45,6 +45,8 @@ jobs:
         run: sh tests/profile_check.sh
       - name: A filesystem that does not answer is left alone
         run: sh tests/mounts_check.sh
+      - name: Exit status, -q and --since
+        run: sh tests/exit_check.sh
       - name: ShellCheck (errors)
         run: |
           shellcheck --version | head -2

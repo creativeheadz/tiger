@@ -53,7 +53,11 @@ short, and a consumer should treat it as incomplete.
 `tigris-diff -j OLD NEW` prints one object: `from` and `to` (the two `run`
 records), `new` and `resolved` (arrays of `finding` records) and
 `unchanged` (a count). Two findings are the same when `level`, `id` and
-`message` are all equal.
+`message` are all equal. A new finding that carries `accepted` is in `new`
+like any other; the exit status (1 when something is new) does not count
+it, and the text output marks it "(accepted)". `tigris --since RUN` runs
+this comparison against the new report and takes its exit status from
+the worst new finding that is not accepted.
 
 When either run skipped the filesystem scan, all `fsys*` findings are
 left out of both sides, so they show as neither new nor resolved, and the
