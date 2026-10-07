@@ -1,0 +1,11 @@
+Id: boot013e
+Severity: ERROR
+Category: boot
+Check: check_secureboot
+
+The system booted with UEFI, but the firmware's variables could not be
+read, so whether Secure Boot is on is unknown. They are read from
+efivarfs, mounted at /sys/firmware/efi/efivars; systemd mounts it at
+boot ('mount -t efivarfs efivarfs /sys/firmware/efi/efivars' does it by
+hand). 'mokutil --sb-state' gives the answer another way. The od
+command is needed to read them.

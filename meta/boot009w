@@ -1,0 +1,20 @@
+Id: boot009w
+Severity: WARN
+Category: boot
+Check: check_secureboot
+References: UEFI specification, chapter 32 (Secure Boot and Driver Signing)
+
+Secure Boot is off. The firmware starts whatever boot loader is on the
+disk, and the boot loader whatever kernel, so anyone who can write the
+boot partition, or boot the machine from another disk, can run a kernel
+of their own below everything the operating system protects. A rootkit
+installed there survives reinstalling packages and is invisible from
+the running system.
+
+To fix it, turn Secure Boot on in the firmware setup. Debian, Ubuntu,
+Fedora, RHEL and SUSE boot with it as they are (their shim is signed by
+Microsoft's UEFI CA); a kernel or modules you build yourself have to be
+signed with a key enrolled with mokutil. Check afterwards with
+'mokutil --sb-state'. If the hardware cannot do it, or the risk does
+not apply (a VM whose disk only you can reach), accept the finding with
+tigris-accept.

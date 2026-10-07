@@ -1,0 +1,137 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_secureboot: is Secure Boot on, and if it is, is the running kernel
+#                 locked down, so that root cannot change it afterwards.
+#
+# 10/07/2026 atrimbitas - Initial version. Secure Boot is read from the
+#                 firmware's SecureBoot and SetupMode variables (efivarfs,
+#                 a byte after four of attributes), lockdown from
+#                 /sys/kernel/security/lockdown, where the mode in
+#                 brackets is the current one. A kernel that Secure Boot
+#                 verified but that is not locked down lets root load
+#                 unsigned code into it, which undoes what Secure Boot
+#                 vouched for. Where /sys/firmware is empty (a container)
+#                 there is nothing to say about the host's boot.
+#                 Tiger_Sysctl_Root prefixes /sys for the tests.
+#
+# References:
+#   https://uefi.org/specs/UEFI/2.10/32_Secure_Boot_and_Driver_Signing.html
+#   man 7 kernel_lockdown
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT LS SED || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT LS SED || exit 1
+
+fw="${Tiger_Sysctl_Root:-}/sys/firmware"
+# A container sees an empty (or no) /sys/firmware: the host's boot is not
+# its to judge
+[ -n "`$LS "$fw" 2>/dev/null`" ] || exit 0
+
+echo
+echo "# Checking Secure Boot and kernel lockdown..."
+
+od=
+for d in /usr/bin /bin
+do
+  [ -x "$d/od" ] && { od=$d/od; break; }
+done
+
+# efivar NAME: the value byte of a global variable, empty when unreadable
+efivar()
+{
+  f="$fw/efi/efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+  [ -r "$f" ] && [ -n "$od" ] || return 0
+  $od -An -tu1 "$f" 2>/dev/null | $AWK '{ for (i = 1; i <= NF; i++) v = $i } END { print v }'
+}
+
+# The kernel's lockdown mode, "" when it has no lockdown support
+lockdown=`$SED -n 's/.*\[\([a-z]*\)\].*/\1/p' "${Tiger_Sysctl_Root:-}/sys/kernel/security/lockdown" 2>/dev/null`
+
+if [ ! -d "$fw/efi" ]; then
+  message INFO boot010i "" "The system booted without UEFI (legacy BIOS), where Secure Boot does not exist."
+  exit 0
+fi
+
+sb=`efivar SecureBoot`
+setup=`efivar SetupMode`
+case "$sb" in
+  '')
+    message ERROR boot013e "" "Whether Secure Boot is on cannot be told: the firmware's variables in $fw/efi/efivars cannot be read."
+    ;;
+  1)
+    message INFO boot012i "" "Secure Boot is on, and kernel lockdown is ${lockdown:-not supported by this kernel}."
+    case "$lockdown" in
+      integrity|confidentiality) ;;
+      *) message WARN lin040w "Lockdown is ${lockdown:-not built into this kernel}. Boot with lockdown=integrity on the kernel command line (in GRUB_CMDLINE_LINUX), or use a kernel built with CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT, as Debian, Ubuntu and Fedora ship." "Secure Boot is on, but the kernel is not locked down: root can still change the running kernel, which undoes what Secure Boot verified." ;;
+    esac
+    ;;
+  *)
+    if [ "$setup" = 1 ]; then
+      message WARN boot011w "" "The firmware is in Secure Boot setup mode: no platform key is enrolled, so anything that runs can enrol its own keys, and nothing is verified."
+    else
+      message WARN boot009w "" "Secure Boot is off: the firmware starts any boot loader and kernel, signed or not."
+    fi
+    ;;
+esac
+
+exit 0

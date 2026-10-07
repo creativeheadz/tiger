@@ -1,0 +1,22 @@
+Id: lin040w
+Severity: WARN
+Category: kernel
+Check: check_secureboot
+References: kernel_lockdown(7)
+
+Secure Boot is on, but the running kernel is not locked down. Secure
+Boot guarantees only that the kernel which started was signed; without
+lockdown, root can still change it while it runs: load unsigned
+modules (unless module.sig_enforce is set), kexec an unsigned kernel,
+write kernel memory through /dev/mem, or reach the hardware directly
+(I/O ports, model-specific registers). Malware with root can then hide
+in the kernel, and Secure Boot no longer says anything about what is
+running.
+
+Lockdown in "integrity" mode blocks these; "confidentiality" also
+keeps root from reading kernel memory. Debian, Ubuntu and Fedora build
+their kernels to switch to integrity when Secure Boot is on
+(CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT). Elsewhere, add lockdown=integrity
+to the kernel command line (GRUB_CMDLINE_LINUX in /etc/default/grub,
+then update the GRUB configuration). Lockdown also turns off
+hibernation and some debugging and tracing tools, which is the price.

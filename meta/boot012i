@@ -1,0 +1,10 @@
+Id: boot012i
+Severity: INFO
+Category: boot
+Check: check_secureboot
+
+Secure Boot is on: the firmware verified the boot loader, and the boot
+loader the kernel, against the keys enrolled in the firmware. The
+message names the kernel's lockdown mode; when it is "none" or not
+supported, lin040w explains what that leaves open. This is
+informational.

@@ -1,0 +1,11 @@
+Id: boot010i
+Severity: INFO
+Category: boot
+Check: check_secureboot
+
+The system started from a legacy BIOS (or UEFI's compatibility mode),
+not UEFI, so Secure Boot cannot be on: nothing checks the boot loader
+or the kernel before they run. Machines from the last ten years can
+usually boot in UEFI mode, but switching an installed system means
+converting its disk to GPT and installing a UEFI boot loader. On a
+virtual machine, choose UEFI firmware (OVMF) when creating it.

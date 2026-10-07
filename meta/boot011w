@@ -1,0 +1,15 @@
+Id: boot011w
+Severity: WARN
+Category: boot
+Check: check_secureboot
+References: UEFI specification, chapter 32 (Secure Boot and Driver Signing)
+
+The firmware is in Secure Boot setup mode: no platform key (PK) is
+enrolled. In this mode the key databases are not protected, so any
+program that runs, including one started from a USB stick, can enrol
+keys of its own, and the firmware verifies nothing while it lasts.
+
+To fix it, restore the factory keys in the firmware setup (often
+"Restore Factory Keys" or "Install default Secure Boot keys") and turn
+Secure Boot on, or enrol your own platform key if you manage your own
+keys (sbctl, for instance, does this).

@@ -304,6 +304,13 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   `path006w` and `path007w` meant other things in older versions. A
   report from 3.3.0 compared with one from 3.4.0 shows those findings
   as resolved and new once. `tests/pathmsg_check.sh` covers the levels.
+- [x] **`check_secureboot`**: Secure Boot from the firmware's SecureBoot
+  and SetupMode variables (off: boot009w; setup mode, where anything can
+  enrol keys: boot011w; on: boot012i; legacy BIOS: boot010i), and, when
+  it is on, kernel lockdown: a verified kernel that is not locked down
+  lets root load unsigned code into it (lin040w). Says nothing in a
+  container, whose /sys/firmware is empty. Hera: on, lockdown
+  integrity. `tests/secureboot_check.sh` builds a /sys per case.
 
 ## 3.2.x: maintenance
 
@@ -420,7 +427,8 @@ open items below ship from 3.4.0 on.
   master since 3.3.0).
 - [x] Ports Docker publishes, which bypass the input chain (fire005w,
   fire006i; on master since 3.3.0).
-- [ ] Kernel lockdown and Secure Boot.
+- [x] Kernel lockdown and Secure Boot (`check_secureboot`, boot009w to
+  boot013e and lin040w; on master since 3.3.0).
 - [ ] AppArmor or SELinux enforcing, auditd, journald persistence.
 - [ ] Time sync (chrony, timesyncd) instead of the NTP-only check.
 - [ ] Updates: automatic security updates configured, pending security
