@@ -180,7 +180,8 @@ do
 		      echo "--ERROR-- [run001e] The file /etc/shadow is available but not readable by the user running Tiger."
 		fi
 
-	    else
+	    elif [ -f "$PASSWD" ]; then
+                # (an image may have no passwd at all: a distroless one)
                 $CAT "$PASSWD" |
                 {
                         if [ "$passwordflag" = 'Y' ]; then

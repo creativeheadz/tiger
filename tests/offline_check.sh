@@ -6,11 +6,11 @@
 # pam_faillock, and a pwquality.conf that is an absolute link to another
 # file of that root, setting minlen = 6. Runs tigris --root on it with a
 # profile that leaves five checks on: check_pam, which reads an offline
-# root; check_timesync, which reads the running system; check_units,
-# which cannot read an offline root yet; and check_ssh and check_sudo,
-# which can but need root. check_pam must report the root's minimum
-# length, read through the link inside the root; check_timesync and
-# check_units must be skipped, each with its reason, in the report and in
+# root; check_timesync, which reads the running system; check_signatures,
+# which cannot read an offline root; and check_ssh and check_sudo, which
+# can but need root. check_pam must report the root's minimum length,
+# read through the link inside the root; check_timesync and
+# check_signatures must be skipped, each with its reason, in the report and in
 # the JSON, and check_ssh and check_sudo too when this is not root; the run record names the root, and the run exits 3 (a
 # WARN): a check that does not apply to an offline root is not one that
 # failed to run. Then
@@ -43,7 +43,7 @@ ln -s /etc/security/pwquality-real.conf "$R/etc/security/pwquality.conf"
 {
   sed -n 's/^\(Tiger_Check_[A-Z_]*\)=.*/\1=N/p' "$W/tigerrc"
   echo 'Tiger_Deb_CheckMD5Sums=N'; echo 'Tiger_Deb_NoPackFiles=N'; echo 'Tiger_Deb_StatOverride=N'
-  echo 'Tiger_Check_SYSTEM=Y'; echo 'Tiger_Check_PAM=Y'; echo 'Tiger_Check_TIMESYNC=Y'; echo 'Tiger_Check_SUDO=Y'; echo 'Tiger_Check_SSH=Y'; echo 'Tiger_Check_UNITS=Y'
+  echo 'Tiger_Check_SYSTEM=Y'; echo 'Tiger_Check_PAM=Y'; echo 'Tiger_Check_TIMESYNC=Y'; echo 'Tiger_Check_SUDO=Y'; echo 'Tiger_Check_SSH=Y'; echo 'Tiger_Check_SIGNATURES=Y'
 } > "$W/profiles/offline"
 chmod 644 "$W/profiles/offline"
 
@@ -57,7 +57,7 @@ grep -q '"id":"pam002w".*"message":"New passwords may be as short as 6 character
 grep -q '"id":"pam00[13]w"' "$json" && bad "pam001w or pam003w: the root's stacks were not the ones read" ||
   ok "the root's PAM stacks were read: quality and lockout found"
 grep -q "^# Skipped check_timesync: it reads the running system, and this audit is of $R\.$" "$report" &&
-  grep -q '^# Skipped check_units: it cannot read an offline root yet\.$' "$report" &&
+  grep -q '^# Skipped check_signatures: it cannot read an offline root yet\.$' "$report" &&
   ok "a live-system check and one not offline yet are skipped, each saying why" || { bad "report lines"; grep Skipped "$report"; }
 if [ "`id -u`" = 0 ]; then
   want=2
@@ -69,12 +69,12 @@ else
     ok "as a user, check_ssh and check_sudo (offline, need root) are skipped for root" || { bad "check_ssh/check_sudo as a user"; grep Skipped "$report"; }
 fi
 grep -q '{"type":"skip","check":"check_timesync","reason":"live system"}' "$json" &&
-  grep -q '{"type":"skip","check":"check_units","reason":"not offline yet"}' "$json" &&
+  grep -q '{"type":"skip","check":"check_signatures","reason":"not offline yet"}' "$json" &&
   grep -q "\"type\":\"summary\".*\"skipped\":$want}" "$json" &&
   ok "a skip record each in the JSON, \"skipped\":$want in the summary" || { bad "skip records"; grep '"skip' "$json"; tail -1 "$json"; }
 grep -q "\"type\":\"run\".*\"root\":\"$R\"" "$json" && ok "the run record names the root" || { bad "run record"; head -1 "$json"; }
 [ "$st" = 3 ] && ok "exit status 3: the WARN; skipping what does not apply to an offline root is not an error" || bad "exit status $st"
-grep -q "Checking time synchronisation\|Checking what enabled" "$report" && bad "a skipped check ran" || ok "the skipped checks did not run"
+grep -q "Checking time synchronisation\|signature check of system binaries" "$report" && bad "a skipped check ran" || ok "the skipped checks did not run"
 sh "$W/tests/schema_check.sh" "$json" > "$W/schema.out" 2>&1 && ok "the report validates" || { bad "schema"; cat "$W/schema.out"; }
 
 # util/rootpath on its own
