@@ -1,0 +1,16 @@
+Id: path011i
+Severity: INFO
+Category: accounts
+Check: check_path
+
+A directory on a user's PATH is not owned by that user. Another account
+can then replace the programs in it with Trojan horses that run under
+the user's identity the next time they type the command name. Give the
+directory to the user whose PATH names it, or take it out of the PATH.
+
+It is INFO rather than a WARN because the owner expected is root and
+the file named is a directory or not executable: whoever owns it can
+change what it holds, but not a program that runs.
+
+Until 3.4.0 this was reported as path006; the number changed because
+path006w meant something else in older versions.

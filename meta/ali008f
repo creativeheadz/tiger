@@ -1,0 +1,13 @@
+Id: ali008f
+Severity: FAIL
+Category: services
+Check: check_aliases
+
+The indicated alias includes a file which has group write permission,
+world write permission or both.  This allows others to add or modify
+entries in the file, possibly gaining unauthorized privileges.
+
+It is a FAIL because anyone on the system can write it and the file
+named is executable.
+
+Until 3.4.0 this was reported as ali008, without the letter for its level.

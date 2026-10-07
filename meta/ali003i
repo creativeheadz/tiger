@@ -1,0 +1,14 @@
+Id: ali003i
+Severity: INFO
+Category: services
+Check: check_aliases
+
+The indicated alias is a program alias, but the executable is not owned
+by root.  This may allow the owner of the executable (or anyone gaining
+access to that login ID) to gain unauthorized privileges.
+
+It is INFO rather than a WARN because the owner expected is root and
+the file named is a directory or not executable: whoever owns it can
+change what it holds, but not a program that runs.
+
+Until 3.4.0 this was reported as ali003, without the letter for its level.

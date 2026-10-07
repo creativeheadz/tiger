@@ -1,5 +1,5 @@
-Id: cron003
-Severity: FAIL, WARN, INFO
+Id: cron003w
+Severity: WARN
 Category: cron
 Check: check_crontabs
 
@@ -8,3 +8,8 @@ permissions, world write permissions or both.  This can allow the
 system to be compromised.  For root cron entries, this is especially
 dangerous.  Note that the actual problem may be with a directory in
 the path to the file, not the file itself.
+
+It is a WARN because its group can write it and the file named is
+executable.
+
+Until 3.4.0 this was reported as cron003, without the letter for its level.

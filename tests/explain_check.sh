@@ -21,9 +21,10 @@
 #   column (today every line says '.', i.e. no real id).
 # - check_embed: emits embed001..embed004 with $l, which is 'w' except
 #   for INFO ('i'), so both suffixes are enumerated.
-# - pathmsg $1/$2 (initdefs re-emits them verbatim). These keep the old
-#   unsuffixed form (ali003, suid002); '.' as $1 marks the dead owner
-#   branch and is not an id.
+# - pathmsg $1/$2 are ids without their last letter, which pathmsg adds
+#   from the level: $1 (not owned by) becomes w or i, $2 (writable by)
+#   f, w or i, so ali003 is ali003w and ali003i. '.' as $1 marks the
+#   dead owner branch and is not an id.
 # Out of scope, each for a reason stated once here:
 # - scripts/check_network: perl, undispatched (commented out in tiger).
 # - systems/Linux/0 and 1: kernel 0.x/1.x, unreachable; systems/default
@@ -34,6 +35,9 @@
 # - audit/: standalone scripts for other systems, not part of a run.
 #
 TIGER=${TIGER:-`cd "\`dirname \"$0\"\`/.." && pwd`}
+# Bytes, not characters: some scripts are Latin-1, and sort and comm
+# must agree on one order
+LC_ALL=C; export LC_ALL
 W=`mktemp -d`
 trap 'rm -rf "$W"' 0
 fail=0
@@ -63,8 +67,10 @@ grep -hoE "embed00[0-9]\\\$l" scripts/sub/check_embed | sort -u | sed 's/\$l//' 
 : > "$W/embed_ids.txt"
 while read -r b; do echo "${b}w"; echo "${b}i"; done < "$W/embed_base.txt" > "$W/embed_ids.txt"
 
-grep -rhoE "pathmsg +[^ ]+ +[^ ]+" scripts systems/Linux/2 tiger \
-  | awk '{print $2; print $3}' | grep -v '^\.$' | grep -v '\$' | sort -u > "$W/pathmsg_ids.txt"
+grep -rh "" scripts systems/Linux/2 tiger | grep -v "^[ 	]*#" | grep -oE "pathmsg +[^ ]+ +[^ ]+" > "$W/pathmsg_calls.txt"
+awk '{print $2; print $3}' "$W/pathmsg_calls.txt" | grep -v '^\.$' | grep -v '\$' | sort -u > "$W/pathmsg_bases.txt"
+awk '$2 != "." { print $2 "w"; print $2 "i" } { print $3 "f"; print $3 "w"; print $3 "i" }' "$W/pathmsg_calls.txt" \
+  | sort -u > "$W/pathmsg_ids.txt"
 
 cat "$W/shape_ids.txt" "$W/perm_ids.txt" "$W/sig_ids.txt" "$W/embed_ids.txt" "$W/pathmsg_ids.txt" \
   | sort -u > "$W/emitted.txt"
@@ -84,8 +90,8 @@ fi
 
 # What the code says about each id: "id script" for every script it
 # appears in, and "id LEVEL" for every level a message call or a raw
-# --LEVEL-- line gives it (pathmsg: WARN or INFO for its owner id, FAIL,
-# WARN or INFO for its access id)
+# --LEVEL-- line gives it (pathmsg adds the level's letter: w or i to its
+# owner id, f, w or i to its access id)
 # shellcheck disable=SC2086
 grep -r "" $CODE 2>/dev/null | grep -v "^[^:]*:[ 	]*#" | grep -v "^scripts/check_network:" \
   | grep -v "systems/Linux/2/\(embedlist\|facl.strict\|file_access_list\|rel_file_exp_list\|rh7.3.baseline\|services\|services.save\|sgid_list\|signatures\|suid_list\):" \
@@ -103,8 +109,9 @@ grep -r "" $CODE 2>/dev/null | grep -v "^[^:]*:[ 	]*#" | grep -v "^scripts/check
         if (w[i] == "message" && lv ~ /^(ALERT|FAIL|WARN|INFO|ERROR|CONFIG)$/ && id ~ /^[a-z]+[0-9][0-9][0-9][a-z]?$/)
           print id, "L", lv
         if (w[i] == "pathmsg") {
-          if (lv != ".") { print lv, "L", "WARN"; print lv, "L", "INFO" }
-          print id, "L", "FAIL"; print id, "L", "WARN"; print id, "L", "INFO"
+          if (lv != ".") { print lv "w", "L", "WARN"; print lv "i", "L", "INFO"; print lv "w", "S", base; print lv "i", "S", base }
+          print id "f", "L", "FAIL"; print id "w", "L", "WARN"; print id "i", "L", "INFO"
+          print id "f", "S", base; print id "w", "S", base; print id "i", "S", base
         }
       }
       rest = line
@@ -170,7 +177,7 @@ fi
 
 # Well-formed: the id argument of message (2nd) and pathmsg (1st, 2nd).
 # Dynamic ($var) ids are covered structurally above; message ids carry a
-# severity suffix, pathmsg ids keep the legacy unsuffixed form.
+# severity suffix, pathmsg is given ids without one and adds it.
 # shellcheck disable=SC2086
 grep -r "" $CODE 2>/dev/null | grep -v "^[^:]*:[ 	]*#" | grep -v "^scripts/check_network:" \
   | cut -d: -f2- | awk '{
@@ -190,9 +197,9 @@ if [ -z "$deformed" ]; then
 else
   bad "malformed message ids:"; echo "$deformed" | sed 's/^/     /'
 fi
-deformed=$(grep -vE "^[a-z]{3,7}[0-9]{3}[a-z]?$" "$W/pathmsg_ids.txt" || true)
+deformed=$( { grep -vE "^[a-z]{3,7}[0-9]{3}$" "$W/pathmsg_bases.txt"; grep -vE "^[a-z]{3,7}[0-9]{3}[a-z]$" "$W/pathmsg_ids.txt"; } || true)
 if [ -z "$deformed" ]; then
-  ok "every pathmsg id is well-formed"
+  ok "every pathmsg id is well-formed (given without its letter, which pathmsg adds)"
 else
   bad "malformed pathmsg ids:"; echo "$deformed" | sed 's/^/     /'
 fi

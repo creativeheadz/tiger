@@ -1,0 +1,15 @@
+Id: path012w
+Severity: WARN
+Category: accounts
+Check: check_path
+
+A directory on a user's PATH can be written by its group or by any
+user. Whoever can write the directory can drop in a Trojan horse under
+the name of a command the user runs. Remove the write permission, or
+take the directory out of the PATH.
+
+It is a WARN because its group can write it and the file named is
+executable.
+
+Until 3.4.0 this was reported as path007; the number changed because
+path007w meant something else in older versions.

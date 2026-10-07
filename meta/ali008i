@@ -1,8 +1,13 @@
-Id: ali008
-Severity: FAIL, WARN, INFO
+Id: ali008i
+Severity: INFO
 Category: services
 Check: check_aliases
 
 The indicated alias includes a file which has group write permission,
 world write permission or both.  This allows others to add or modify
 entries in the file, possibly gaining unauthorized privileges.
+
+It is INFO because the file named is a directory or not executable,
+though others (its group, or anyone) can write it.
+
+Until 3.4.0 this was reported as ali008, without the letter for its level.

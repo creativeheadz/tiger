@@ -1,8 +1,13 @@
-Id: ali003
-Severity: WARN, INFO
+Id: ali003w
+Severity: WARN
 Category: services
 Check: check_aliases
 
 The indicated alias is a program alias, but the executable is not owned
 by root.  This may allow the owner of the executable (or anyone gaining
 access to that login ID) to gain unauthorized privileges.
+
+It is a WARN when the file named is executable, or when the owner
+expected is not root.
+
+Until 3.4.0 this was reported as ali003, without the letter for its level.

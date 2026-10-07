@@ -1,0 +1,15 @@
+Id: suid002i
+Severity: INFO
+Category: filesystem
+Check: check_suid
+
+A setuid file can be written by its group or by any user. Whoever can
+write the file can replace it with a program of their own choosing,
+which then runs with the file owner's privileges. Remove the write
+permission with chmod, or take the setuid bit off if the program does
+not need it.
+
+It is INFO because the file named is a directory or not executable,
+though others (its group, or anyone) can write it.
+
+Until 3.4.0 this was reported as suid002, without the letter for its level.

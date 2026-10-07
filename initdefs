@@ -328,6 +328,11 @@ message()
 #
 #  Output messages about a file... reads the output of lgetpermit()
 #
+#  $1 and $2 are the ids for "not owned by" and "writable by" without
+#  their last letter, which is the level's: an id names one level, as the
+#  JSON schema requires. $1 is reported as WARN or INFO, $2 as FAIL, WARN
+#  or INFO, so each has a meta file per letter (ali003w and ali003i).
+#
 pathmsg()
 {
   __omsgid="$1"
@@ -411,13 +416,15 @@ pathmsg()
     esac
     
     [ -n "$__omsg" ] && {
-      message "$__olvl" "$__omsgid" "$__trailer" "$__msgtxt $__file which is $__omsg"
+      case "$__olvl" in WARN) __l=w ;; *) __l=i ;; esac
+      message "$__olvl" "$__omsgid$__l" "$__trailer" "$__msgtxt $__file which is $__omsg"
       echo
       changelog "$__olvl : chown : $__owner : $__comp"
     }
     
     [ -n "$__access" ] && {
-      message "$__alvl" "$__amsgid" "$__trailer" "$__msgtxt $__file which is $__access writable."
+      case "$__alvl" in FAIL) __l=f ;; WARN) __l=w ;; *) __l=i ;; esac
+      message "$__alvl" "$__amsgid$__l" "$__trailer" "$__msgtxt $__file which is $__access writable."
       echo
       changelog "$__alvl : chmod : $__newmode : $__comp"
     }

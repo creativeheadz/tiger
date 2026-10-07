@@ -293,6 +293,17 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   no file, a file for an id nothing emits, an unknown key or category,
   a severity that leaves out a level the code reports, or a Check list
   that does not match the scripts the id appears in.
+- [x] **Every id names one level** (incompatible: nine ids change, so
+  the release notes must list them). `pathmsg` reported the ids its
+  callers gave it without a level letter (`ali003`, `suid002`), at FAIL,
+  WARN or INFO as the file deserved, so a run that hit one wrote JSON
+  the schema rejects. It now adds the letter: `ali003`, `ali007` and
+  `cron002` become `...w` or `...i`; `ali004`, `ali008`, `cron003` and
+  `suid002` become `...f`, `...w` or `...i`; `path006` and `path007`
+  become `path011w/i` and `path012f/w/i`, new numbers because
+  `path006w` and `path007w` meant other things in older versions. A
+  report from 3.3.0 compared with one from 3.4.0 shows those findings
+  as resolved and new once. `tests/pathmsg_check.sh` covers the levels.
 
 ## 3.2.x: maintenance
 

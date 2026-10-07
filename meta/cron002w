@@ -1,5 +1,5 @@
-Id: cron002
-Severity: WARN, INFO
+Id: cron002w
+Severity: WARN
 Category: cron
 Check: check_crontabs
 
@@ -8,3 +8,8 @@ by the owner of the cron entry, and is also not owned by a system
 account (root or bin, etc).  For root cron entries, these are especially
 dangerous.  Note that the actual problem may be with a directory in
 the path to the file, not the file itself.
+
+It is a WARN when the file named is executable, or when the owner
+expected is not root.
+
+Until 3.4.0 this was reported as cron002, without the letter for its level.

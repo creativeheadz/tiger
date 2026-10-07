@@ -17,6 +17,10 @@
 #
 # check_path  - 06/14/93
 #
+# 10/07/2026 atrimbitas  A user's PATH directory owned by someone else or
+#                 writable by others is path011 or path012 with the level's
+#                 letter (pathmsg adds it); it was path006 and path007,
+#                 whose w forms meant other things in older versions.
 # 05/02/2004 jfs  Try to avoid eval problems if handling variables with
 #                 special characters (such as space)
 # 10/07/2003 jfs Redirected LS error to /dev/null since dangling symlinks
@@ -180,7 +184,7 @@ parse_path()
       }
     elif [ -d "$comp" ]; then
       lgetpermit "$comp" |
-      pathmsg path006 path007 "$comp" "$user" "The PATH set in $user's $file contains"
+      pathmsg path011 path012 "$comp" "$user" "The PATH set in $user's $file contains"
     fi
     [ "$user" = 'root' -a "$comp" != '.' ] && checkcmds $user "$comp" "$file"
   done

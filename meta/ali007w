@@ -1,8 +1,13 @@
-Id: ali007
-Severity: WARN, INFO
+Id: ali007w
+Severity: WARN
 Category: services
 Check: check_aliases
 
 The indicated alias includes a file which is not owned by root.
 This may allow the owner of the included file (or anyone gaining
 access to that login ID) to gain unauthorized privileges.
+
+It is a WARN when the file named is executable, or when the owner
+expected is not root.
+
+Until 3.4.0 this was reported as ali007, without the letter for its level.
