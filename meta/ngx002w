@@ -1,0 +1,10 @@
+Id: ngx002w
+Severity: WARN
+Category: services
+Check: check_nginx
+Fix: Log somewhere: access_log /var/log/nginx/access.log.
+References: ngx_http_log_module
+
+A server never logs requests: access_log is off, and nothing in its
+locations logs either. Without request logs an intrusion leaves no
+trace here: no addresses, no URLs, no time to start from.

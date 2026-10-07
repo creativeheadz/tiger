@@ -596,6 +596,35 @@ lgetpermit()
   getpermit
 }
 #
+# exposed PATH GROUP: why PATH (an audited-system path) is readable by
+# strangers: world-readable or writable, or group-readable or writable
+# for a group that is neither root nor GROUP. Prints the reason, or
+# nothing when the path is missing or properly alone. For one file or
+# directory on its own; pathmsg judges a path with every directory
+# above it.
+#
+exposed()
+{
+  # getpermit resolves an offline root by itself, but not the tests'
+  # Tiger_Sysctl_Root, so that one is resolved here. The wanted group
+  # is kept aside: set -- replaces the arguments below.
+  __want=$2
+  if [ -n "$TIGRIS_ROOT" ]; then
+    __p=$1
+  else
+    __p=`rootfile "$1"`
+    [ -e "$__p" ] || return 0
+  fi
+  set -- `getpermit "$__p" 2>/dev/null`
+  [ $# -ge 12 ] || return 0
+  __group=$3 __gr=$7 __gw=$8 __or=${10} __ow=${11}
+  [ "$__ow" = 1 ] && { echo "writable by anyone"; return 0; }
+  [ "$__or" = 1 ] && { echo "readable by anyone"; return 0; }
+  case "$__group" in root|"$__want") ;; *) [ "$__gw" = 1 ] && { echo "writable by group \`$__group'"; return 0; }
+    [ "$__gr" = 1 ] && { echo "readable by group \`$__group'"; return 0; } ;; esac
+  return 0
+}
+#
 # Write entry to change log
 #
 changelog()

@@ -1,0 +1,398 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_databases: MySQL/MariaDB, PostgreSQL and Redis, from their
+#                 configuration files alone: no server is queried, so no
+#                 credentials are needed and an offline root reads the
+#                 same. Authentication disabled (dbs001f), LOAD DATA
+#                 LOCAL (dbs002w), secrets a stranger can read (dbs003f,
+#                 dbs007f, dbs010f), the server running as root (dbs004f),
+#                 trust authentication (dbs005f), md5 passwords (dbs006w),
+#                 unencrypted network connections (dbs008w), and Redis
+#                 open without a password (dbs009f).
+#
+# 10/07/2026 atrimbitas - Initial version. Includes expand in place, so
+#                 the last value of a setting wins wherever it stands;
+#                 each expanded line knows the file it came from. What is
+#                 not set is not judged: the distributions' defaults
+#                 (Debian's snakeoil SSL, scram-sha-256 since PostgreSQL
+#                 14) are taken as sane. Relative includes resolve
+#                 against the file that names them, which is where the
+#                 packaged configurations keep them. MongoDB is not
+#                 covered.
+#
+# References:
+#   mysqld(8), postgresql.conf(5), pg_hba.conf(5), redis-server(1)
+#
+# Tigris: offline
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK GREP SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK GREP SED SORT || exit 1
+
+dblist=$WORKDIR/dblist.$$
+safe_temp $dblist
+trap 'delete $dblist ; exit 1' 1 2 3 15
+
+# expand_db FILE DEPTH KIND: FILE (an audited-system path) with its
+# includes expanded in place, read inside the root. KIND is mysql
+# (!include, !includedir), pg (include, include_if_exists, include_dir)
+# or redis (include). Every file's lines follow a "# @@FILE@@ PATH"
+# line naming it, so a value found knows where it stands. The marker
+# goes out again after every include: what follows is this file's
+# again. An
+# include_dir reads every file but dotfiles and backups.
+expand_db()
+{
+  (
+  __f=$1 __d=$2 __k=$3
+  __h=`rootfile "$__f"`
+  [ -f "$__h" ] && [ "$__d" -le 16 ] || exit 0
+  printf '# @@FILE@@ %s\n' "$__f"
+  while IFS= read -r __l || [ -n "$__l" ]
+  do
+    __inc= __isdir=
+    case "$__k" in
+      mysql)
+        case "$__l" in
+          '!includedir'[\ \	]*)
+            __isdir=Y
+            __inc=`printf '%s' "$__l" | $SED 's/#.*//; s/^!includedir[ 	][ 	]*//; s/[ 	]*$//'` ;;
+          '!include'[\ \	]*)
+            __inc=`printf '%s' "$__l" | $SED 's/#.*//; s/^!include[ 	][ 	]*//; s/[ 	]*$//'` ;;
+        esac ;;
+      pg)
+        __s=`printf '%s' "$__l" | $SED 's/#.*//'`
+        case "$__s" in
+          include_dir[\ \	]*=*)
+            __isdir=Y
+            __inc=`printf '%s' "$__s" | $SED "s/^[^=]*=[ 	]*//; s/^[ 	]*'//; s/'[ 	]*$//; s/^['\"]//; s/['\"]$//"` ;;
+          include[\ \	]*=*|include_if_exists[\ \	]*=*)
+            __inc=`printf '%s' "$__s" | $SED "s/^[^=]*=[ 	]*//; s/^[ 	]*'//; s/'[ 	]*$//; s/^['\"]//; s/['\"]$//"` ;;
+        esac ;;
+      redis)
+        case "$__l" in
+          include[\ \	]*)
+            __inc=`printf '%s' "$__l" | $SED 's/^include[ 	][ 	]*//; s/^"//; s/"$//; s/#.*//; s/[ 	]*$//'` ;;
+        esac ;;
+    esac
+    if [ -z "$__inc" ]; then
+      printf '%s\n' "$__l"
+      continue
+    fi
+    case "$__inc" in /*) ;; *) __inc=${__f%/*}/$__inc ;; esac
+    if [ -n "$__isdir" ]; then
+      rootls "$__inc" 2>/dev/null | $SORT | while IFS= read -r __n
+      do
+        case "${__n##*/}" in .*|*~) ;; *) [ -f "`rootfile "$__n"`" ] && expand_db "$__n" `expr $__d + 1` "$__k" ;; esac
+      done
+    else
+      case "$__inc" in
+        *[\*\?[]*)
+          __dir=${__inc%/*} __pat=${__inc##*/}
+          rootls "$__dir" 2>/dev/null | while IFS= read -r __n
+          do
+            case "${__n##*/}" in $__pat) expand_db "$__n" `expr $__d + 1` "$__k" ;; esac
+          done ;;
+        *) expand_db "$__inc" `expr $__d + 1` "$__k" ;;
+      esac
+    fi
+    printf '# @@FILE@@ %s\n' "$__f"
+  done < "$__h"
+  )
+}
+
+# the configurations, one "engine path" a line: fixed paths and rootls
+# walks, so an offline root is searched, not this host
+for m in /etc/mysql/my.cnf /etc/my.cnf
+do
+  [ -f "`rootfile $m`" ] && echo "mysql $m" >> $dblist
+done
+for v in `rootls /etc/postgresql 2>/dev/null`
+do
+  for c in `rootls "$v" 2>/dev/null`
+  do
+    for f in postgresql.conf pg_hba.conf
+    do
+      [ -f "`rootfile "$c/$f"`" ] && echo "pg $c/$f" >> $dblist
+    done
+  done
+done
+for e1 in `rootls /var/lib/pgsql 2>/dev/null`
+do
+  for e2 in "$e1" `rootls "$e1" 2>/dev/null`
+  do
+    for f in postgresql.conf pg_hba.conf
+    do
+      [ -f "`rootfile "$e2/$f"`" ] && echo "pg $e2/$f" >> $dblist
+    done
+  done
+done
+[ -f "`rootfile /etc/redis/redis.conf`" ] && echo "redis /etc/redis/redis.conf" >> $dblist
+rootls /etc/redis 2>/dev/null | while IFS= read -r c
+do
+  case "$c" in *.conf) [ -f "`rootfile "$c"`" ] && echo "redis $c" >> $dblist ;; esac
+done
+$SORT -u -o $dblist $dblist
+[ -s $dblist ] || { delete $dblist; exit 0; }
+
+echo
+echo "# Checking the database servers' configuration..."
+
+# MySQL and MariaDB: the server sections, and local-infile in the client
+# ones; the last value of each setting wins. Two mains can share
+# included files, so a finding made is not made again.
+seen1= seen2= seen3= seen4=
+$GREP -q '^mysql ' $dblist && mysql_seen=Y
+$GREP '^mysql ' $dblist | $SED 's/^mysql //' | while IFS= read -r main
+do
+  expand_db "$main" 0 mysql | $AWK '
+    /^# @@FILE@@ / { file = substr($0, 12); next }
+    /^\[.*\]/ { sect = $0; next }
+    { line = $0; sub(/#.*/, "", line); sub(/;.*/, "", line)
+      if (line ~ /=/) { k = line; sub(/=.*/, "", k); v = line; sub(/^[^=]*=/, "", v) }
+      else { k = line; v = "ON" }
+      gsub(/^[ \t]+|[ \t]+$/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", v)
+      if (k == "") next
+      gsub(/-/, "_", k)
+      if (sect ~ /^\[(mysqld(\]|-|$)|server(\]|-|$))/) print tolower(k) "\t" v "\t" file "\tsrv"
+      else if (sect ~ /^\[(client(\]|-|$)|mysql(\]|-|$))/) print tolower(k) "\t" v "\t" file "\tcli" }' | {
+    grant= grantf= local= localf= localsect= user= userf= data=
+    while IFS='	' read -r k v f s
+    do
+      case "$k" in
+        skip_grant_tables) [ "$s" = srv ] && { grant=$v; grantf=$f; } ;;
+        local_infile) local=$v; localf=$f; localsect=$s ;;
+        user) [ "$s" = srv ] && { user=$v; userf=$f; } ;;
+        datadir) [ "$s" = srv ] && data=$v ;;
+      esac
+    done
+    case "$grant" in ''|0|OFF|Off|off|FALSE|False|false|NO|No|no) ;; *)
+      case " $seen1 " in *" $grantf "*) ;; *)
+        seen1="$seen1 $grantf"
+        message FAIL dbs001f "" "MySQL runs with skip-grant-tables ($grantf): anyone connecting has every privilege without a password." ;; esac ;;
+    esac
+    case "$local" in 1|ON|On|on|TRUE|True|true|YES|Yes|yes)
+      case " $seen2 " in *" $localf:$localsect "*) ;; *)
+        seen2="$seen2 $localf:$localsect"
+        if [ "$localsect" = cli ]; then
+          message WARN dbs002w "" "LOAD DATA LOCAL is enabled for clients ($localf): this host's tools send local files to any server they load data to."
+        else
+          message WARN dbs002w "" "LOAD DATA LOCAL is enabled ($localf): a SQL user reads files off the machine connecting."
+        fi ;; esac ;;
+    esac
+    case "$user" in root)
+      case " $seen4 " in *" $userf "*) ;; *)
+        seen4="$seen4 $userf"
+        message FAIL dbs004f "" "mysqld runs as root (user=root in $userf): anything it is told to do, it does as root." ;; esac ;;
+    esac
+    [ -n "$data" ] && {
+      case "$data" in /*) case " $seen3 " in *" $data "*) ;; *)
+        why=`exposed "$data" mysql` && [ -n "$why" ] && {
+          seen3="$seen3 $data"
+          message FAIL dbs003f "" "MySQL's data directory \`$data' is $why: every table can be copied."
+        } ;; esac ;; esac
+    }
+  }
+done
+[ -n "$mysql_seen" ] && {
+  debcnf=/etc/mysql/debian.cnf
+  [ -f "`rootfile $debcnf`" ] && {
+    why=`exposed "$debcnf" mysql`
+    [ -n "$why" ] && message FAIL dbs003f "" "The maintenance password in \`$debcnf' is $why."
+  }
+}
+
+# PostgreSQL: every cluster's configuration
+$GREP '^pg ' $dblist | $SED 's/^pg //' | while IFS= read -r conf
+do
+  dir=${conf%/*}
+  case "$conf" in
+    */pg_hba.conf)
+      lineno=0
+      while IFS= read -r line || [ -n "$line" ]
+      do
+        lineno=`expr $lineno + 1`
+        set -- `printf '%s' "$line" | $SED 's/#.*//'`
+        [ $# -ge 4 ] || continue
+        case "$1" in \#*|"") continue ;; esac
+        shift; shift; shift
+        for w
+        do
+          [ "$w" = trust ] && message FAIL dbs005f "`printf '%s' "$line" | $SED 's/^ *//; s/ *$//'`" "Line $lineno of \`$conf' authenticates with 'trust': no password is asked."
+        done
+      done < "`rootfile "$conf"`" ;;
+    */postgresql.conf)
+      expand_db "$conf" 0 pg | $AWK '
+        /^# @@FILE@@ / { file = substr($0, 12); next }
+        { line = $0; sub(/#.*/, "", line)
+          if (line ~ /=/) { k = line; sub(/=.*/, "", k); v = line; sub(/^[^=]*=/, "", v)
+            gsub(/^[ \t]+|[ \t]+$/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", v)
+            gsub(/^'\''|'\''$/, "", v); gsub(/^"|"$/, "", v)
+            if (k != "") print tolower(k) "\t" v "\t" file } }' | {
+        ssl= sslf= listen= enc= encf= dd=
+        while IFS='	' read -r k v f
+        do
+          case "$k" in
+            ssl) ssl=$v; sslf=$f ;;
+            listen_addresses) listen=$v ;;
+            password_encryption) enc=$v; encf=$f ;;
+            data_directory) dd=$v ;;
+          esac
+        done
+        case "$enc" in md5|MD5)
+          message WARN dbs006w "" "Passwords are stored as md5 ($encf): a stolen pg_authid is cracked at billions of guesses a second. Use scram-sha-256." ;;
+        esac
+        case "$ssl" in off|OFF|Off|false|FALSE|False|0|no|NO|No)
+          # localhost, or nothing (local sockets only), needs no TLS
+          open=
+          for a in `printf '%s' "$listen" | $SED "s/['\"]//g" | tr ',' ' '`
+          do
+            case "$a" in ''|localhost|127.0.0.1|::1) ;; *) open="$open $a" ;; esac
+          done
+          [ -n "$open" ] &&
+            message WARN dbs008w "" "PostgreSQL takes unencrypted connections from the network (ssl is off in $sslf, listening on `echo $open | $SED 's/ /, /g'`)." ;;
+        esac
+        if [ -n "$dd" ]; then
+          case "$dd" in /*) why=`exposed "$dd" postgres` && [ -n "$why" ] &&
+            message FAIL dbs007f "" "PostgreSQL's data directory \`$dd' is $why: every table can be copied." ;; esac
+        elif [ -f "`rootfile "$dir/PG_VERSION"`" ]; then
+          why=`exposed "$dir" postgres`
+          [ -n "$why" ] && message FAIL dbs007f "" "PostgreSQL's data directory \`$dir' is $why: every table can be copied."
+        fi
+      } ;;
+  esac
+done
+
+# Redis: every configuration file
+$GREP '^redis ' $dblist | $SED 's/^redis //' | while IFS= read -r conf
+do
+  expand_db "$conf" 0 redis | $AWK '
+    /^# @@FILE@@ / { file = substr($0, 12); next }
+    { line = $0; sub(/#.*/, "", line)
+      key = line; sub(/[ \t].*/, "", key)
+      val = line; sub(/^[^ \t]+[ \t]+/, "", val); gsub(/^[ \t]+|[ \t]+$/, "", val)
+      if (key != "") print tolower(key) "\t" val "\t" file }' | {
+    pm= bind= portv= reqpass= defcred= defoff= baduser= badusers= anycred=
+    passfiles=
+    while IFS='	' read -r k v f
+    do
+      case "$k" in
+        protected-mode) pm=$v ;;
+        bind) bind="$bind $v" ;;
+        port) portv=$v ;;
+        requirepass) [ -n "$v" ] && { reqpass=Y; passfiles="$passfiles $f"; } ;;
+        user)
+          set -- $v
+          __un=$1; shift
+          __on= __cred= __nopass=
+          for __t
+          do
+            case "$__t" in on) __on=Y ;; '>'*|'#'*) __cred=Y ;; nopass) __nopass=Y ;; esac
+          done
+          [ -n "$__cred" ] && { anycred=Y; passfiles="$passfiles $f"; }
+          [ "$__un" = default ] && [ -n "$__on" ] && {
+            [ -n "$__cred" ] && [ -z "$__nopass" ] && defcred=Y
+            { [ -n "$__nopass" ] || { [ -z "$__cred" ] && [ -z "$__nopass" ]; }; } &&
+              { baduser=Y; badusers="${badusers:+$badusers }$__un"; }
+          }
+          [ "$__un" = default ] && [ "$__on" != Y ] && case "$v" in *off*) defoff=Y ;; esac
+          [ "$__un" != default ] && [ -n "$__on" ] && { [ -n "$__nopass" ] || [ -z "$__cred" ]; } &&
+            { baduser=Y; badusers="${badusers:+$badusers }$__un"; } ;;
+      esac
+    done
+    # closed means a password everywhere: requirepass, the default user
+    # with one, or the default user off with every named user passworded
+    closed=
+    { [ -n "$reqpass" ] || [ -n "$defcred" ] || [ -n "$defoff" ]; } && [ -z "$baduser" ] && closed=Y
+    case "$pm" in no|NO|No)
+      [ -z "$closed" ] && [ "$portv" != 0 ] && {
+        bound=
+        for a in $bind
+        do
+          case "$a" in -*|"") ;; *) bound="$bound $a" ;; esac
+        done
+        safe=Y
+        [ -z "$bound" ] && safe=
+        for a in $bound
+        do
+          case "$a" in 127.*|::1|localhost) ;; *) safe= ;; esac
+        done
+        [ -z "$safe" ] && {
+          [ -n "$bound" ] || bound="every interface (no bind line)"
+          cause=
+          { [ -n "$reqpass" ] || [ -n "$defcred" ] || [ -n "$defoff" ]; } || cause="no requirepass"
+          [ -n "$baduser" ] && cause="${cause:+$cause, }users without a password ($badusers)"
+          message FAIL dbs009f "" "Redis is open to the network without a password (protected-mode no in $conf, $cause, bound to `echo $bound | $SED 's/ /, /g'`): anyone can read and write every key."
+        }
+      } ;;
+    esac
+    [ -n "$reqpass" ] || [ -n "$anycred" ] && for pf in `printf '%s' "$passfiles" | tr ' ' '\n' | $SORT -u`
+    do
+      why=`exposed "$pf" redis`
+      [ -n "$why" ] && message FAIL dbs010f "" "The password in \`$pf' is $why."
+    done
+  }
+done
+
+delete $dblist
+exit 0

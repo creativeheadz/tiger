@@ -1,0 +1,11 @@
+Id: dbs009f
+Severity: FAIL
+Category: services
+Check: check_databases
+Fix: Set a requirepass (and password every ACL user), bind localhost, and leave protected-mode on.
+References: redis-server(1)
+
+Redis is open to the network without a password: protected-mode is
+off, no password is set, and it listens past localhost. Anyone
+reaching it reads and writes every key; this exact shape is how
+cryptominers move in.

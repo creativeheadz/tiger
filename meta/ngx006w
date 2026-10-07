@@ -1,0 +1,10 @@
+Id: ngx006w
+Severity: WARN
+Category: services
+Check: check_nginx
+Fix: Allow TLSv1.2 and TLSv1.3 only.
+References: ngx_http_ssl_module
+
+TLS 1.0 or 1.1 is allowed: deprecated since 2021, kept alive only for
+clients too old to matter. TLS 1.2 is the floor; 1.3 where the server
+supports it.

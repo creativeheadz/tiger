@@ -45,7 +45,13 @@ run = {"type": "run", "schema": 1, "id": "r1", "tool": "tigris", "version": "3.2
        "os": "Linux", "release": "7.0", "arch": "x86_64", "config": "./tigerrc", "start": "2026-10-05T07:12:03Z"}
 finding = {"type": "finding", "level": "WARN", "id": "ssh008w", "check": "check_ssh", "message": "m"}
 summary = {"type": "summary", "id": "r1", "end": "2026-10-05T07:14:01Z",
-           "counts": {"ALERT": 0, "FAIL": 1, "WARN": 2, "INFO": 3, "ERROR": 0}}
+           "counts": {"ALERT": 0, "FAIL": 1, "WARN": 2, "INFO": 3, "ERROR": 0},
+           "distinct": {"ALERT": 0, "FAIL": 1, "WARN": 1},
+           "categories": {"ssh": {"ALERT": 0, "FAIL": 1, "WARN": 2, "INFO": 0, "ERROR": 0},
+                           "logging": {"ALERT": 0, "FAIL": 0, "WARN": 0, "INFO": 3, "ERROR": 0}},
+           "score": {"value": 95, "formula": "100 - 10*ALERT - 4*FAIL - 1*WARN",
+                     "deducted": {"ALERT": 0, "FAIL": 4, "WARN": 1}},
+           "skipped": 0}
 results = [
     ok("a run record", run),
     ok("a finding", finding),
@@ -62,6 +68,8 @@ results = [
     rejected("an acceptance with a badly formatted date", dict(finding, accepted={"reason": "r", "until": "1/2/2027"})),
     rejected("an acceptance without a reason", dict(finding, accepted={"until": "-"})),
     rejected("a summary missing a level in its counts", dict(summary, counts={"ALERT": 0, "FAIL": 0, "WARN": 0, "INFO": 0})),
+    rejected("a summary with a score above 100", dict(summary, score=dict(summary["score"], value=101))),
+    rejected("a summary with a category missing a level", dict(summary, categories={"ssh": {"ALERT": 0, "FAIL": 1, "WARN": 2, "INFO": 0}})),
     rejected("a timestamp without the Z", dict(run, start="2026-10-05T07:12:03")),
 ]
 if not all(results):

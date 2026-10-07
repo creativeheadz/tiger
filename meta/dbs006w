@@ -1,0 +1,10 @@
+Id: dbs006w
+Severity: WARN
+Category: services
+Check: check_databases
+Fix: Set password_encryption to scram-sha-256 and re-set the passwords.
+References: postgresql.conf(5)
+
+Passwords are stored as md5. A stolen pg_authid falls to billions of
+guesses a second on commodity hardware; scram-sha-256 has been the
+default since PostgreSQL 14.

@@ -1,0 +1,320 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_nginx: nginx's configuration with its includes: the version
+#                 given away (ngx001w), requests never logged (ngx002w),
+#                 TLS keys a stranger can read (ngx003f, ngx004w),
+#                 broken or deprecated protocols (ngx005f, ngx006w), weak
+#                 ciphers (ngx007w), workers as root (ngx008f), directory
+#                 listings (ngx009w), HTTPS without HSTS (ngx010i), a
+#                 certificate or key that is not there (ngx011w), and
+#                 errors thrown away (ngx012w).
+#
+# 10/07/2026 atrimbitas - Initial version. One awk pass over the
+#                 configuration with its includes expanded, tracking
+#                 blocks: what is said in a server is judged for that
+#                 server, with the http scope behind it, and the servers
+#                 are judged at the end, when the http scope stands
+#                 complete however the includes ordered it. Comments end
+#                 at # outside quotes (quoted #'s are not nginx's habit);
+#                 braces in regex quantifiers ({1,2}) and quoted strings
+#                 are not counted as blocks. Relative includes resolve
+#                 against the file that names them, which is where the
+#                 packaged configurations keep them; relative
+#                 certificate paths are skipped, resolving against the
+#                 compiled-in prefix, which cannot be known without
+#                 running the server. What is not set is not judged: a
+#                 modern nginx's defaults (TLS 1.2 and up, strong
+#                 ciphers) are taken as sane.
+#
+# References:
+#   ngx_http_core_module, ngx_http_ssl_module, nginx(8)
+#
+# Tigris: offline
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK GREP SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK GREP SED SORT || exit 1
+
+main=/etc/nginx/nginx.conf
+[ -f "`rootfile $main`" ] || main=/usr/local/nginx/conf/nginx.conf
+[ -f "`rootfile $main`" ] || exit 0
+
+echo
+echo "# Checking nginx's configuration..."
+
+# expand_ngx FILE DEPTH: FILE (an audited-system path) with its includes
+# expanded in place, read inside the root. Every file's lines follow a
+# "# @@FILE@@ PATH COUNT" line naming it and how many of its lines went
+# before, so a value found knows where it stands, on which line. The
+# marker goes out again after every include: what follows is this
+# file's again.
+expand_ngx()
+{
+  (
+  __f=$1 __d=$2
+  __h=`rootfile "$__f"`
+  [ -f "$__h" ] && [ "$__d" -le 16 ] || exit 0
+  __n=0
+  printf '# @@FILE@@ %s %d\n' "$__f" $__n
+  while IFS= read -r __l || [ -n "$__l" ]
+  do
+    __n=`expr $__n + 1`
+    __s=`printf '%s' "$__l" | $SED 's/#.*//'`
+    case "$__s" in
+      include[\ \	]*|*[!a-zA-Z]include[\ \	]*)
+        __p=`printf '%s' "$__s" | $SED 's/^.*[^a-zA-Z]include[ 	][ 	]*//; s/^include[ 	][ 	]*//; s/[; 	][ 	]*$//; s/^"//; s/"$//'` ;;
+      *) printf '%s\n' "$__l"; continue ;;
+    esac
+    [ -n "$__p" ] || continue
+    case "$__p" in /*) ;; *) __p=${__f%/*}/$__p ;; esac
+    case "$__p" in
+      *[\*\?[]*)
+        __dir=${__p%/*} __pat=${__p##*/}
+        rootls "$__dir" 2>/dev/null | while IFS= read -r __n
+        do
+          case "${__n##*/}" in $__pat) expand_ngx "$__n" `expr $__d + 1` ;; esac
+        done ;;
+      *) expand_ngx "$__p" `expr $__d + 1` ;;
+    esac
+    printf '# @@FILE@@ %s %d\n' "$__f" $__n
+  done < "$__h"
+  )
+}
+
+expand_ngx $main 0 | $AWK -v sq="'" '
+  BEGIN { d = 0; tcp = 0; nsrv = 0 }
+  function push(type) {
+    d++; stack[d] = type
+    if (type == "server") { srvd = d; sid[d] = ++nsrv; skind[nsrv] = (tcp > 0 ? "connections" : "requests") }
+    if (type == "http") httpd = d
+    if (type == "stream" || type == "mail") tcp++
+  }
+  function srv() { return sid[srvd] + 0 }
+  function close_server(id,   eff, loc) {
+    # requests logged: a path anywhere in the server, else the http scope,
+    # else on by default. off beside a path is ambiguous and left alone.
+    if (salgpath[id]) eff = "path"
+    else if (salg[id] == "off") { eff = "off"; loc = salglog[id] }
+    else if (httpath) eff = "path"
+    else if (httpalog == "off") { eff = "off"; loc = httpalogloc }
+    else eff = "path"
+    if (eff == "off" && !slocpath[id]) print "NOLOG\t" sname[id] "\t" loc "\t" skind[id]
+    # HSTS: the server says it, or nothing there overrides the http scope
+    if (skind[id] == "requests" && srvssl[id] && !srvsts[id] && (srvhdr[id] || !httpsts))
+      print "NOHSTS\t" sname[id]
+  }
+  function pop() {
+    if (stack[d] == "server") srvd = 0
+    if (stack[d] == "http") httpd = 0
+    if (stack[d] == "stream" || stack[d] == "mail") tcp--
+    d--
+  }
+  function firstword(s) { sub(/^[ \t]+/, "", s); sub(/[ \t\{].*/, "", s); return s }
+  /^# @@FILE@@ / { sub(/^# @@FILE@@ /, ""); lineno = $NF + 0; sub(/ [0-9]+$/, ""); file = $0; next }
+  {
+    lineno++
+    code = $0; sub(/#.*/, "", code)
+    # values read from the comment-stripped line, quotes and all: what is
+    # judged alone needs no block state. A certificate or key keeps a
+    # quoted path with spaces; relative ones and variables are skipped.
+    # (proxy_ssl_certificate and the like name upstream trust, not what
+    # is served, and do not match: the word starts the match.)
+    rest = code
+    while (match(rest, /(^|[^a-zA-Z_])ssl_certificate(_key)?[ \t]+("[^"]*"|[^; \t]+)/)) {
+      m = substr(rest, RSTART, RLENGTH)
+      rest = substr(rest, RSTART + RLENGTH)
+      sub(/^[^a-zA-Z_]/, "", m)
+      kind = (m ~ /_key/) ? "KEY" : "CERT"
+      cp = m; sub(/^[^ \t]+[ \t]+/, "", cp); gsub(/^"|"$/, "", cp)
+      if (cp ~ /^\// && cp !~ /\$/) print kind "\t" cp "\t" file "\t" lineno "\t" (srvd ? sname[srv()] : "")
+    }
+    if (tcp == 0) {
+      tok = code
+      while (match(tok, /(^|[^a-zA-Z_])server_tokens[ \t]+[^; \t]+/)) {
+        m = substr(tok, RSTART, RLENGTH); tok = substr(tok, RSTART + RLENGTH)
+        sub(/^.*server_tokens[ \t]+/, "", m)
+        if (m != "" && m != "off") print "TOK\t" file "\t" lineno "\t" m
+      }
+    }
+    rest = code
+    while (match(rest, /(^|[^a-zA-Z_])ssl_protocols[ \t]+[^;]+/)) {
+      m = substr(rest, RSTART, RLENGTH); rest = substr(rest, RSTART + RLENGTH)
+      sub(/^.*ssl_protocols[ \t]+/, "", m)
+      ssl = ""; tls = ""; np = split(m, p, /[ \t]+/)
+      for (i = 1; i <= np; i++) {
+        if (p[i] == "SSLv2" || p[i] == "SSLv3") { if (index("," ssl ",", "," p[i] ",") == 0) ssl = ssl (ssl == "" ? "" : ", ") p[i] }
+        if (p[i] == "TLSv1" || p[i] == "TLSv1.1") { if (index("," tls ",", "," p[i] ",") == 0) tls = tls (tls == "" ? "" : ", ") p[i] }
+      }
+      if (ssl != "") print "PROTOSSL\t" file "\t" lineno "\t" ssl
+      if (tls != "") print "PROTOTLS\t" file "\t" lineno "\t" tls
+    }
+    rest = code
+    while (match(rest, /(^|[^a-zA-Z_])ssl_ciphers[ \t]+[^;]+/)) {
+      m = substr(rest, RSTART, RLENGTH); rest = substr(rest, RSTART + RLENGTH)
+      sub(/^.*ssl_ciphers[ \t]+/, "", m); gsub(/"/, "", m); gsub(sq, "", m)
+      nc = split(m, c, ":"); weak = ""
+      for (i = 1; i <= nc; i++) {
+        t = c[i]; sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t)
+        if (t ~ /^[!-]/) continue
+        if (tolower(t) ~ /rc4|des|3des|md5|null|anon|adh|aecdh|export|low/) {
+          if (index("," weak ",", "," t ",") == 0) weak = weak (weak == "" ? "" : ", ") t
+        }
+      }
+      if (weak != "") print "CIPHER\t" file "\t" lineno "\tssl_ciphers\t" weak
+    }
+    if (match(code, /(^|[^a-zA-Z_])ssl_conf_command[ \t]+SecurityLevel[ \t]+[^; \t]+/)) {
+      m = substr(code, RSTART, RLENGTH); sub(/^.*SecurityLevel[ \t]+/, "", m)
+      if (m == "0" || m == "1") print "CIPHER\t" file "\t" lineno "\tssl_conf_command\tSecurityLevel " m
+    }
+    # structure: quoted spans and regex quantifiers hide their braces and
+    # semicolons; what remains opens, says, and closes
+    scan = code
+    gsub(/"[^"]*"/, "", scan)
+    gsub(sq "[^" sq "]*" sq, "", scan)
+    gsub(/\{[0-9][0-9,]*\}/, "", scan)
+    n = split(scan, stmts, ";")
+    for (si = 1; si <= n; si++) {
+      st = stmts[si]
+      tmp = st; no = 0; while (match(tmp, /\{/)) { no++; tmp = substr(tmp, RSTART + RLENGTH) }
+      if (no > 0) {
+        fw = firstword(st)
+        for (i = 0; i < no; i++) push(i == 0 && fw != "" ? fw : "anon")
+        sub(/^.*\{/, "", st)
+      }
+      dtxt = st; gsub(/\}/, " ", dtxt); sub(/^[ \t]+/, "", dtxt); sub(/[ \t]+$/, "", dtxt)
+      if (dtxt != "") {
+        nw = split(dtxt, w, /[ \t]+/)
+        if (w[1] == "user" && d == 0 && w[2] == "root")
+          print "USERROOT\t" file "\t" lineno
+        if (w[1] == "autoindex" && w[2] == "on" && tcp == 0)
+          print "AUTOINDEX\t" file "\t" lineno "\t" (srvd ? sname[srv()] : "")
+        if (w[1] == "error_log" && (w[2] == "/dev/null" || w[2] == "off"))
+          print "NOLOGERR\t" file "\t" lineno "\t" w[2]
+        if (w[1] == "listen" && srvd) { for (i = 2; i <= nw; i++) if (w[i] == "ssl") srvssl[srv()] = 1 }
+        if (w[1] == "ssl" && w[2] == "on" && srvd) srvssl[srv()] = 1
+        if (w[1] == "server_name" && srvd && d == srvd && sname[srv()] == "") { sname[srv()] = w[2]; gsub(/"/, "", sname[srv()]) }
+        if (w[1] == "access_log") {
+          v = (w[2] == "off" ? "off" : "path")
+          if (srvd && d == srvd) { salg[srv()] = v; salglog[srv()] = file "\t" lineno; if (v == "path") salgpath[srv()] = 1 }
+          else if (srvd && d > srvd) { if (v == "path") slocpath[srv()] = 1 }
+          else if (httpd && d == httpd) { httpalog = v; httpalogloc = file "\t" lineno; if (v == "path") httpath = 1 }
+        }
+        if (w[1] == "add_header") {
+          hdr = (tolower(w[2]) ~ /strict-transport-security/)
+          if (srvd && d == srvd) { srvhdr[srv()] = 1; if (hdr) srvsts[srv()] = 1 }
+          else if (httpd && d == httpd) { httphdr = 1; if (hdr) httpsts = 1 }
+        }
+      }
+      tmp = st; while (match(tmp, /\}/)) { pop(); tmp = substr(tmp, RSTART + RLENGTH) }
+    }
+  }
+  END { for (id = 1; id <= nsrv; id++) close_server(id) }
+' | {
+  while IFS='	' read -r t a b c d
+  do
+    case "$t" in
+      TOK)
+        message WARN ngx001w "" "server_tokens is $c ($a line $b): every response and error page advertises the nginx version." ;;
+      USERROOT)
+        message FAIL ngx008f "" "nginx's workers run as root (user root in $a line $b): a flaw in request handling is a root flaw." ;;
+      AUTOINDEX)
+        if [ -n "$c" ]; then
+          message WARN ngx009w "" "Directory listings are on for the server \`$c' (autoindex in $a line $b): file names disclose structure and backups."
+        else
+          message WARN ngx009w "" "Directory listings are on everywhere (autoindex in $a line $b): file names disclose structure and backups."
+        fi ;;
+      NOLOGERR)
+        message WARN ngx012w "" "Errors are thrown away (error_log $c in $a line $b): failures leave no trace." ;;
+      PROTOSSL)
+        message FAIL ngx005f "" "ssl_protocols in $a line $b allows $c: broken protocols, disabled in every client years ago." ;;
+      PROTOTLS)
+        message WARN ngx006w "" "ssl_protocols in $a line $b allows $c: deprecated since 2021; TLS 1.2 is the floor." ;;
+      CIPHER)
+        message WARN ngx007w "" "$c in $a line $b names weak ciphers ($d): clients can negotiate down to them." ;;
+      CERT|KEY)
+        [ "$t" = CERT ] && what=certificate || what=key
+        here=`rootfile "$a"`
+        if [ ! -f "$here" ]; then
+          if [ -n "$d" ]; then
+            message WARN ngx011w "" "The $what \`$a' for the server \`$d' ($b line $c) is not there: nginx cannot start with it."
+          else
+            message WARN ngx011w "" "The $what \`$a' ($b line $c) is not there: nginx cannot start with it."
+          fi
+        elif [ "$t" = KEY ]; then
+          why=`exposed "$a" ssl-cert`
+          case "$why" in
+            *'by anyone') message FAIL ngx003f "" "The TLS key \`$a' is $why: whoever reads it can impersonate the server and decrypt its recorded traffic." ;;
+            *'by group'*) message WARN ngx004w "" "The TLS key \`$a' is $why: whoever reads it can impersonate the server and decrypt its recorded traffic." ;;
+          esac
+        fi ;;
+      NOLOG)
+        [ -n "$a" ] && who="server \`$a'" || who="default server"
+        message WARN ngx002w "" "The $who never logs $d ($b line $c): without logs an intrusion leaves no trace here." ;;
+      NOHSTS)
+        [ -n "$a" ] && who="server \`$a'" || who="default server"
+        message INFO ngx010i "" "The $who serves HTTPS without Strict-Transport-Security: first visits can be silently downgraded." ;;
+    esac
+  done
+}
+
+exit 0

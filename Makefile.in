@@ -149,6 +149,7 @@ MISCFILES=./initdefs \
 	./util/meta2html \
 	./util/pkgspecial \
 	./util/rootpath \
+	./util/summary \
 	./util/getfs-amd \
 	./util/getfs-automount \
 	./util/getfs-nfs \

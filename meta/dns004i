@@ -1,0 +1,11 @@
+Id: dns004i
+Severity: INFO
+Category: network
+Check: check_dns
+Fix: Name a second resolver, on another host.
+References: resolv.conf(5)
+
+A single nameserver in /etc/resolv.conf, and no fallback when it stops
+answering. A lone loopback address is not reported: that is a
+resolver on the host itself, whose own upstreams this file does not
+show.

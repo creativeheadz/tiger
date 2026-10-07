@@ -1,0 +1,11 @@
+Id: rlog003w
+Severity: WARN
+Category: logging
+Check: check_remotelog
+Fix: Rename it to end in .conf, or move its rules where rsyslog reads.
+References: rsyslog.conf(5)
+
+A file in rsyslog's includes directory will never be read, because its
+name does not match the glob the configuration includes (usually
+*.conf: no .bak, no README, no files without a suffix). Rules put
+there in the belief they run do not.

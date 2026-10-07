@@ -1,0 +1,11 @@
+Id: dns002w
+Severity: WARN
+Category: network
+Check: check_dns
+Fix: Keep the three resolvers that should answer, in order.
+References: resolv.conf(5)
+
+/etc/resolv.conf names more than three servers, but the resolver only
+uses the first three; the rest are never asked. The usual cause is
+years of DHCP and hand edits piling up, and the fourth entry is often
+the one the administrator believes is in force.

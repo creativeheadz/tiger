@@ -146,7 +146,11 @@ each finding is a line
 .BI \-\- LEVEL \-\- " [" id "] " message
 with the level ALERT, FAIL, WARN, INFO, ERROR or CONFIG, and a
 .B #
-line says what each check is doing and what was skipped.
+line says what each check is doing and what was skipped. The report
+ends with a
+.B # Summary
+counting the findings by level and category, and a score of 0 to 100
+with the formula it was computed from and the ids the points went to.
 .LP
 Beside it,
 .I security.report.HOST.DATE.jsonl
@@ -159,7 +163,8 @@ compliance controls,
 .B skip
 records for the checks that did not run and why, and a
 .B summary
-with the counts last. INFO findings are always there. The format is a
+with the counts, the distinct ids, the per-category counts and the
+score last. INFO findings are always there. The format is a
 versioned contract with a JSON Schema; see
 .IR doc/json-format.md .
 .LP

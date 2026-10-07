@@ -185,6 +185,26 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   skip_check $SYSTEMDIR/check_containers || $SYSTEMDIR/check_containers
 }
 
+[ "$Tiger_Check_CERTS" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_certs || $SYSTEMDIR/check_certs
+}
+
+[ "$Tiger_Check_REMOTELOG" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_remotelog || $SYSTEMDIR/check_remotelog
+}
+
+[ "$Tiger_Check_DNS" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_dns || $SYSTEMDIR/check_dns
+}
+
+[ "$Tiger_Check_DATABASES" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_databases || $SYSTEMDIR/check_databases
+}
+
+[ "$Tiger_Check_NGINX" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_nginx || $SYSTEMDIR/check_nginx
+}
+
 [ "$Tiger_Check_PASSWD" != 'N' -a "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
   skip_check $SYSTEMDIR/check_passwdspec || $SYSTEMDIR/check_passwdspec
 }

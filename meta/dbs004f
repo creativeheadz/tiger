@@ -1,0 +1,10 @@
+Id: dbs004f
+Severity: FAIL
+Category: services
+Check: check_databases
+Fix: Run it as mysql (user=mysql in [mysqld]).
+References: mysqld(8)
+
+mysqld runs as root. Anything it is told to do, from FILE privileges
+to user-defined functions, it does as root, and any flaw in it is a
+root flaw.

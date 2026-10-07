@@ -239,6 +239,7 @@
         },
         "counts": {
           "type": "object",
+          "description": "Every finding record at each level, accepted findings included.",
           "required": [
             "ALERT",
             "FAIL",
@@ -273,6 +274,110 @@
           "type": "integer",
           "minimum": 0,
           "description": "How many checks were skipped because they need root. Absent in reports older than the field."
+        },
+        "distinct": {
+          "type": "object",
+          "description": "How many finding ids were reported at each of these levels, each id once however often it was reported. Accepted findings are not counted. Absent in reports older than the field.",
+          "required": [
+            "ALERT",
+            "FAIL",
+            "WARN"
+          ],
+          "properties": {
+            "ALERT": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "FAIL": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "WARN": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "categories": {
+          "type": "object",
+          "description": "Finding counts per level for each category, as in counts but split by the finding's category (meta/ID); findings without one are under \"other\". Accepted findings are not counted. Absent in reports older than the field.",
+          "propertyNames": {
+            "pattern": "^[a-z]+$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "ALERT",
+              "FAIL",
+              "WARN",
+              "INFO",
+              "ERROR"
+            ],
+            "properties": {
+              "ALERT": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "FAIL": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "WARN": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "INFO": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "ERROR": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "score": {
+          "type": "object",
+          "description": "0 to 100 from the distinct ids, with the formula it was computed with and what each level cost. The text report ends with the same number, its formula and the ids. Absent in reports older than the field.",
+          "required": [
+            "value",
+            "formula",
+            "deducted"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "formula": {
+              "type": "string",
+              "minLength": 1
+            },
+            "deducted": {
+              "type": "object",
+              "required": [
+                "ALERT",
+                "FAIL",
+                "WARN"
+              ],
+              "properties": {
+                "ALERT": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "FAIL": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "WARN": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
         }
       }
     },

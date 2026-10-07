@@ -1,0 +1,10 @@
+Id: ngx009w
+Severity: WARN
+Category: services
+Check: check_nginx
+Fix: Switch autoindex off where listings are not the point.
+References: ngx_http_autoindex_module
+
+Directory listings are on: file names disclose structure, backups,
+and the occasional secret with a guessable name. Listing is a
+feature for mirrors, not for applications.

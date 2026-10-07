@@ -1,0 +1,10 @@
+Id: dbs007f
+Severity: FAIL
+Category: services
+Check: check_databases
+Fix: Make it postgres's alone: chown postgres:postgres, chmod 700.
+References: postgresql.conf(5)
+
+PostgreSQL's data directory can be read by accounts that should never
+see it. It holds every table, and the server itself refuses to start
+when its permissions are this open, which says what it thinks of them.

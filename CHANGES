@@ -41,6 +41,23 @@ Changes since 3.5.0 (unreleased)
   Tigris's own messages. A finding is evidence for an assessment, not
   a verdict on a control.
 
+- Every report ends with a summary: the findings counted by level and
+  by category, and a score of 0 to 100 that shows the formula it was
+  computed from (10 points an ALERT id, 4 a FAIL, 1 a WARN; distinct
+  ids, accepted findings not counted). The JSON report carries the
+  same summary last, with the distinct ids and the per-category
+  counts.
+
+- Five new checks close the server-side gaps with Lynis, all static
+  configuration analysis, offline-capable, with no credentials and no
+  live probing: nginx and TLS (ngx001w to ngx012w: server tokens,
+  logging, key permissions, SSLv2/3, old TLS, weak ciphers, the root
+  user, autoindex, HSTS, a missing certificate or key, logging to
+  /dev/null); databases (dbs001f to dbs010f: MySQL and MariaDB,
+  PostgreSQL, Redis); DNS resolvers (dns001f to dns006f: resolv.conf,
+  unbound, BIND); remote logging (rlog001i to rlog003w: rsyslog,
+  syslog-ng, journal upload); certificate expiry (crt001f to crt003i).
+
 Changes (v 3.5.0)
 --------------------
 

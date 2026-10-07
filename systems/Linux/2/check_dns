@@ -1,0 +1,210 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_dns: name resolution and the resolver daemons: resolv.conf
+#                 without a usable nameserver (dns001f), with more than
+#                 three (dns002w), with lines that are not addresses
+#                 (dns003w), or with a single one (dns004i); unbound
+#                 (dns005f) or bind (dns006f) answering recursion to the
+#                 whole Internet.
+#
+# 10/07/2026 atrimbitas - Initial version. One level of includes, which
+#                 is what both daemons' packaged configurations use; a
+#                 named ACL used for allow-recursion is resolved one
+#                 level too. A named.conf with 'recursion no' anywhere is
+#                 authoritative-only and is not analyzed (a view turning
+#                 recursion back on is missed). dnsmasq is not covered.
+#
+# References:
+#   resolv.conf(5), unbound.conf(5), named.conf(5)
+#
+# Tigris: offline
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK GREP SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK GREP SED SORT || exit 1
+
+echo
+echo "# Checking name resolution..."
+
+# valid_ip ADDR: an IPv4 quad in range, or IPv6 (hex, colons and dots),
+# and not all zeros
+valid_ip()
+{
+  case "$1" in
+    0.0.0.0|::) return 1 ;;
+    *:*)
+      case "$1" in *[!0-9a-fA-F:.]*) return 1 ;; esac
+      return 0 ;;
+    *.*.*.*)
+      echo "$1" | $AWK -F. 'NF == 4 { for (i = 1; i <= 4; i++)
+        if ($i !~ /^[0-9]+$/ || $i < 0 || $i > 255) exit 1; exit 0 } { exit 1 }' ;;
+    *) return 1 ;;
+  esac
+}
+
+resolv=`rootfile /etc/resolv.conf`
+if [ ! -f "$resolv" ]; then
+  message FAIL dns001f "" "There is no /etc/resolv.conf: names resolve only if a resolver runs on localhost."
+else
+  n=0 nvalid=0 lineno=0
+  extras=
+  while IFS= read -r line || [ -n "$line" ]
+  do
+    lineno=`expr $lineno + 1`
+    set -- $line
+    [ "$1" = nameserver ] || continue
+    n=`expr $n + 1`
+    if valid_ip "$2"; then
+      nvalid=`expr $nvalid + 1`
+      [ $nvalid -eq 1 ] && first=$2
+      [ $nvalid -gt 3 ] && extras="$extras $2"
+    else
+      message WARN dns003w "" "Line $lineno of /etc/resolv.conf names '$2' as a nameserver, which is not an IP address; it is ignored."
+    fi
+  done < "$resolv"
+  [ $nvalid -eq 0 ] &&
+    message FAIL dns001f "" "No usable nameserver in /etc/resolv.conf: names cannot be resolved."
+  [ -n "$extras" ] &&
+    message WARN dns002w "" "$nvalid nameservers in /etc/resolv.conf, but only the first 3 are used; `echo $extras | $SED 's/ /, /g'` ignored."
+  # a lone loopback nameserver is a resolver on this host (systemd-resolved,
+  # dnsmasq), which has upstreams of its own: its redundancy is not
+  # resolv.conf's to judge
+  case "$first" in 127.*|::1) ;; *) [ $nvalid -eq 1 ] &&
+    message INFO dns004i "" "A single nameserver ($first) in /etc/resolv.conf: no fallback if it stops answering." ;; esac
+fi
+
+# unbound: access-control opening recursion past localhost, in its
+# configuration and one level of includes
+main=/etc/unbound/unbound.conf
+if [ -f "`rootfile $main`" ]; then
+  {
+    echo "$main"
+    $SED 's/#.*//' "`rootfile $main`" |
+      $SED -n 's/^[ 	]*include:[ 	]*"*//p' | $SED 's/"[ 	]*$//; s/[ 	]*$//' |
+      while IFS= read -r g
+      do
+        case "$g" in /*) ;; *) g=/etc/unbound/$g ;; esac
+        case "$g" in *[\*\?[]*) __dir=${g%/*} __pat=${g##*/}; rootls "$__dir" 2>/dev/null | while IFS= read -r __n; do case "${__n##*/}" in $__pat) echo "$__n" ;; esac; done ;; *) echo "$g" ;; esac
+      done
+  } | $SORT -u | while IFS= read -r f
+  do
+    [ -f "`rootfile "$f"`" ] || continue
+    $SED 's/#.*//' "`rootfile "$f"`" |
+      $GREP -i '^[ 	]*access-control:[ 	]*\(0\.0\.0\.0/0\|::/0\)[ 	][ 	]*allow' |
+      $SED 's/^[ 	]*//; s/[ 	][ 	]*/ /g' | while IFS= read -r hit
+      do
+        message FAIL dns005f "" "\`$f' lets anyone use this resolver ($hit): it answers the whole Internet, and amplifies denial-of-service attacks against others. Allow localhost and the local networks only."
+      done
+  done
+fi
+
+# bind: allow-recursion holding 'any', directly or through a named ACL,
+# in named.conf and one level of includes. 'recursion no' anywhere is
+# authoritative-only: nothing to open.
+for main in /etc/bind/named.conf /etc/named.conf
+do
+  [ -f "`rootfile $main`" ] || continue
+  {
+    echo "$main"
+    $SED 's,//.*,,' "`rootfile $main`" |
+      $SED -n 's/^[ 	]*include[ 	][ 	]*"//p' | $SED 's/".*//' |
+      while IFS= read -r g
+      do
+        case "$g" in /*) ;; *) g=${main%/*}/$g ;; esac
+        case "$g" in *[\*\?[]*) __dir=${g%/*} __pat=${g##*/}; rootls "$__dir" 2>/dev/null | while IFS= read -r __n; do case "${__n##*/}" in $__pat) echo "$__n" ;; esac; done ;; *) echo "$g" ;; esac
+      done
+  } | $SORT -u | while IFS= read -r f
+  do
+    here=`rootfile "$f"`
+    [ -f "$here" ] || continue
+    # one line: statements may span lines; braces and semicolons kept so
+    # an acl's addresses stay with its name
+    flat=`$SED 's,#.*,,' "$here" | $SED 's,//.*,,' | tr '\n' ' ' | $SED 's/[ 	][ 	]*/ /g'`
+    case "$flat" in *'recursion no'*) continue ;; esac
+    acls=`printf '%s' "$flat" | $SED 's/;/;\
+/g' | $AWK '
+      /acl[ 	]+"[^"]+"[ 	]*\{/ { name = $0; sub(/^.*acl[ 	]+"/, "", name); sub(/".*/, "", name); addrs = "" }
+      name != "" { addrs = addrs $0 }
+      name != "" && /\}/ { gsub(/[{};]/, " ", addrs); print name "=" addrs " "; name = "" }'`
+    printf '%s' "$flat" | $SED 's/;/;\
+/g' | $GREP 'allow-recursion' | while IFS= read -r st
+    do
+      addrs=`printf '%s' "$st" | $SED 's/.*allow-recursion[^{]*{//; s/[};].*//'`
+      # a name where addresses go is an acl's: resolve it one level
+      open=
+      for w in $addrs
+      do
+        case "$w" in
+          any) open="holds 'any'" ;;
+          localhost|localhost6|localnets|none) ;;
+          *[!a-zA-Z0-9_-]*) ;;
+          *) printf '%s\n' "$acls" | $GREP -q "^$w=.* any " && open="names '$w', an ACL holding 'any'" ;;
+        esac
+      done
+      [ -n "$open" ] &&
+        message FAIL dns006f "" "\`$f' lets anyone recurse: allow-recursion $open. It answers the whole Internet, and amplifies denial-of-service attacks against others. Allow localhost and the local networks only."
+    done
+  done
+done
+
+exit 0

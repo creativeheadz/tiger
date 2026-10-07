@@ -38,6 +38,18 @@ jobs:
         run: sh tests/diff_check.sh
       - name: accepted findings
         run: sh tests/accept_check.sh
+      - name: Transparent summary
+        run: sh tests/summary_check.sh
+      - name: Certificates
+        run: sh tests/certs_check.sh
+      - name: Databases
+        run: sh tests/databases_check.sh
+      - name: DNS
+        run: sh tests/dns_check.sh
+      - name: nginx
+        run: sh tests/nginx_check.sh
+      - name: Remote logging
+        run: sh tests/remotelog_check.sh
       - name: JSON schema
         run: sh tests/schema_check.sh
       - name: Every finding id explained
@@ -98,7 +110,7 @@ jobs:
         run: |
           shellcheck --version | head -2
           files=
-          for f in tiger tigexp tigercron config initdefs util/realpath util/rootpath tests/*.sh \
+          for f in tiger tigexp tigercron config initdefs util/realpath util/rootpath util/summary tests/*.sh \
               $(git ls-files scripts systems/Linux/2 systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$'); do
             head -1 "$f" | grep -q perl && continue
             files="$files $f"

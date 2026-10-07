@@ -1,0 +1,10 @@
+Id: dbs005f
+Severity: FAIL
+Category: services
+Check: check_databases
+Fix: Use scram-sha-256 (or peer, on the local socket).
+References: pg_hba.conf(5)
+
+A pg_hba.conf line authenticates with 'trust': no password is asked.
+Anyone reaching the server as the line's users and addresses is let
+in, over the network included.

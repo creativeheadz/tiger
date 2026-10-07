@@ -55,7 +55,7 @@ Settled, so they do not have to be argued again:
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
-| Checks               | 58 check scripts, 400 finding ids in 15 categories, each explained | ~470 test ids in 42 categories        |
+| Checks               | 63 check scripts, 434 finding ids in 15 categories, each explained | ~470 test ids in 42 categories        |
 | Platforms            | Linux: Debian/Ubuntu, Fedora/RHEL/SUSE, Alpine, Arch            | Linux, macOS, BSD, Solaris, AIX          |
 | Machine output       | JSON Lines with a versioned schema, next to the text report     | `report.dat` (key=value)                 |
 | Explanations         | `tigris explain ID`, one metadata file per id (severity, category, checks) | Suggestions linked to the CISOfy website |
@@ -63,7 +63,7 @@ Settled, so they do not have to be argued again:
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
-| Tests                | 33 fixture suites, 12 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 36 fixture suites, 15 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
@@ -608,8 +608,13 @@ what scripts and cron see.
   every distribution's package tools for it.
 - [ ] **Offline audit, the rest**: the 16 of TIGER's original checks
   listed above, so that an image reads as fully as a running system.
-- [ ] **A transparent summary**: counts by severity and category, and any
-  score shows its formula.
+- [x] **A transparent summary** (3.6.0): counts by severity and category,
+  and the score shows its formula, in the text report and the JSON
+  summary alike (`util/summary`).
+- [x] **Server-side Lynis gaps** (3.6.0): nginx and TLS, databases
+  (MySQL/MariaDB, PostgreSQL, Redis), DNS resolvers, remote logging,
+  certificate expiry. Static configuration analysis, offline-capable;
+  no credentials, no live probing.
 - [ ] **Rename the internals** in one release, with shims for old
   configurations: `tigerrc` to `tigris.conf`, `Tiger_*` to `Tigris_*`,
   `/etc/tiger` to `/etc/tigris`, `tigexp` to `tigris explain` (which
@@ -656,7 +661,7 @@ stable, so it is built against a fixed contract.
   on a package manager run in a real container: each plants a modified
   file, a deleted one, a changed mode and a stray, and requires exactly
   those four new findings on top of the image's own baseline. Test
-  awk-dependent code under both mawk and gawk.
+  awk-dependent code under mawk, gawk and busybox awk.
 - **Safety:** no `eval` of data read from the system, `mktemp` for every
   temporary file, everything quoted. Files such as `/etc/os-release` and
   `/etc/pacman.conf` are read as text, never sourced. Tigris runs as
@@ -667,9 +672,9 @@ stable, so it is built against a fixed contract.
   next is the profiles above.
 - **Packaging:** `.deb`, `.rpm` and apk built in CI, under the name
   `tigris` and separate from Debian's `tiger`; an AUR package; a COPR; a
-  container image that scans a host or an image. Debian packaging of the
-  fork is for later and would be its own package.
-- **Docs:** man pages, `doc/json-format.md` (done), and a GitHub Pages
+  container image that scans a host or an image (done). Debian packaging
+  of the fork is for later and would be its own package.
+- **Docs:** man pages (done), `doc/json-format.md` (done), and a GitHub Pages
   site generated from the check metadata once it exists.
 
 ## Not planned

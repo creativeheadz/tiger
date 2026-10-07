@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# summary [-j] REPORT.jsonl: the summary of a run, from its JSON Lines
+#                 report: how many findings at each level, by category,
+#                 how many distinct finding ids, how many checks were
+#                 skipped, and a score with its formula. As text ("# "
+#                 lines, for the end of the text report) or, with -j, as
+#                 the fields a summary record carries after its counts.
+#
+# 10/07/2026 atrimbitas - Initial version. The score is 100 minus 10 for
+#                 each distinct ALERT id, 4 for each FAIL id and 1 for each
+#                 WARN id, and not below 0. Each id counts once however
+#                 many times it is reported, so a scan that finds a hundred
+#                 dangling links costs the same as one that finds one: the
+#                 score is about which problems a system has, not how
+#                 many files have them. INFO and ERROR do not count, nor
+#                 do accepted findings (tigris-accept) or skipped checks.
+#                 The text says all that beside the number, and lists the
+#                 ids the points went to, so nobody has to trust it.
+#
+#-----------------------------------------------------------------------------
+#
+json=N
+[ "$1" = -j ] && { json=Y; shift; }
+report=$1
+[ -n "$report" ] && [ -r "$report" ] || { echo "usage: summary [-j] REPORT.jsonl" >&2; exit 2; }
+AWK=${AWK:-awk}
+
+$AWK -v json="$json" '
+  # the value of a string key, raw
+  function raw(rec, key,   i, j) {
+    i = index(rec, "\"" key "\":\"")
+    if (!i) return ""
+    i += length(key) + 4
+    j = index(substr(rec, i), "\"")
+    return substr(rec, i, j - 1)
+  }
+  # ids as a list, wrapped so no line passes 76 columns: the first
+  # follows "#   LEVEL (-ddd): " (at most 18 columns), the rest "#     "
+  function idlist(level,   out, line, i, n, a, w) {
+    n = split(ids[level], a, " "); out = ""; line = ""; w = 58
+    for (i = 1; i <= n; i++) {
+      if (line != "" && length(line) + 1 + length(a[i]) > w) { out = out line "\n#     "; line = ""; w = 70 }
+      line = line (line == "" ? "" : " ") a[i]
+    }
+    return out line
+  }
+  index($0, "{\"type\":\"skip\"") == 1 { nskip++; next }
+  index($0, "{\"type\":\"finding\"") != 1 { next }
+  {
+    lvl = raw($0, "level"); id = raw($0, "id"); cat = raw($0, "category")
+    if (cat == "") cat = "other"
+    if (index($0, "\"accepted\":{")) { accepted++; next }
+    count[lvl]++
+    cats[cat]; catcount[cat, lvl]++
+    if (!((lvl, id) in seen)) { seen[lvl, id]; distinct[lvl]++; ids[lvl] = ids[lvl] (ids[lvl] == "" ? "" : " ") id }
+  }
+  END {
+    weight["ALERT"] = 10; weight["FAIL"] = 4; weight["WARN"] = 1
+    score = 100
+    for (l in weight) { ded[l] = weight[l] * distinct[l]; score -= ded[l] }
+    if (score < 0) score = 0
+    ncat = 0
+    for (c in cats) names[++ncat] = c
+    # categories in alphabetical order: a small sort
+    for (i = 1; i <= ncat; i++) for (j = i + 1; j <= ncat; j++) if (names[j] < names[i]) { t = names[i]; names[i] = names[j]; names[j] = t }
+    if (json == "Y") {
+      printf ",\"distinct\":{\"ALERT\":%d,\"FAIL\":%d,\"WARN\":%d}", distinct["ALERT"], distinct["FAIL"], distinct["WARN"]
+      printf ",\"categories\":{"
+      for (i = 1; i <= ncat; i++) {
+        c = names[i]
+        printf "%s\"%s\":{\"ALERT\":%d,\"FAIL\":%d,\"WARN\":%d,\"INFO\":%d,\"ERROR\":%d}", (i > 1 ? "," : ""), c,
+          catcount[c, "ALERT"], catcount[c, "FAIL"], catcount[c, "WARN"], catcount[c, "INFO"], catcount[c, "ERROR"]
+      }
+      printf "}"
+      printf ",\"score\":{\"value\":%d,\"formula\":\"100 - 10*ALERT - 4*FAIL - 1*WARN, each distinct finding id once, not below 0; INFO, ERROR, accepted findings and skipped checks do not count\",\"deducted\":{\"ALERT\":%d,\"FAIL\":%d,\"WARN\":%d}}",
+        score, ded["ALERT"], ded["FAIL"], ded["WARN"]
+      printf "\n"
+      exit
+    }
+    nd = distinct["ALERT"] + distinct["FAIL"] + distinct["WARN"]
+    printf "# Summary: %d ALERT, %d FAIL, %d WARN, %d INFO, %d ERROR (%d distinct finding id%s at WARN or above)",
+      count["ALERT"], count["FAIL"], count["WARN"], count["INFO"], count["ERROR"], nd, (nd == 1 ? "" : "s")
+    if (accepted) printf "; %d accepted finding%s left out", accepted, (accepted == 1 ? "" : "s")
+    if (nskip) printf "; %d check%s skipped", nskip, (nskip == 1 ? "" : "s")
+    printf ".\n"
+    if (ncat) {
+      line = "#   by category:"
+      for (i = 1; i <= ncat; i++) {
+        c = names[i]
+        part = c
+        n = 0
+        split("ALERT FAIL WARN INFO ERROR", lv, " ")
+        for (k = 1; k <= 5; k++) if (catcount[c, lv[k]]) { part = part (n++ ? "," : "") " " catcount[c, lv[k]] " " lv[k] }
+        if (length(line) + 2 + length(part) > 76) { print line; line = "#    " }
+        line = line " " part (i < ncat ? ";" : ".")
+      }
+      print line
+    }
+    printf "# Score %d of 100: 100 minus 10 per ALERT id, 4 per FAIL id,\n", score
+    printf "#   1 per WARN id, each id once however often it is reported;\n"
+    printf "#   INFO, ERROR, accepted findings and skipped checks do not count.\n"
+    if (distinct["ALERT"]) printf "#   ALERT (-%d): %s\n", ded["ALERT"], idlist("ALERT")
+    if (distinct["FAIL"]) printf "#   FAIL (-%d): %s\n", ded["FAIL"], idlist("FAIL")
+    if (distinct["WARN"]) printf "#   WARN (-%d): %s\n", ded["WARN"], idlist("WARN")
+  }' "$report"

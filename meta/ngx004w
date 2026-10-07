@@ -1,0 +1,11 @@
+Id: ngx004w
+Severity: WARN
+Category: services
+Check: check_nginx
+Fix: Narrow the group to ssl-cert or root, or chmod 600.
+References: ngx_http_ssl_module
+
+The server's TLS key can be read by a group that is neither root nor
+ssl-cert. Debian's ssl-cert group exists for exactly this: the key at
+640 there is the done-right setup, and this finding says nothing
+about it.

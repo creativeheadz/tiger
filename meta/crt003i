@@ -1,0 +1,10 @@
+Id: crt003i
+Severity: INFO
+Category: services
+Check: check_certs
+Fix: Install openssl so the expiry can be read.
+References: openssl-x509(1)
+
+Certificate files were found, but openssl is not installed, so their
+expiry is unknown. The finding lists them; with openssl present each
+would be reported as expired, expiring soon, or silently fine.

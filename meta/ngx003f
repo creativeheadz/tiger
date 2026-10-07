@@ -1,0 +1,10 @@
+Id: ngx003f
+Severity: FAIL
+Category: services
+Check: check_nginx
+Fix: Make it root's alone: chown root:root, chmod 600.
+References: ngx_http_ssl_module
+
+The server's TLS key can be read by anyone. Whoever reads it can
+impersonate the server and decrypt its recorded traffic: the whole of
+HTTPS for the site rests on this file staying secret.

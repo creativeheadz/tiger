@@ -1,0 +1,10 @@
+Id: ngx001w
+Severity: WARN
+Category: services
+Check: check_nginx
+Fix: Set server_tokens off.
+References: ngx_http_core_module
+
+server_tokens is on: every response and error page advertises the
+nginx version. It tells anyone asking exactly which flaws to try, for
+no benefit to the site's own visitors.

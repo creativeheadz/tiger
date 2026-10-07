@@ -1,0 +1,214 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_remotelog: whether logs leave this host: rsyslog's forwarding
+#                 (@host, @@host, omfwd), syslog-ng's tcp/udp/syslog
+#                 destinations, and journal-upload. Forwarded (rlog001i,
+#                 saying where) or not (rlog002i). Files rsyslog will
+#                 never read ones named outside its includes (rlog003w).
+#
+# 10/07/2026 atrimbitas - Initial version. One level of includes is what
+#                 both daemons use in practice; the expansion still guards
+#                 its depth. syslog-ng's destinations are read line by
+#                 line: a tcp("host") split across lines is missed, which
+#                 no configuration seen does.
+#
+# References:
+#   rsyslog.conf(5), syslog-ng.conf(5)
+#
+# Tigris: offline
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK GREP SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK GREP SED SORT || exit 1
+
+found=$WORKDIR/rlog.$$
+safe_temp $found
+trap 'delete $found ; exit 1' 1 2 3 15
+
+echo
+echo "# Checking whether logs are forwarded off this host..."
+
+# expand_rs FILE DEPTH: FILE (an audited-system path) with its rsyslog
+# includes ($IncludeConfig, include()) replaced by the files they name,
+# read inside the root
+expand_rs()
+{
+  (
+  __f=$1 __d=$2
+  __h=`rootfile "$__f"`
+  [ -f "$__h" ] && [ "$__d" -le 16 ] || exit 0
+  while IFS= read -r __l || [ -n "$__l" ]
+  do
+    __s=`printf '%s' "$__l" | $SED 's/#.*//; s/[ 	][ 	]*$//'`
+    case "$__s" in
+      \$IncludeConfig[\ \	]*)
+        __p=`printf '%s' "$__s" | $SED 's/^\$IncludeConfig[ 	][ 	]*//; s/^"//; s/"$//'` ;;
+      include[\ \	]*\(*file*=*)
+        __p=`printf '%s' "$__s" | $SED 's/^.*file[ 	]*=[ 	]*"//; s/".*//'` ;;
+      *) printf '%s\n' "$__l"; continue ;;
+    esac
+    case "$__p" in /*) ;; *) __p=${__f%/*}/$__p ;; esac
+    case "$__p" in
+      *[\*\?[]*)
+        __dir=${__p%/*} __pat=${__p##*/}
+        rootls "$__dir" 2>/dev/null | while IFS= read -r __n
+        do
+          case "${__n##*/}" in $__pat) expand_rs "$__n" `expr $__d + 1` ;; esac
+        done ;;
+      *) expand_rs "$__p" `expr $__d + 1` ;;
+    esac
+  done < "$__h"
+  )
+}
+
+# expand_ng FILE DEPTH: the same for syslog-ng's @include "glob"
+expand_ng()
+{
+  (
+  __f=$1 __d=$2
+  __h=`rootfile "$__f"`
+  [ -f "$__h" ] && [ "$__d" -le 16 ] || exit 0
+  while IFS= read -r __l || [ -n "$__l" ]
+  do
+    __s=`printf '%s' "$__l" | $SED 's/#.*//; s,//.*,,'`
+    case "$__s" in
+      *@include[\ \	]*\"*\")
+        __p=`printf '%s' "$__s" | $SED 's/^.*@include[ 	][ 	]*"//; s/".*//'` ;;
+      *) printf '%s\n' "$__l"; continue ;;
+    esac
+    case "$__p" in /*) ;; *) __p=${__f%/*}/$__p ;; esac
+    case "$__p" in
+      *[\*\?[]*)
+        __dir=${__p%/*} __pat=${__p##*/}
+        rootls "$__dir" 2>/dev/null | while IFS= read -r __n
+        do
+          case "${__n##*/}" in $__pat) expand_ng "$__n" `expr $__d + 1` ;; esac
+        done ;;
+      *) expand_ng "$__p" `expr $__d + 1` ;;
+    esac
+  done < "$__h"
+  )
+}
+
+have_syslog=
+# rsyslog: @host and @@host actions (quoted strings first removed, so a
+# template's "@" is not one), and omfwd actions with their target
+if [ -f "`rootfile /etc/rsyslog.conf`" ]; then
+  have_syslog=Y
+  main=/etc/rsyslog.conf
+  expand_rs $main 0 | $SED 's/"[^"]*"//g' | $AWK '
+    { for (i = 1; i <= NF; i++)
+        if ($i ~ /^@@?./) { sub(/;$/, "", $i); print "rsyslog " $i } }' >> $found
+  expand_rs $main 0 |
+    $GREP 'action[ 	]*(.*type[ 	]*=[ 	]*"omfwd"' |
+    $SED 's/^.*target[ 	]*=[ 	]*"\([^"]*\)".*/\1/; t; d' |
+    while IFS= read -r t
+    do
+      echo "rsyslog omfwd $t" >> $found
+    done
+  # files the includes name no glob for: rsyslog never reads them
+  $GREP -h '^[ 	]*\$IncludeConfig\|^[ 	]*include[ 	]*(.*file' "`rootfile $main`" 2>/dev/null |
+    $SED 's/#.*//; s/^[ 	]*//; s/^\$IncludeConfig[ 	][ 	]*//; s/^include[ 	]*(.*file[ 	]*=[ 	]*"//; s/".*//; s/^"//; s/"$//' |
+    while IFS= read -r g
+    do
+      case "$g" in /*) ;; *) g=/etc/"$g" ;; esac
+      case "$g" in *[\*\?[]*) ;; *) continue ;; esac
+      __dir=${g%/*} __pat=${g##*/}
+      rootls "$__dir" 2>/dev/null | while IFS= read -r __n
+      do
+        case "${__n##*/}" in $__pat) ;; *) [ -f "`rootfile "$__n"`" ] &&
+          message WARN rlog003w "" "\`$__n' will be ignored: rsyslog only reads \`$__pat' in \`$__dir'." ;; esac
+      done
+    done
+fi
+
+# syslog-ng: tcp("host"), udp("host") and syslog("host") destinations
+if [ -f "`rootfile /etc/syslog-ng/syslog-ng.conf`" ]; then
+  have_syslog=Y
+  expand_ng /etc/syslog-ng/syslog-ng.conf 0 |
+    $SED -n 's/^[^#]*\(tcp\|udp\|syslog\|network\)([ 	]*"\([^"]*\)".*/syslog-ng \2/p' >> $found
+fi
+
+# journal-upload: logs sent where its URL says
+ju=`rootfile /etc/systemd/journal-upload.conf`
+if [ -f "$ju" ]; then
+  url=`$SED -n 's/^[ 	]*URL=//p' "$ju" | $SED -n '$p'`
+  [ -n "$url" ] && echo "journal-upload $url" >> $found
+fi
+
+if [ -s $found ]; then
+  dests=`$SORT -u $found | $SED 's/^[^ ]* //; s/^omfwd //' | $AWK '{ if (NR > 1) printf ", "; printf "%s", $0 } END { print "" }'`
+  kinds=`$SORT -u $found | $AWK '{ print $1 }' | $SORT -u | $AWK '{ if (NR > 1) printf " and "; printf "%s", $0 } END { print "" }'`
+  message INFO rlog001i "`$SORT -u $found | $SED 's/^/  /'`" "Logs are forwarded to $dests ($kinds)."
+else
+  # one or the other, as if/else: message exits 1 even when it prints,
+  # so && ... || ... would print both
+  if [ -n "$have_syslog" ]; then
+    message INFO rlog002i "" "No remote logging is configured: rsyslog and syslog-ng keep every log on this host."
+  else
+    message INFO rlog002i "" "No remote logging is configured, and no rsyslog or syslog-ng configuration was found."
+  fi
+fi
+
+delete $found
+exit 0

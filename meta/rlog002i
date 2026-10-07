@@ -1,0 +1,11 @@
+Id: rlog002i
+Severity: INFO
+Category: logging
+Check: check_remotelog
+Fix: Forward the logs to a host of their own (rsyslog's omfwd, syslog-ng's tcp(), journal-upload).
+References: rsyslog.conf(5); syslog-ng.conf(5)
+
+No remote logging is configured: every log stays on this host. The
+first thing an intruder does with root is silence the logs, and a
+disk that dies takes its own account with it. On a machine nobody
+depends on that is a choice; on a server it is a gap.

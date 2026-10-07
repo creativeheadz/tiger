@@ -1,0 +1,203 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_certs: the certificates a server presents: expired (crt001f), or
+#                 expiring within 30 days (crt002w). Without openssl there
+#                 is nothing to read them with (crt003i).
+#
+# 10/07/2026 atrimbitas - Initial version. The candidates are the leaf
+#                 certificates letsencrypt renews
+#                 (/etc/letsencrypt/live/*/cert.pem), the ssl_certificate
+#                 and SSLCertificateFile values of nginx.conf and
+#                 apache2.conf/httpd.conf with what they include, and
+#                 *.pem/*.crt/*.cert in the usual ssl directories. Only
+#                 what openssl reads as a certificate is judged; CA
+#                 certificates are the distribution's to renew, not this
+#                 server's. Relative paths in the web configuration are
+#                 skipped: they resolve against the compiled-in prefix,
+#                 which cannot be known without running the server.
+#                 Tiger_Openssl_Cmd replaces openssl, for the tests; set but
+#                 empty, there is no openssl.
+#
+# References:
+#   openssl-x509(1)
+#
+# Tigris: offline
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK GREP SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK GREP SED SORT || exit 1
+
+cands=$WORKDIR/certs.$$
+safe_temp $cands
+trap 'delete $cands ; exit 1' 1 2 3 15
+
+# expand_inc FILE DEPTH WORD: the lines of FILE (an audited-system path)
+# with its WORD lines (nginx "include", apache "Include") replaced by the
+# files they name, read inside the root. One level of glob, as the
+# servers allow; relative to the file that names them, which is where the
+# packaged configurations keep them.
+expand_inc()
+{
+  (
+  __f=$1 __d=$2 __w=$3
+  __h=`rootfile "$__f"`
+  [ -f "$__h" ] && [ "$__d" -le 16 ] || exit 0
+  while IFS= read -r __l || [ -n "$__l" ]
+  do
+    # a comment starts at # outside quotes; quoted #'s are not nginx's
+    # or apache's habit, so the simple cut stands
+    __s=`printf '%s' "$__l" | $SED 's/#.*//'`
+    case "$__s" in
+      *[!a-zA-Z]"$__w"[\ \	]*|"$__w"[\ \	]*)
+        __p=`printf '%s' "$__s" | $SED "s/^.*[^a-zA-Z]${__w}[ 	]*//; s/^${__w}[ 	]*//; s/[; 	]*$//; s/^['\"]//; s/['\"]$//"`
+        case "$__p" in /*) ;; *) __p=${__f%/*}/$__p ;; esac
+        case "$__p" in
+          *[\*\?[]*)
+            __dir=${__p%/*} __pat=${__p##*/}
+            rootls "$__dir" 2>/dev/null | while IFS= read -r __n
+            do
+              case "${__n##*/}" in $__pat) expand_inc "$__n" `expr $__d + 1` "$__w" ;; esac
+            done ;;
+          *) expand_inc "$__p" `expr $__d + 1` "$__w" ;;
+        esac ;;
+      *) printf '%s\n' "$__l" ;;
+    esac
+  done < "$__h"
+  )
+}
+
+# the certificates nginx would serve: its ssl_certificate values
+if [ -f "`rootfile /etc/nginx/nginx.conf`" ]; then
+  expand_inc /etc/nginx/nginx.conf 0 include |
+    $SED -n 's/^[^#]*ssl_certificate[ 	][ 	]*\([^; 	][^;]*\);.*/\1/p' |
+    $SED 's/^ *//; s/ *$//' | $GREP '^/' >> $cands
+fi
+
+# and apache's: its SSLCertificateFile values
+for main in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf
+do
+  [ -f "`rootfile $main`" ] || continue
+  { expand_inc $main 0 Include; expand_inc $main 0 IncludeOptional; } |
+    $SED -n 's/^[^#]*SSLCertificateFile[ 	][ 	]*\([^ 	][^ 	]*\).*/\1/p' |
+    $GREP '^/' >> $cands
+done
+
+# letsencrypt's leaves, and whatever else is kept as a certificate
+rootls /etc/letsencrypt/live 2>/dev/null | while IFS= read -r leaf
+do
+  for n in cert.pem fullchain.pem
+  do
+    [ -f "`rootfile "$leaf/$n"`" ] && { echo "$leaf/$n"; break; }
+  done
+done >> $cands
+for d in /etc/nginx/ssl /etc/apache2/ssl /etc/httpd/ssl /etc/ssl/private /etc/pki/tls/certs
+do
+  rootls "$d" 2>/dev/null | while IFS= read -r __n
+  do
+    case "$__n" in *.pem|*.crt|*.cert) [ -f "`rootfile "$__n"`" ] && echo "$__n" ;; esac
+  done
+done >> $cands
+
+$SORT -u -o $cands $cands
+[ -s $cands ] || { delete $cands; exit 0; }
+
+echo
+echo "# Checking the server's certificates..."
+
+if [ "${Tiger_Openssl_Cmd+x}" = x ]; then
+  ossl=$Tiger_Openssl_Cmd
+else
+  ossl=
+  for d in /usr/bin /bin /usr/sbin /sbin
+  do
+    [ -x "$d/openssl" ] && { ossl="$d/openssl"; break; }
+  done
+fi
+if [ -z "$ossl" ]; then
+  n=`$GREP -c . $cands`
+  message INFO crt003i "`$SED 's/^/  /' $cands`" "$n certificate files found, but openssl is not installed, so their expiry is unknown."
+  delete $cands
+  exit 0
+fi
+
+while IFS= read -r cert
+do
+  here=`rootfile "$cert"`
+  [ -f "$here" ] || continue
+  # one openssl call: what it is, and when it lapses. A key, a bundle
+  # that is not one certificate, or anything else unreadable is skipped;
+  # a CA certificate is the distribution's to renew.
+  text=`$ossl x509 -noout -text -in "$here" 2>/dev/null` || continue
+  case "$text" in *'CA:TRUE'*) continue ;; esac
+  end=`printf '%s' "$text" | $SED -n 's/^ *Not After *: *//p'`
+  [ -n "$end" ] || continue
+  if $ossl x509 -noout -checkend 0 -in "$here" 2>/dev/null; then
+    $ossl x509 -noout -checkend 2592000 -in "$here" 2>/dev/null ||
+      message WARN crt002w "" "The certificate in \`$cert' expires on $end, within 30 days; renew it."
+  else
+    message FAIL crt001f "" "The certificate in \`$cert' expired on $end; renew it."
+  fi
+done < $cands
+
+delete $cands
+exit 0

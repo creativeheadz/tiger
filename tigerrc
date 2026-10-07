@@ -78,6 +78,11 @@ Tiger_Check_PAM=Y               # Fast - password quality and lockout in PAM
 Tiger_Check_UNITS=Y             # Fast - what enabled systemd services and timers run
 Tiger_Check_STORAGE=Y           # Fast - /tmp and /dev/shm options, encryption, core dumps
 Tiger_Check_CONTAINERS=Y        # Fast - Docker and Podman: socket, TCP API, running containers
+Tiger_Check_CERTS=Y             # Fast - server certificates expired or expiring soon
+Tiger_Check_REMOTELOG=Y         # Fast - logs forwarded off this host, or not
+Tiger_Check_DNS=Y               # Fast - resolv.conf, and unbound/bind open to the world
+Tiger_Check_DATABASES=Y         # Fast - MySQL, PostgreSQL and Redis configuration
+Tiger_Check_NGINX=Y             # Fast - nginx configuration and TLS
 Tiger_Check_PKGINTEGRITY=Y      # Installed files against the rpm, apk or pacman database
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       

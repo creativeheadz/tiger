@@ -1,0 +1,10 @@
+Id: ngx008f
+Severity: FAIL
+Category: services
+Check: check_nginx
+Fix: Run the workers unprivileged (user nginx or www-data).
+References: ngx_core_module
+
+nginx's workers run as root. They parse every request, so a flaw in
+request handling is a root flaw; the master alone needs root, to bind
+the ports and read the keys at startup.

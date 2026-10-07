@@ -1,0 +1,11 @@
+Id: dns005f
+Severity: FAIL
+Category: network
+Check: check_dns
+Fix: Allow localhost and the local networks only.
+References: unbound.conf(5)
+
+Unbound answers recursion to anyone: an access-control line allows
+0.0.0.0/0 or ::/0. An open resolver serves the whole Internet,
+including spoofed queries that turn it into an amplifier for
+denial-of-service attacks against others.

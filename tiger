@@ -609,6 +609,11 @@ noroot=`$GREP -c '^# Skipped [^:]*: it needs root' $logtmp 2>/dev/null`
 [ "${noroot:-0}" -gt 0 ] && [ $tiger_status -lt 2 ] && tiger_status=2
 
 [ "$Tiger_TESTMODE" != 'Y' ] && {
+  # The run in a few lines, counted from the JSON: per-level counts,
+  # distinct ids, per-category counts, and the score with its formula.
+  # Without a JSON report (Tiger_Output_JSON=N) there is nothing to
+  # count from, so the report ends as it always has.
+  [ -n "$Tiger_JSON_File" ] && sh $BASEDIR/util/summary "$Tiger_JSON_File" >>$logtmp
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}."
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}." >>$logtmp
   [ -n "$Tiger_JSON_File" ] && {
@@ -618,7 +623,9 @@ noroot=`$GREP -c '^# Skipped [^:]*: it needs root' $logtmp 2>/dev/null`
       n=`$GREP -c "\"type\":\"finding\",\"level\":\"$level\"" $Tiger_JSON_File`
       counts="$counts${counts:+,}\"$level\":$n"
     done
-    echo "{\"type\":\"summary\",\"id\":\"$Tiger_Run_Id\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts},\"skipped\":${skipped:-0}}" >> $Tiger_JSON_File
+    # distinct ids, per-category counts and the score, after the counts
+    summary_extra=`sh $BASEDIR/util/summary -j "$Tiger_JSON_File" 2>/dev/null`
+    echo "{\"type\":\"summary\",\"id\":\"$Tiger_Run_Id\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts}$summary_extra,\"skipped\":${skipped:-0}}" >> $Tiger_JSON_File
     echo "Findings as JSON Lines are in \`$Tiger_JSON_File'."
   }
 

@@ -1,0 +1,10 @@
+Id: dns003w
+Severity: WARN
+Category: network
+Check: check_dns
+Fix: Replace it with the resolver's address.
+References: resolv.conf(5)
+
+A nameserver line in /etc/resolv.conf does not hold an IP address (a
+name, 0.0.0.0, or a typo), so it is ignored. Names cannot bootstrap
+from names: the resolver needs addresses to ask first.

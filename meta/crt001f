@@ -1,0 +1,11 @@
+Id: crt001f
+Severity: FAIL
+Category: services
+Check: check_certs
+Fix: Renew the certificate before clients refuse it.
+References: openssl-x509(1)
+
+A certificate this server presents (its web server's, or one kept in
+the usual places) has expired. Clients that check dates refuse it, so
+the service is down for them; clients that do not check are open to
+anyone with another certificate for the name.

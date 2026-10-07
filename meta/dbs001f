@@ -1,0 +1,11 @@
+Id: dbs001f
+Severity: FAIL
+Category: services
+Check: check_databases
+Fix: Remove skip-grant-tables and restart the server.
+References: mysqld(8)
+
+MySQL or MariaDB runs with skip-grant-tables: authentication is off
+and anyone connecting has every privilege without a password. It is a
+recovery switch for a lost root password, never a running
+configuration.

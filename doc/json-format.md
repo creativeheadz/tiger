@@ -70,9 +70,25 @@ The text report has a `# Skipped NAME` line for each.
 
 ### `summary`
 
-`end` (UTC), `counts` per level, and `skipped`, how many checks were
-skipped (absent before 3.4.0). A report with no `summary` line was cut
-short, and a consumer should treat it as incomplete.
+`end` (UTC), `counts` per level (every finding record, accepted ones
+included), and `skipped`, how many checks were skipped (absent before
+3.4.0). A report with no `summary` line was cut short, and a consumer
+should treat it as incomplete.
+
+Since 3.6.0 the summary also carries what the text report ends with:
+
+- `distinct`: how many finding ids at ALERT, FAIL and WARN, each id
+  once however often it was reported. Accepted findings are not
+  counted: this is about the open problems.
+- `categories`: the same per-level counts as `counts`, but split by
+  the finding's category (`accounts`, `ssh`, …); findings without a
+  category are under `other`. Accepted findings are not counted.
+- `score`: `value` (0 to 100), the `formula` it was computed with,
+  and `deducted`, the points each level cost. The formula today is
+  100 minus 10 per distinct ALERT id, 4 per distinct FAIL id and 1
+  per distinct WARN id, not below 0; INFO, ERROR, accepted findings
+  and skipped checks do not count. A consumer that grades runs
+  should read the formula, not assume it: the weights may change.
 
 ### `diff`
 

@@ -1,0 +1,11 @@
+Id: dns006f
+Severity: FAIL
+Category: network
+Check: check_dns
+Fix: Allow localhost and the local networks only.
+References: named.conf(5)
+
+Bind answers recursion to anyone: an allow-recursion list holds 'any',
+directly or through a named ACL. An open resolver serves the whole
+Internet, including spoofed queries that turn it into an amplifier
+for denial-of-service attacks against others.

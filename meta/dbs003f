@@ -1,0 +1,10 @@
+Id: dbs003f
+Severity: FAIL
+Category: services
+Check: check_databases
+Fix: Make it mysql's alone: chown mysql:mysql, chmod 700 (600 for debian.cnf).
+References: mysqld(8)
+
+MySQL's data directory, or its Debian maintenance password, can be
+read by accounts that should never see them. The directory holds every
+table; debian.cnf holds a password with full privileges.

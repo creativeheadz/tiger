@@ -1,0 +1,10 @@
+Id: dns001f
+Severity: FAIL
+Category: network
+Check: check_dns
+Fix: Name the resolvers in /etc/resolv.conf (or run one on localhost).
+References: resolv.conf(5)
+
+Names cannot be resolved: /etc/resolv.conf is missing, or names no
+usable server. Without a resolver nothing that is named by name works:
+updates, mail, authentication against a directory, monitoring.

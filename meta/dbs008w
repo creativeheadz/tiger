@@ -1,0 +1,10 @@
+Id: dbs008w
+Severity: WARN
+Category: services
+Check: check_databases
+Fix: Turn ssl on, with a certificate the clients check.
+References: postgresql.conf(5)
+
+PostgreSQL takes unencrypted connections from the network: ssl is off
+while it listens past localhost. Passwords and data cross the wire
+readable to anyone on it.
