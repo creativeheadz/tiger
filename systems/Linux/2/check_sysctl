@@ -156,7 +156,7 @@ if [ -n "$TIGRIS_ROOT" ]; then
     case "$value" in ''|*[!0-9-]*) continue ;; esac
     good "$value" "$test" "$want" || message $level $code "" "$key is $value (set in $file): $text"
   done
-  [ -s $unset_keys ] && message INFO lin041i "`$SORT -u $unset_keys | $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }'`." "Some hardening settings are set by nothing in $TIGRIS_ROOT's sysctl configuration: they are left to the kernel's defaults, which depend on the kernel it boots."
+  [ -s $unset_keys ] && message INFO lin041i "`$SORT -u $unset_keys | $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }'`." "Some hardening settings are set by nothing in the root's sysctl configuration: they are left to the kernel's defaults, which depend on the kernel it boots."
   delete $SYSCTL_CONF $unset_keys
   exit 0
 fi

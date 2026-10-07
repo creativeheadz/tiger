@@ -75,7 +75,7 @@ eval $greps | $GREP -v '^'/hw | $GREP -v '/systemd/inaccessible/' > $WORKDIR/dev
   $SORT $WORKDIR/dev.list.$$ |
   while read file
   do
-    $LS $LSGROUP -ld "$file"
+    lsline "$file"
   done
   echo
 }

@@ -590,8 +590,14 @@ what scripts and cron see.
   includes read inside the root; accounts and passwords, owners named by
   the root's own passwd; cron; systemd units (`systemd-analyze --root
   cat-config`); the kernel and network settings it applies at boot.
-  mount options and encryption from fstab and crypttab. Still to read
-  one: the file system scan.
+  mount options and encryption from fstab and crypttab; the file system
+  scan, ownership judged by the root's passwd and group. On an image
+  with systemd, 8 checks are skipped as needing the running system and
+  16 of TIGER's original ones (check_perms, check_umask, check_exports,
+  check_aliases, check_logfiles, check_rootkit, check_known,
+  check_services, check_lilo, check_single, check_rcumask,
+  check_release, check_ntp, check_devices, check_embedded,
+  check_neverlogin) still cannot read an offline root.
 - [ ] **A transparent summary**: counts by severity and category, and any
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old

@@ -17,6 +17,15 @@
 #
 # find_files - 06/14/93
 #
+# 10/07/2026 atrimbitas An offline root (--root): the root is walked, its
+#                /proc, /sys and /run (a running system's, not its own) left
+#                out; files nobody owns are those whose uid or gid is no
+#                entry of the root's passwd or group (find's -nouser asks
+#                this host's); dangling links are decided inside the root,
+#                through rootpaths (find's -xtype would follow an absolute
+#                link to this host's files); every list names the root's
+#                own paths. Needs GNU find (-fprintf), as the fast scan does.
+#
 # 10/04/2026 atrimbitas Skip the directories listed in Tiger_FSScan_PruneDirs,
 #                based on a patch from Nicholas Bamber (Debian bug #610785)
 #
@@ -43,6 +52,9 @@
 # 04/27/93 dls Fixed it so that filenames are stored in a
 #              variable, separated by '/'.  Also, while added
 #              some new filename patterns to search for.
+#
+# Tigris: offline
+#   the root's own files, owners judged by its passwd and group.
 #
 #-----------------------------------------------------------------------------
 # TODO:
@@ -280,14 +292,34 @@ fastopts()
     fo="$fo${fo:+ ,} \( -perm -002000 ! -type d -fprintf \"$1.sgid.$2\" '%p\n' \)"
   [ "x$Tiger_FSScan_Devs" != 'xN' ] &&
     fo="$fo${fo:+ ,} \( \( -type b -o -type c \) -fprintf \"$1.dev.$2\" '%p\n' \)"
+  if [ -n "$TIGRIS_ROOT" ]; then
+    # dangling links are found inside the root afterwards
+    [ "x$Tiger_FSScan_SymLinks" != 'xN' ] &&
+      fo="$fo${fo:+ ,} \( -type l -fprintf \"$1.link.$2\" '%p\n' \)"
+  else
   [ "x$Tiger_FSScan_SymLinks" != 'xN' ] &&
     fo="$fo${fo:+ ,} \( -type l -fprintf \"$1.link.$2\" '%p\n' \) , \( -type l -xtype l -fprintf \"$1.dangling.$2\" '%p\n' \)"
+  fi
   [ "x$Tiger_FSScan_WDIR" != 'xN' ] &&
     fo="$fo${fo:+ ,} \( -type d -perm -000002 -fprintf \"$1.wdir.$2\" '%p\n' \)"
   [ "x$Tiger_FSScan_Unowned" != 'xN' ] &&
-    fo="$fo${fo:+ ,} \( -nouser -fprintf \"$1.nouser.$2\" '%p\n' \) , \( -nogroup -fprintf \"$1.nogroup.$2\" '%p\n' \)"
+    fo="$fo${fo:+ ,} \( $nouser -fprintf \"$1.nouser.$2\" '%p\n' \) , \( $nogroup -fprintf \"$1.nogroup.$2\" '%p\n' \)"
   [ -n "$fo" ] && printf '%s\n' "\( $fo \)"
 }
+
+# Files nobody owns: on the running system, as its name service says; on an
+# offline root, any uid or gid that is no entry of its own passwd or group
+nouser=-nouser nogroup=-nogroup
+if [ -n "$TIGRIS_ROOT" ]; then
+  [ -n "$fastfind" ] || {
+    message ERROR fsys019e "" "The file system scan of an offline root needs GNU find (its -fprintf); this find has none, so $TIGRIS_ROOT's files were not scanned."
+    exit 0
+  }
+  pwfile=`rootfile /etc/passwd` grfile=`rootfile /etc/group`
+  nouser=`$AWK -F: '$3 ~ /^[0-9]+$/ { printf " ! -uid %s", $3 }' "$pwfile" 2>/dev/null`
+  nogroup=`$AWK -F: '$3 ~ /^[0-9]+$/ { printf " ! -gid %s", $3 }' "$grfile" 2>/dev/null`
+  nouser="\\( -true$nouser \\)" nogroup="\\( -true$nogroup \\)"
+fi
 
 pidlist=$WORKDIR/pid.list$$
 mountlist=$WORKDIR/mount.list$$
@@ -314,7 +346,7 @@ if [ -n "$Tiger_FSScan_PruneDirs" ]; then
     # Match the directory and anything below it: a mount point inside a
     # pruned directory is a starting point of its own for find
     [ -n "$pruneopt" ] && pruneopt="$pruneopt -o"
-    pruneopt="$pruneopt -path '${prunedir%/}' -o -path '${prunedir%/}/*'"
+    pruneopt="$pruneopt -path '$TIGRIS_ROOT${prunedir%/}' -o -path '$TIGRIS_ROOT${prunedir%/}/*'"
   done
   set +f
   IFS=$saveIFS
@@ -322,7 +354,13 @@ if [ -n "$Tiger_FSScan_PruneDirs" ]; then
 fi
 
 {
-  if [ ! -n "$FINDXDEV" ]; then
+  if [ -n "$TIGRIS_ROOT" ]; then
+    # the root, all of it, but what a running system mounts there
+    # (read below takes one level of backslashes and eval the next; printf,
+    # since dash's echo would take another)
+    printf '%s\n' "\\\\( -path '$TIGRIS_ROOT/proc' -o -path '$TIGRIS_ROOT/sys' -o -path '$TIGRIS_ROOT/run' \\\\) -prune -o"
+    echo "$TIGRIS_ROOT"
+  elif [ ! -n "$FINDXDEV" ]; then
     echo "$FINDPRUNE"
     echo "/"
   elif haveallcmds GETDISKS; then
@@ -396,6 +434,29 @@ fi
     done |
     $SORT > $outfile.${what}
   done
+
+  if [ -n "$TIGRIS_ROOT" ]; then
+    # the root's own paths in every list
+    for what in suid sgid other dev link wdir nouser nogroup
+    do
+      [ -s $outfile.$what ] || continue
+      $AWK -v r="$TIGRIS_ROOT" '$0 == r { $0 = "/" } index($0, r "/") == 1 { $0 = substr($0, length(r) + 1) } { print }' $outfile.$what > $outfile.$what.tmp &&
+        $CAT $outfile.$what.tmp > $outfile.$what
+      delete $outfile.$what.tmp
+    done
+    # a link is dangling when, resolved inside the root, it names nothing;
+    # but /proc, /sys, /run and /dev are filled in by a running system
+    # (/etc/mtab is a link into /proc), so links into them are not
+    [ -s $outfile.link ] && rootpaths < $outfile.link |
+      $AWK 'NR == FNR { p[FNR] = $0; next } { print p[FNR] "\t" $0 }' $outfile.link - |
+      while IFS='	' read -r l h
+      do
+        case "$h" in
+          "$TIGRIS_ROOT"/proc|"$TIGRIS_ROOT"/proc/*|"$TIGRIS_ROOT"/sys|"$TIGRIS_ROOT"/sys/*|"$TIGRIS_ROOT"/run|"$TIGRIS_ROOT"/run/*|"$TIGRIS_ROOT"/dev/*) continue ;;
+        esac
+        [ -n "$h" ] && [ -e "$h" ] || echo "$l"
+      done | $SORT > $outfile.dangling
+  fi
 
   # The one-pass find lists dangling symlinks; the flogit path reports them
   # as it goes. A dangling symlink in a system directory is somewhere a

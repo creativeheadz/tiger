@@ -41,6 +41,10 @@
 #                    Chaboisseau and Adam James for providing a patch (Debian
 #                    bug: #369501)
 #
+# 10/07/2026 - atrimbitas - Names may start with an underscore (Debian's _apt,
+#    _ssh) and contain dots, and Samba's machine accounts end in $; the group
+#    pattern said A-z, which also took [ \ ] ^ and `.
+#
 # Tigris: offline
 #   the root's passwd, shadow and group files.
 #
@@ -128,7 +132,7 @@ $AWK -F: '{
                 next;
         if ($1 == "")
                 printf("Line %d has an empty login field.\n", NR);
-        else if ($1 !~ /^[A-Za-z0-9][A-Za-z0-9_\.-]*$/)
+        else if ($1 !~ /^[A-Za-z0-9_][A-Za-z0-9_.-]*[$]?$/)
                 printf("Login %s has non-alphanumeric characters.\n", $1);
 # Consider removing this since many recent OS will not have any problems
 # with this
@@ -192,7 +196,7 @@ $AWK -F: '{
                 next;
         if ($1 == "")
                 printf("Line %d has an empty login field.\n", NR);
-        else if ($1 !~ /^[A-Za-z0-9][A-Za-z0-9_-]*$/)
+        else if ($1 !~ /^[A-Za-z0-9_][A-Za-z0-9_.-]*[$]?$/)
                 printf("Login %s has non-alphanumeric characters.\n", $1);
         if (length($1) > 32)
                 printf("Login %s has more than 32 characters.\n", $1);
@@ -227,7 +231,7 @@ $AWK -F: '{
                 next;
         if (NF != 4)
                 printf("Line %d has the wrong number of fields.\n", NR);
-        if ($1 !~ /^[A-za-z0-9][A-za-z0-9_-]*$/)
+        if ($1 !~ /^[A-Za-z0-9_][A-Za-z0-9_.-]*[$]?$/)
                 printf("Group %s has non-alphanumeric characters.\n", $1);
         if (length($1) > 32)
                 printf("Group %s has more than 32 characters.\n", $1);

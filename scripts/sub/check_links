@@ -45,10 +45,18 @@ file="$1"
 echo
 echo "# Checking symbolic links..."
 
-haveallcmds SORT GREP JOIN LS REALPATH || exit 1
+haveallcmds SORT GREP JOIN LS || exit 1
+[ -n "$TIGRIS_ROOT" ] || haveallcmds REALPATH || exit 1
 haveallfiles WORKDIR || exit 1
 
-$REALPATH < $file |
+# "link target", the target fully resolved: on an offline root, inside it,
+# and named by the root's own path
+if [ -n "$TIGRIS_ROOT" ]; then
+  rootpaths < $file |
+    $AWK -v r="$TIGRIS_ROOT" 'NR == FNR { p[FNR] = $0; next } { t = $0; if (index(t, r "/") == 1) t = substr(t, length(r) + 1); print p[FNR], t }' $file -
+else
+  $REALPATH < $file
+fi |
 $SORT -k 2 > $WORKDIR/link.tmp.$$
 
 $GREP -v '^#' $FILE_ACL |
@@ -56,7 +64,7 @@ $SORT |
 $JOIN -j2 2 -o 2.1 2.2 1.1 - $WORKDIR/link.tmp.$$ |
 while read file realfile facl
 do
-  $LS -ld $LSGROUP "$file" | {
+  lsline "$file" | {
     read p l owner group s a b c f
     [ "$owner" != 'root' -a "$owner" != 'bin' ] && {
       message INFO fsys007i "" "Symbolic link \`$file' points to \`$realfile'."

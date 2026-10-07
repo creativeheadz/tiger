@@ -61,9 +61,11 @@ haveallfiles BASEDIR WORKDIR || exit 1
 haveallcmds FILECMD LS SGREP STRINGS && {
   while read file
   do
-    $FILECMD "$file" 2>/dev/null | $SGREP script 2>/dev/null && {
+    # where it is: itself, or inside an offline root
+    here=`__here "$file"`
+    $FILECMD "$here" 2>/dev/null | $SGREP script 2>/dev/null && {
       message WARN fsys010w "" "File $file is a setgid script:"
-      $LS $LSGROUP -ld "$file"
+      lsline "$file"
     }
   
 #    $STRINGS - "$file" 2>/dev/null |
@@ -100,7 +102,7 @@ haveallcmds LS AWK && {
     message ALERT fsys011a "$source" 'The following setgid programs are non-standard:'
     while read file
     do
-      $LS $LSGROUP -ld "$file"
+      lsline "$file"
     done < $WORKDIR/sgid.list.$$ |
     $AWK '{printf("%10s %-8s %-8s %s\n", $1, $3, $4, $NF);}' |
     $SORT
@@ -122,16 +124,17 @@ haveallfiles SIGNATURE_FILE && {
   while read file
   do
     loc_signature=
+    fh=`__here "$file"`
     case "$p1$p2$p3$p4$p5$p6$p7$p8" in
       *[!0-9a-f]*) {
 	std_signature="$p1"
 	comment="$p2 $p3 $p4 $p5 $p6 $p7 $p8 $comment"
-	[ -n "$MD5" ] && loc_signature="`$MD5 < $file`"
+	[ -n "$MD5" ] && loc_signature="`$MD5 < \"$fh\"`"
       }
       ;;
       *) {
 	std_signature=" $p1 $p2 $p3 $p4 $p5 $p6 $p7 $p8"
-	[ -n "$SNEFRU" ] && loc_signature="`$SNEFRU < $file`"
+	[ -n "$SNEFRU" ] && loc_signature="`$SNEFRU < \"$fh\"`"
       }
       ;;
     esac
@@ -140,7 +143,7 @@ haveallfiles SIGNATURE_FILE && {
 	read flag msgid rfile p1 p2 p3 p4 p5 p6 p7 p8 comment
 	[ -n "$rfile" -a "$file" != "$rfile" ] && {
 	  message ALERT sgid001a "" "\`$file' is a setgid copy of $rfile [$comment]."
-	  $LS -ld $LSGROUP $file
+	  lsline "$file"
 	}
       }
     }

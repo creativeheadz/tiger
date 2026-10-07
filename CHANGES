@@ -18,7 +18,8 @@ Changes since 3.4.0 (unreleased)
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
   deb_statoverride, check_updates (without the reboot question),
   check_pam, check_ssh, check_sudo, the account checks, cron,
-  check_units, check_sysctl, check_network_config and check_storage. Those marked "# Tigris: live system" (processes, sockets,
+  check_units, check_sysctl, check_network_config, check_storage and
+  the file system scan. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -66,6 +67,20 @@ Changes since 3.4.0 (unreleased)
   accounts); its group pattern's A-z also took [, \, ], ^ and the
   backquote. Without column it prints the duplicates one a line instead
   of stopping.
+
+- The file system scan reads an offline root. find_files walks the root,
+  leaving out its /proc, /sys and /run (a running system's, not its
+  own); a file nobody owns is one whose uid or gid is no entry of the
+  root's passwd or group, which find's -nouser cannot say (it asks this
+  host); a link is dangling when, resolved inside the root, it names
+  nothing, not when find's -xtype follows an absolute link to this
+  host's file (links into /proc, /sys, /run and /dev, which a running
+  system fills, are not); and every list names the root's paths. The
+  setuid and setgid lists are compared with what the root's packages
+  ship (util/pkgspecial reads its rpm, pacman or apk database), and
+  files are read and listed through __here and lsline, owners named by
+  the root's passwd. It needs GNU find's -fprintf (fsys019e otherwise).
+  Live, a full run on Hera matches 3.4.0's.
 
 - check_storage reads an offline root: what it sets up at boot rather
   than what is mounted now. /tmp, /dev/shm and /var/tmp's options from

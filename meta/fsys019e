@@ -1,0 +1,15 @@
+Id: fsys019e
+Severity: ERROR
+Category: filesystem
+Check: find_files
+
+Auditing a system that is not running (tigris --root), its files are
+scanned with this host's find, and that scan needs GNU find: its
+-fprintf writes each kind of finding (setuid, setgid, devices, links,
+world-writable directories, unowned files) to its own list in one pass,
+and only that pass can judge ownership by the image's passwd and group
+and find dangling links inside the image. This find (busybox's, most
+likely) has no -fprintf, so the image's files were not scanned at all.
+
+Install GNU findutils on the host doing the audit, or audit from one
+that has it.

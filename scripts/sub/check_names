@@ -75,10 +75,10 @@ haveallcmds LS BASENAME AWK SORT || exit 1
 	case "$name" in
 	  .FSP*)
 	    message WARN fsys009w "" "FSP server control file found:"
-	    $LS $LSGROUP -ld -- "$pathname";;
+	    lsline "$pathname";;
 	  *)
 	    message ALERT fsys005a "" "Unusual filename \`$name' found:"
-	    $LS $LSGROUP -ld -- "$pathname";;
+	    lsline "$pathname";;
 	esac;;
       S)
 	set -- $rest

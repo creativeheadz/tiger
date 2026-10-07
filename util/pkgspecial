@@ -37,7 +37,8 @@ case "$which" in
   sgid) bits=2367 ;;
   *) echo "usage: pkgspecial suid|sgid" >&2; exit 2 ;;
 esac
-root=${Tiger_Sysctl_Root:-}
+# the tests' root, or an offline root's (tigris --root) database
+root=${Tiger_Sysctl_Root:-$TIGRIS_ROOT}
 AWK=${AWK:-awk} SORT=${SORT:-sort}
 
 # Is there a database with modes in it? Decided here, before the
@@ -57,7 +58,7 @@ modes()
       if [ -n "$Tiger_Rpm_Modes_Cmd" ]; then
         $Tiger_Rpm_Modes_Cmd
       else
-        rpm -qa --qf '[%{FILEMODES:octal} %{FILENAMES}\n]'
+        rpm ${TIGRIS_ROOT:+--root "$TIGRIS_ROOT"} -qa --qf '[%{FILEMODES:octal} %{FILENAMES}\n]'
       fi 2>/dev/null
       ;;
     pacman)
