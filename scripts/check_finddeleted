@@ -42,6 +42,9 @@
 #              (http://www.hackinglinuxexposed.com/articles/20020507.html)
 # 04/17/2002 - jfs - Use safe delete() instead of $RM
 #
+# Tigris: needs root
+#   only root sees the open files of other users' processes.
+#
 #-----------------------------------------------------------------------------
 #
 # TODO:

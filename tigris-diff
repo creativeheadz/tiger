@@ -117,6 +117,8 @@ function jtext(rec, key,    s, out, c, i, n) {
 function take(rec, which,    key, level) {
   if (index(rec, "\"type\":\"finding\"") == 0) {
     if (index(rec, "\"type\":\"run\"") > 0) run[which] = rec
+    # a check skipped in either run (it needs root) is left out of both
+    if (index(rec, "\"type\":\"skip\"") > 0 && !(jraw(rec, "check") in skipped)) skipped[jraw(rec, "check")] = ++nskipped
     return
   }
   # Findings of the filesystem scan (all fsys*) are only comparable when both
@@ -152,6 +154,11 @@ END {
     cfg[r] = c "|" p; show[r] = (c == "" ? "?" : c) (p == "" ? "" : " with profile " p)
   }
   config1 = cfg[1]; config2 = cfg[2]
+  if (nskipped) {
+    for (i = 1; i <= nold; i++) if (oldorder[i] != "" && (jraw(old[oldorder[i]], "check") in skipped)) { delete old[oldorder[i]]; oldorder[i] = "" }
+    for (i = 1; i <= nnew; i++) if (neworder[i] != "" && (jraw(new[neworder[i]], "check") in skipped)) { delete new[neworder[i]]; neworder[i] = "" }
+    for (c in skipped) skipname[skipped[c]] = c
+  }
   nres = 0; nadd = 0; same = 0
   for (i = 1; i <= nold; i++) { k = oldorder[i]; if (k == "") continue; if (!(k in new)) resolved[++nres] = k; else same++ }
   nopen = 0
@@ -165,6 +172,11 @@ END {
     printf "],\"unchanged\":%d", same
     if (setaside) printf ",\"set_aside\":[\"fsys\"]"
     if (config1 != config2) printf ",\"configs_differ\":true"
+    if (nskipped) {
+      printf ",\"skipped_checks\":["
+      for (i = 1; i <= nskipped; i++) printf "%s\"%s\"", (i > 1 ? "," : ""), skipname[i]
+      printf "]"
+    }
     printf "}\n"
   } else {
     printf "Tigris diff: %s -> %s\n", who(1), who(2)
@@ -172,6 +184,11 @@ END {
       printf "  note: %s, so its findings (fsys*) are left out of both sides\n", (noscan1 && noscan2 ? "neither run scanned the file system" : (noscan1 ? "the first run did not scan the file system" : "the second run did not scan the file system"))
     if (config1 != config2)
       printf "  note: the runs used different configurations (%s, %s); a check on in only one of them shows its findings as new or resolved\n", show[1], show[2]
+    if (nskipped) {
+      printf "  note: skipped in a run that was not root, so left out of both sides:"
+      for (i = 1; i <= nskipped; i++) printf "%s %s", (i > 1 ? "," : ""), skipname[i]
+      printf "\n"
+    }
     printf "  new (%d):\n", nadd
     for (i = 1; i <= nadd; i++) { r = new[added[i]]; printf "    + %-5s %s %s%s\n", jtext(r, "level"), jtext(r, "id"), jtext(r, "message"), (index(r, "\"accepted\":{") ? " (accepted)" : "") }
     printf "  resolved (%d):\n", nres

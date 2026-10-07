@@ -32,6 +32,9 @@
 # References:
 #   man 5 sudoers, man 1 cvtsudoers
 #
+# Tigris: needs root
+#   /etc/sudoers is root's to read.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

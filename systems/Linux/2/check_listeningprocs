@@ -58,6 +58,9 @@
 #   as open spuriously (see Debian Bug#136991). Should this be fixed?
 #   (the socket is in fact open and could be accessed remotely)
 #
+# Tigris: needs root
+#   only root sees which process holds another user's socket.
+#
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
 

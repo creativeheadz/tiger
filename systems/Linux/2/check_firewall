@@ -50,6 +50,9 @@
 #   https://wiki.nftables.org/wiki-nftables/index.php/Configuring_chains
 #   man nft (CHAINS: base chains, hooks, priorities and policies)
 #
+# Tigris: needs root
+#   the kernel's ruleset (nft list ruleset) is root's to read.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

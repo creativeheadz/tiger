@@ -11,6 +11,9 @@
       "$ref": "#/$defs/finding"
     },
     {
+      "$ref": "#/$defs/skip"
+    },
+    {
       "$ref": "#/$defs/summary"
     },
     {
@@ -155,6 +158,28 @@
         }
       }
     },
+    "skip": {
+      "description": "A check that was not run because it needs root and Tigris was not running as root (its header says '# Tigris: needs root'). The text report has a '# Skipped NAME' line for it, and the run's exit status counts it as a check that could not run (2).",
+      "type": "object",
+      "required": [
+        "type",
+        "check",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "const": "skip"
+        },
+        "check": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The script that was not run."
+        },
+        "reason": {
+          "const": "needs root"
+        }
+      }
+    },
     "summary": {
       "description": "Last line of a report. A report without one was cut short.",
       "type": "object",
@@ -206,6 +231,11 @@
               "minimum": 0
             }
           }
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many checks were skipped because they need root. Absent in reports older than the field."
         }
       }
     },
@@ -270,6 +300,13 @@
         "configs_differ": {
           "type": "boolean",
           "description": "true when the two runs used different tigerrc files, so a check on in only one shows its findings as new or resolved."
+        },
+        "skipped_checks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Checks skipped in either run (they need root): their findings are left out of both sides."
         }
       }
     }

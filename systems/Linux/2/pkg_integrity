@@ -36,6 +36,9 @@
 # References:
 #   man rpm (VERIFY OPTIONS), man apk-audit, man pacman (-k)
 #
+# Tigris: needs root
+#   files only root can read would look changed or missing.
+#
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
 

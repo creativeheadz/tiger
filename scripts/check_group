@@ -29,6 +29,9 @@
 # check_group  - 08/08/2003 - jfs - Safe temporary file creation
 # check_group  - 06/26/2003 - jfs - Added Ryan Braderitch's patch
 #
+# Tigris: needs root
+#   grpck needs /etc/gshadow, which is root's to read.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

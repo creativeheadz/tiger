@@ -607,6 +607,21 @@ safe_temp()
 # It will also check that the script is owned by the same user running
 # the program and wether or not it is executable.
 #
+# skip_unless_root SCRIPT: a check whose header says "# Tigris: needs root"
+# cannot give a true answer without root (it would report what it could
+# not read as missing or changed). Run by someone else, it is skipped:
+# a line in the report, a skip record in the JSON, and the exit status
+# counts it as a check that could not run. Returns 0 when it skipped it.
+skip_unless_root()
+{
+  [ "$UUID" = 0 ] && return 1
+  $GREP -q '^# Tigris: needs root$' "$1" 2>/dev/null || return 1
+  __sname=${1##*/}
+  echo "# Skipped $__sname: it needs root, and Tigris is not running as root."
+  [ -n "$Tiger_JSON_File" ] && printf '{"type":"skip","check":"%s","reason":"needs root"}\n' "$__sname" >> "$Tiger_JSON_File"
+  return 0
+}
+
 run_script()
 {
   __script_run=""
@@ -631,7 +646,7 @@ run_script()
             if test $TESTEXEC $__script_run; then
 	            # The owner may run it, and so may the same person via sudo
 	            if [ $__script_owner -eq $UUID ] || [ "$__script_owner" = "${SUDO_UID:-}" ]; then
-			$__script_run
+			skip_unless_root "$__script_run" || $__script_run
 		    else
 			message ERROR misc024e "" "The $__script_run script will not be run since it is owned by a user ($__script_owner) different than the one running Tiger ($UUID)"
   			__error=1

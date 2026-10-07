@@ -31,6 +31,9 @@
 #   - Figure out a clever method for integrating the default checks with the
 #     normal checks.
 #   - Currently suited for OpenSSH needs to be tested with other SSH daemons
+# Tigris: needs root
+#   sshd -T needs root (it reads the host keys).
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

@@ -391,6 +391,17 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   the host's kernel, boot, firewall, systemd or disks). An unknown
   profile stops the run (con013e). The run record names the profile,
   and tigris-diff counts it as part of the configuration.
+- [x] **Checks that need root are skipped, not guessed.** Run as an
+  ordinary user, a quick run on Hera gave false findings (grpck could
+  not open /etc/gshadow, GRUB's configuration unreadable, dpkg files
+  reported missing), lost real ones (sshd -T, the listening processes
+  of others, the firewall) or errors. Twelve checks now say `# Tigris:
+  needs root` in their header, and without root each is skipped: a
+  `# Skipped NAME` line in the report, a `skip` record in the JSON,
+  `skipped` in the summary, and an exit status of at least 2. tigris-diff
+  leaves a check skipped in either run out of both sides
+  (`skipped_checks`), so comparing a root run with a user run does not
+  call its findings resolved.
 
 ## 3.2.x: maintenance
 
@@ -477,8 +488,8 @@ open items below ship from 3.4.0 on.
 - [x] `server`, `desktop` and `container`, each a short tigerrc selecting
   the checks and the prune list that make sense for that kind of machine
   (`--profile NAME`, files in `profiles/`; on master since 3.3.0).
-- [ ] A non-root mode that reports "skipped: needs root" for the checks
-  that need it, instead of guessing.
+- [x] A non-root mode that reports "skipped: needs root" for the checks
+  that need it, instead of guessing (on master since 3.3.0).
 
 **Package integrity**
 - [x] rpm, apk and pacman alongside dpkg.

@@ -575,6 +575,9 @@ do
   $GREP -e "^--${_lvl%:*}-- " -e "<I>${_lvl%:*}</I>" $logtmp >/dev/null 2>&1 &&
     tiger_status=${_lvl#*:}
 done
+# A check skipped because it needs root (skip_unless_root) could not run
+skipped=`$GREP -c '^# Skipped ' $logtmp 2>/dev/null`
+[ "${skipped:-0}" -gt 0 ] && [ $tiger_status -lt 2 ] && tiger_status=2
 
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   echo "`$TIMECMD`> Security report completed for ${HOSTNAME}."
@@ -586,7 +589,7 @@ done
       n=`$GREP -c "\"type\":\"finding\",\"level\":\"$level\"" $Tiger_JSON_File`
       counts="$counts${counts:+,}\"$level\":$n"
     done
-    echo "{\"type\":\"summary\",\"id\":\"$Tiger_Run_Id\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts}}" >> $Tiger_JSON_File
+    echo "{\"type\":\"summary\",\"id\":\"$Tiger_Run_Id\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts},\"skipped\":${skipped:-0}}" >> $Tiger_JSON_File
     echo "Findings as JSON Lines are in \`$Tiger_JSON_File'."
   }
 
@@ -614,6 +617,7 @@ done
   [ "$HTML" = "N" ] && {
     echo "Security report is in \`$logfile'."
   }
+  [ "${skipped:-0}" -gt 0 ] && echo "$skipped checks need root and were skipped; run Tigris as root to include them."
 
   # --since: what changed since that run. The exit status then counts the
   # new findings only; with -q, nothing is printed unless something
@@ -645,6 +649,8 @@ done
         print w, n, (res == "" ? 0 : split(res, x, "{\"type\":\"finding\",") - 1)
       }'`
       tiger_status=${1:-0}
+      # a run with skipped checks is still one where checks could not run
+      [ "${skipped:-0}" -gt 0 ] && [ "$tiger_status" -lt 2 ] && tiger_status=2
       [ "$QUIET" != 'Y' ] || [ "${2:-0}" -gt 0 ] || [ "${3:-0}" -gt 0 ] &&
         $BASEDIR/tigris-diff "$since_file" "$Tiger_JSON_File"
     fi

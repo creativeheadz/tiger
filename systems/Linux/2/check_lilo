@@ -35,6 +35,9 @@
 #                  password configured (Ubuntu bug 248843)
 #                  Look for grub in the proper location (as used in Grub 2)
 #
+# Tigris: needs root
+#   the boot loader's configuration is root's to read.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

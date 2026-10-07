@@ -74,6 +74,9 @@
 # - Add an option to Tiger so some directories might be excluded from this
 #   check.
 #
+# Tigris: needs root
+#   files only root can read would look changed or missing.
+#
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
 

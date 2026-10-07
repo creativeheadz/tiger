@@ -30,6 +30,9 @@
 #   https://gitlab.com/apparmor/apparmor/-/wikis/Documentation
 #   man 8 selinux
 #
+# Tigris: needs root
+#   AppArmor's list of profiles is root's to read.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

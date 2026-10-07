@@ -75,6 +75,8 @@ jobs:
         run: sh tests/containers_check.sh
       - name: check_suid and check_sgid against the package database
         run: sh tests/suid_check.sh
+      - name: checks that need root are skipped, and said to be
+        run: sh tests/nonroot_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: ShellCheck (errors)

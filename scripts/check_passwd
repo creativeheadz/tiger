@@ -64,6 +64,9 @@
 # 08/19/2018 npb Make pwck -r output part of report (Debian bug #512076)
 # 08/19/2018 jfs Added TR To the list of required commands
 #
+# Tigris: needs root
+#   /etc/shadow is root's to read.
+#
 #-----------------------------------------------------------------------------
 # TODO:
 # - Some 'valid' shells such as nologin or noshell might be listed under

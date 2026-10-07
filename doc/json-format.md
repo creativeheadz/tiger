@@ -45,9 +45,23 @@ order:
 
 `INFO` findings are always here, whatever the text report shows.
 
+### `skip`
+
+A check that was not run: `check` (the script) and `reason`, today always
+`needs root`. A check whose header says `# Tigris: needs root` cannot give
+a true answer without root (it would report what it could not read as
+missing or changed), so a run by another user skips it rather than
+guess. The text report has a `# Skipped NAME` line for it, and the exit
+status counts it as a check that could not run (2).
+
+```
+{"type":"skip","check":"check_sudo","reason":"needs root"}
+```
+
 ### `summary`
 
-`end` (UTC) and `counts` per level. A report with no `summary` line was cut
+`end` (UTC), `counts` per level, and `skipped`, how many checks were
+skipped (absent before 3.4.0). A report with no `summary` line was cut
 short, and a consumer should treat it as incomplete.
 
 ### `diff`
@@ -64,9 +78,11 @@ the worst new finding that is not accepted.
 When either run skipped the filesystem scan, all `fsys*` findings are
 left out of both sides, so they show as neither new nor resolved, and the
 object carries `"set_aside":["fsys"]`. When the two runs used different
-`tigerrc` files it carries `"configs_differ":true`: a check switched on in
-only one of them will show its findings as new or resolved, and a
-consumer should say so rather than raise an alarm.
+`tigerrc` files (or profiles) it carries `"configs_differ":true`: a check
+switched on in only one of them will show its findings as new or
+resolved, and a consumer should say so rather than raise an alarm. A
+check skipped in either run (it needs root) has its findings left out of
+both sides, and is named in `"skipped_checks"`.
 
 ## Encoding
 

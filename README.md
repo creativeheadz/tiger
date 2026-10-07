@@ -43,7 +43,9 @@ From your own checkout:
 
     sudo ./tigris
 
-(`./tiger` still works and does the same.) Tigris will not run check
+(`./tiger` still works and does the same.) Run without root, Tigris
+skips the checks that need it, rather than guess at what it cannot
+read, and lists them in the report. Tigris will not run check
 scripts owned by someone other than the user running it, with one
 exception: a tree owned by the person who ran `sudo` is theirs to run.
 A copy that cron runs, or an installed one, must belong to root. The

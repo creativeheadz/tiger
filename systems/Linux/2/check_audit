@@ -33,6 +33,9 @@
 # References:
 #   man 8 auditd, man 8 auditctl, man 5 journald.conf
 #
+# Tigris: needs root
+#   auditctl lists the rules for root only.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'

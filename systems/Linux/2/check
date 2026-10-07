@@ -106,91 +106,91 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
 
 [ "$Tiger_Check_SINGLE" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking for single user mode password..."
-  $SYSTEMDIR/check_single 
+  skip_unless_root $SYSTEMDIR/check_single || $SYSTEMDIR/check_single
 }
 
 [ "$Tiger_Check_BOOT" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking boot loader file permissions..."
-  $SYSTEMDIR/check_lilo 
+  skip_unless_root $SYSTEMDIR/check_lilo || $SYSTEMDIR/check_lilo
 }
 
 
 [ "$Tiger_Check_RCUMASK" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking umask definitions..."
-  $SYSTEMDIR/check_rcumask
+  skip_unless_root $SYSTEMDIR/check_rcumask || $SYSTEMDIR/check_rcumask
 }
 
 [ "$Tiger_Check_NEVERLOG" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking for users which have not logged in..."
-  $SYSTEMDIR/check_neverlogin
+  skip_unless_root $SYSTEMDIR/check_neverlogin || $SYSTEMDIR/check_neverlogin
 }
 
 [ "$Tiger_Check_NETWORKCONFIG" != 'N' ] && {
 # echo "`$TIMECMD`> Checking for values of the network configuration."
-  $SYSTEMDIR/check_network_config
+  skip_unless_root $SYSTEMDIR/check_network_config || $SYSTEMDIR/check_network_config
 }
 
 [ "$Tiger_Check_SYSCTL" != 'N' ] && {
-  $SYSTEMDIR/check_sysctl
+  skip_unless_root $SYSTEMDIR/check_sysctl || $SYSTEMDIR/check_sysctl
 }
 
 [ "$Tiger_Check_SYSTEMD" != 'N' ] && {
-  $SYSTEMDIR/check_systemd
+  skip_unless_root $SYSTEMDIR/check_systemd || $SYSTEMDIR/check_systemd
 }
 
 [ "$Tiger_Check_FIREWALL" != 'N' ] && {
-  $SYSTEMDIR/check_firewall
+  skip_unless_root $SYSTEMDIR/check_firewall || $SYSTEMDIR/check_firewall
 }
 
 [ "$Tiger_Check_SECUREBOOT" != 'N' ] && {
-  $SYSTEMDIR/check_secureboot
+  skip_unless_root $SYSTEMDIR/check_secureboot || $SYSTEMDIR/check_secureboot
 }
 
 [ "$Tiger_Check_MAC" != 'N' ] && {
-  $SYSTEMDIR/check_mac
+  skip_unless_root $SYSTEMDIR/check_mac || $SYSTEMDIR/check_mac
 }
 
 [ "$Tiger_Check_AUDIT" != 'N' ] && {
-  $SYSTEMDIR/check_audit
+  skip_unless_root $SYSTEMDIR/check_audit || $SYSTEMDIR/check_audit
 }
 
 [ "$Tiger_Check_TIMESYNC" != 'N' ] && {
-  $SYSTEMDIR/check_timesync
+  skip_unless_root $SYSTEMDIR/check_timesync || $SYSTEMDIR/check_timesync
 }
 
 [ "$Tiger_Check_UPDATES" != 'N' ] && {
-  $SYSTEMDIR/check_updates
+  skip_unless_root $SYSTEMDIR/check_updates || $SYSTEMDIR/check_updates
 }
 
 [ "$Tiger_Check_SUDO" != 'N' ] && {
-  $SYSTEMDIR/check_sudo
+  skip_unless_root $SYSTEMDIR/check_sudo || $SYSTEMDIR/check_sudo
 }
 
 [ "$Tiger_Check_PAM" != 'N' ] && {
-  $SYSTEMDIR/check_pam
+  skip_unless_root $SYSTEMDIR/check_pam || $SYSTEMDIR/check_pam
 }
 
 [ "$Tiger_Check_UNITS" != 'N' ] && {
-  $SYSTEMDIR/check_units
+  skip_unless_root $SYSTEMDIR/check_units || $SYSTEMDIR/check_units
 }
 
 [ "$Tiger_Check_STORAGE" != 'N' ] && {
-  $SYSTEMDIR/check_storage
+  skip_unless_root $SYSTEMDIR/check_storage || $SYSTEMDIR/check_storage
 }
 
 [ "$Tiger_Check_CONTAINERS" != 'N' ] && {
-  $SYSTEMDIR/check_containers
+  skip_unless_root $SYSTEMDIR/check_containers || $SYSTEMDIR/check_containers
 }
 
 [ "$Tiger_Check_PASSWD" != 'N' -a "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
-  $SYSTEMDIR/check_passwdspec
+  skip_unless_root $SYSTEMDIR/check_passwdspec || $SYSTEMDIR/check_passwdspec
 }
 
 # The following scripts have been added to provide new checks 
 # specific to the Debian system, written by Javier Fernandez-Sanguino
 #
 [ "$Tiger_Check_PKGINTEGRITY" != 'N' ] && {
-  $SYSTEMDIR/pkg_integrity
+  skip_unless_root $SYSTEMDIR/pkg_integrity || $SYSTEMDIR/pkg_integrity
 }
 
 if [ "$LXDISTRIBUTION" = "debian" ]; then
@@ -199,23 +199,23 @@ if [ "$LXDISTRIBUTION" = "debian" ]; then
 # they could be generalised (there is a tigerrc variable for them)
 [ "$Tiger_Check_OS" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking for correct OS version..."
-  $SYSTEMDIR/check_release 
+  skip_unless_root $SYSTEMDIR/check_release || $SYSTEMDIR/check_release
 }
 
 [ "$Tiger_Check_PATCH" != 'N' ] && {
 #  echo "`$TIMECMD`> Checking for up-to-date patches..."
-  $SYSTEMDIR/check_patches
+  skip_unless_root $SYSTEMDIR/check_patches || $SYSTEMDIR/check_patches
 }
 
 # Debian specific checks
 [ "$Tiger_Deb_CheckMD5Sums" != 'N' ]&&  {
-  $SYSTEMDIR/deb_checkmd5sums
+  skip_unless_root $SYSTEMDIR/deb_checkmd5sums || $SYSTEMDIR/deb_checkmd5sums
 }
 [ "$Tiger_Deb_NoPackFiles" != 'N' ]&&  {
-  $SYSTEMDIR/deb_nopackfiles
+  skip_unless_root $SYSTEMDIR/deb_nopackfiles || $SYSTEMDIR/deb_nopackfiles
 }
 [ "$Tiger_Deb_StatOverride" != 'N' ] && {
-  $SYSTEMDIR/deb_statoverride
+  skip_unless_root $SYSTEMDIR/deb_statoverride || $SYSTEMDIR/deb_statoverride
 }
 # End of Debian-specific checks
 
