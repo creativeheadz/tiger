@@ -1,0 +1,13 @@
+Id: cont008w
+Severity: WARN
+Category: containers
+Check: check_containers
+References: docker-run(1) --volume
+
+A running container has the host's / or /etc mounted, writable. It can
+then change the host's configuration: add a user, a sudoers rule, a
+cron job or a systemd unit, and so run what it likes on the host as
+root.
+
+To fix it, mount only the files the container needs, and read-only
+(:ro), or copy the configuration it needs into its image.

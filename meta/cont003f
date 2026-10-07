@@ -1,0 +1,15 @@
+Id: cont003f
+Severity: FAIL
+Category: containers
+Check: check_containers
+References: https://docs.docker.com/engine/security/protect-access/
+
+The Docker daemon listens on TCP (a tcp:// host in
+/etc/docker/daemon.json or on dockerd's command line) without TLS
+client verification (tlsverify). Anyone who can reach the port, 2375
+by convention, can start a privileged container and is root on the
+host; scanners look for that port on the internet all the time.
+
+To fix it, remove the tcp:// host and use the Unix socket, reach a
+remote daemon over SSH ('docker -H ssh://user@host'), or turn on
+tlsverify with a CA, a server certificate and client certificates.

@@ -1,0 +1,207 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_containers: who can drive Docker or Podman (both are root in effect
+#                 to whoever can), and what the running containers may do
+#                 to the host.
+#
+# 10/07/2026 atrimbitas - Initial version. The sockets are
+#                 /run/docker.sock and /run/podman/podman.sock: their mode,
+#                 and the members of their group (from /etc/group and
+#                 /etc/passwd). The Docker API on TCP without TLS is looked
+#                 for in /etc/docker/daemon.json and dockerd's command
+#                 line; whether dockerd runs as root, in its process. Each
+#                 running container is one line of docker (or podman)
+#                 inspect --format: privileged or extra capabilities, the
+#                 host's PID or network namespace, the Docker socket or
+#                 the host's / or /etc mounted in it. Ports Docker
+#                 publishes are check_firewall's (fire005w).
+#                 Tiger_Sysctl_Root prefixes /proc, /etc and /run, and
+#                 Tiger_Container_List_Cmd replaces the inspect, for the
+#                 tests.
+#
+# References:
+#   https://docs.docker.com/engine/security/
+#   man 1 podman-run (--privileged, --pid, --network)
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP LS SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP LS SED SORT TR || exit 1
+
+root=${Tiger_Sysctl_Root:-}
+sockets=
+for s in /run/docker.sock /run/podman/podman.sock
+do
+  [ -e "$root$s" ] && sockets="$sockets $s"
+done
+# The engine's process, "name uid" per line
+engines=`for p in "$root"/proc/[0-9]*
+do
+  read c 2>/dev/null < "$p/comm" || continue
+  case "$c" in dockerd|podman) echo "$c \`$AWK '/^Uid:/ { print $3 }' "$p/status" 2>/dev/null\` ${p##*/}" ;; esac
+done`
+[ -n "$sockets$engines" ] || exit 0
+
+echo
+echo "# Checking Docker and Podman..."
+
+#
+# Who can use the sockets: the socket is root on the host
+#
+for s in $sockets
+do
+  set -- `$LS -lnd "$root$s" 2>/dev/null`
+  mode=$1 gid=$4
+  name=docker; case "$s" in *podman*) name=podman ;; esac
+  case "$mode" in
+    ???????rw*|????????w*)
+      message FAIL cont002f "$s is $mode. 'chmod 660 $s', and find out what changed it (a unit's SocketMode=, a script)." "Anyone on the system can use the $name socket: every user is root in effect."
+      ;;
+  esac
+  case "$mode" in
+    ????rw*|?????w*)
+      group=`$AWK -F: -v g="$gid" '$3 == g { print $1; exit }' "$root/etc/group" 2>/dev/null`
+      members=`{ $AWK -F: -v g="$gid" '$3 == g { print $4 }' "$root/etc/group" | $TR ',' '\n'
+                 $AWK -F: -v g="$gid" '$4 == g { print $1 }' "$root/etc/passwd"; } 2>/dev/null | $GREP . | $SORT -u |
+                 $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }'`
+      [ -n "$members" ] && message WARN cont001w "Group ${group:-$gid}: $members. Give access only to whom root would be given, or use rootless mode, where each user's containers are their own." "Members of the group that may use the $name socket are root in effect: they can start a container that mounts the host's / and writes to it."
+      ;;
+  esac
+done
+
+#
+# The Docker API on TCP: without TLS, root for anyone who reaches the port
+#
+tcp= tls=
+conf="$root/etc/docker/daemon.json"
+$GREP -q 'tcp://' "$conf" 2>/dev/null && tcp="in /etc/docker/daemon.json"
+$GREP -q '"tlsverify"[[:space:]]*:[[:space:]]*true' "$conf" 2>/dev/null && tls=Y
+flags=`echo "$engines" | while read c uid pid
+do
+  [ "$c" = dockerd ] || continue
+  args=\`$TR '\\0' ' ' 2>/dev/null < "$root/proc/$pid/cmdline"\`
+  case "$args" in *tcp://*) echo tcp ;; esac
+  case "$args" in *--tlsverify*) echo tls ;; esac
+done`
+case " `echo $flags` " in *" tcp "*) tcp="${tcp:+$tcp and }on dockerd's command line" ;; esac
+case " `echo $flags` " in *" tls "*) tls=Y ;; esac
+[ -n "$tcp" ] && [ "$tls" != Y ] && message FAIL cont003f "A tcp:// host is set $tcp, and tlsverify is not. Use the Unix socket only, or TLS with client certificates (tlsverify, tlscacert, tlscert, tlskey), or SSH (docker -H ssh://)." "The Docker API listens on TCP without TLS: anyone who can reach the port is root on this host."
+
+#
+# Rootful or rootless
+#
+echo "$engines" | $AWK '$1 == "dockerd" && $2 == 0 { found = 1 } END { exit !found }' &&
+  message INFO cont009i "" "dockerd runs as root (Docker's rootless mode runs it, and its containers, as an ordinary user)."
+
+#
+# The running containers
+#
+cmd=${Tiger_Container_List_Cmd:-}
+fmt='{{.Name}}|{{.HostConfig.Privileged}}|{{.HostConfig.PidMode}}|{{.HostConfig.NetworkMode}}|{{.HostConfig.CapAdd}}|{{range .Mounts}}{{.Source}}:{{.RW}} {{end}}'
+if [ -z "$cmd" ]; then
+  list=
+  for tool in docker podman
+  do
+    # docker needs its daemon; podman has none
+    [ "$tool" = docker ] && [ ! -e "$root/run/docker.sock" ] && continue
+    t=
+    for d in /usr/bin /bin /usr/local/bin
+    do
+      [ -x "$d/$tool" ] && { t=$d/$tool; break; }
+    done
+    [ -n "$t" ] || continue
+    if ids=`$t ps -q 2>/dev/null`; then
+      # shellcheck disable=SC2086
+      [ -n "$ids" ] && list="$list
+\`$t inspect --format "$fmt" $ids 2>/dev/null\`"
+    else
+      message ERROR cont010e "" "The running $tool containers cannot be listed ($t ps); that needs root, or membership of the group that may use its socket."
+    fi
+  done
+else
+  list=`$cmd 2>/dev/null`
+fi
+
+echo "$list" | while IFS='|' read cname priv pid net caps mounts
+do
+  [ -n "$cname" ] || continue
+  cname=${cname#/}
+  case "$caps" in *ALL*|*SYS_ADMIN*) capword=" (it adds $caps)" ;; *) capword= ;; esac
+  if [ "$priv" = true ] || [ -n "$capword" ]; then
+    what=privileged; [ "$priv" = true ] || what="given $caps"
+    message WARN cont004w "Drop --privileged; grant the single capability or device it needs instead (--cap-add, --device)." "The container $cname runs $what: a process that breaks out of it, or a root user in it, controls the host."
+  fi
+  [ "$pid" = host ] && message WARN cont005w "Remove --pid=host (pid: host in compose) unless it is a monitoring tool that needs it." "The container $cname shares the host's process namespace: it sees, and as root can signal or trace, every process on the host."
+  [ "$net" = host ] && message INFO cont006i "With --network=host its ports are the host's: a firewall rule, not Docker, decides who reaches them." "The container $cname shares the host's network namespace."
+  for m in $mounts
+  do
+    src=${m%:*} rw=${m##*:}
+    case "$src" in
+      /run/docker.sock|/var/run/docker.sock|/run/podman/podman.sock)
+        message WARN cont007w "Mounted from $src. Give it a socket proxy that allows only the calls it needs, or none." "The container $cname has the container engine's socket mounted: whoever controls it controls every container, and the host, read-only mount or not." ;;
+      /|/etc)
+        [ "$rw" = true ] && message WARN cont008w "Mount only the files it needs, read-only (:ro)." "The container $cname has the host's $src mounted writable: it can change the host's configuration, and so the host." ;;
+    esac
+  done
+done
+
+exit 0

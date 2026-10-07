@@ -1,0 +1,13 @@
+Id: cont002f
+Severity: FAIL
+Category: containers
+Check: check_containers
+
+The Docker (or Podman) socket can be read and written by anyone on the
+system: every local user, and every service account a compromised
+service runs as, can drive the container engine, and through it is
+root on the host.
+
+To fix it, 'chmod 660' the socket and keep it owned by root and the
+docker group, then find what changed it: a SocketMode= in a drop-in for
+docker.socket, a -G or --group option, or a script run at boot.

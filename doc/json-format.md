@@ -39,7 +39,7 @@ order:
 | `check` | The script that reported it. |
 | `message` | The text, on one line. |
 | `detail` | Optional. Extra lines the check printed (for example a file listing), joined with `\n`. |
-| `category` | The area the finding belongs to, from its metadata file `meta/ID`: `accounts`, `boot`, `cron`, `filesystem`, `firewall`, `integrity`, `intrusion`, `kernel`, `logging`, `network`, `packages`, `services`, `ssh` or `tigris` ([metadata.md](metadata.md)). Absent in reports written before 3.4.0. |
+| `category` | The area the finding belongs to, from its metadata file `meta/ID`: `accounts`, `boot`, `containers`, `cron`, `filesystem`, `firewall`, `integrity`, `intrusion`, `kernel`, `logging`, `network`, `packages`, `services`, `ssh` or `tigris` ([metadata.md](metadata.md)). Absent in reports written before 3.4.0. |
 | `accepted` | Optional. Present when the finding was accepted with `tigris-accept`: `reason`, and `until` as `YYYY-MM-DD` or `-` for no expiry. An accepted finding is **not** in the text report. A consumer that wants the same view as the text report skips findings that have `accepted`. |
 
 `INFO` findings are always here, whatever the text report shows.

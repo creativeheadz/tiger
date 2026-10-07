@@ -1,0 +1,18 @@
+Id: cont001w
+Severity: WARN
+Category: containers
+Check: check_containers
+References: https://docs.docker.com/engine/security/#docker-daemon-attack-surface
+
+The users named may use the Docker (or Podman) socket, through the
+group that owns it, usually docker. That is root in all but name: any
+of them can run 'docker run -v /:/host --privileged ...' and do what
+they like to the host, without a password and without sudo's log. The
+socket's group is given to developers for convenience, and whoever
+takes over one of their sessions inherits it.
+
+To fix it, keep the group to the people who would be given root anyway
+('gpasswd -d USER docker' for the others), or use rootless Docker or
+Podman, where each user's containers run as that user and give no more
+than they already have. If a member is meant to have it, accept the
+finding with tigris-accept.

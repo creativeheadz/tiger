@@ -132,7 +132,7 @@ problems=`awk -v code="$W/code.txt" '
       else levels[f[1]] = levels[f[1]] " " f[3]
     }
     split("Id Severity Category Check Fix References Controls", k, " "); for (i in k) known[k[i]] = 1
-    split("accounts boot cron filesystem firewall integrity intrusion kernel logging network packages services ssh tigris", k, " "); for (i in k) cats[k[i]] = 1
+    split("accounts boot containers cron filesystem firewall integrity intrusion kernel logging network packages services ssh tigris", k, " "); for (i in k) cats[k[i]] = 1
     split("ALERT FAIL WARN INFO ERROR CONFIG", k, " "); for (i in k) lvls[k[i]] = 1
     suf["a"] = "ALERT"; suf["f"] = "FAIL"; suf["w"] = "WARN"; suf["i"] = "INFO"; suf["e"] = "ERROR"; suf["c"] = "CONFIG"
   }

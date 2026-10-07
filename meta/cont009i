@@ -1,0 +1,13 @@
+Id: cont009i
+Severity: INFO
+Category: containers
+Check: check_containers
+References: https://docs.docker.com/engine/security/rootless/
+
+The Docker daemon runs as root, as it does by default. A process that
+escapes a container then lands as root on the host, and every member of
+the docker group is root in effect (cont001w). Rootless mode runs the
+daemon and its containers as an ordinary user, so an escape lands as
+that user; Podman runs rootless by default for ordinary users. Rootless
+mode has limits (ports below 1024, some network modes, some storage
+drivers), which is why this is informational.

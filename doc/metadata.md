@@ -40,6 +40,7 @@ Unknown keys are an error, so a typo does not go unnoticed.
 |--------------|-----------------------------------------------------------------------|
 | `accounts`   | Users, groups, passwords, root's environment and PATH, login banners  |
 | `boot`       | Boot loader configuration and passwords, single-user mode             |
+| `containers` | Docker and Podman: who may drive them, what their containers may do   |
 | `cron`       | Cron tables and the files they run                                    |
 | `filesystem` | Permissions, ownership, setuid and setgid files, devices, umask       |
 | `firewall`   | The packet filter, and ports Docker publishes past it                 |

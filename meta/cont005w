@@ -1,0 +1,14 @@
+Id: cont005w
+Severity: WARN
+Category: containers
+Check: check_containers
+References: docker-run(1) --pid
+
+A running container shares the host's process namespace (--pid=host,
+pid: host in compose). Everything in it sees every process on the host,
+their command lines and environment included, which often hold
+passwords, and a root process in it can signal or trace the host's
+processes. Monitoring agents use it; little else should.
+
+To fix it, remove --pid=host, or confine the container that needs it
+as far as it allows (read-only, no added capabilities).

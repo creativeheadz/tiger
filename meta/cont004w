@@ -1,0 +1,15 @@
+Id: cont004w
+Severity: WARN
+Category: containers
+Check: check_containers
+References: docker-run(1) --privileged
+
+A running container is privileged (--privileged, privileged: true in
+compose), or has been given CAP_SYS_ADMIN or every capability. Such a
+container can mount the host's disks, load kernel modules and reach
+every device: a process that breaks into it, or a root user inside it,
+controls the host. Some tools need it (Docker in Docker, some hardware
+agents); most containers that have it do not.
+
+To fix it, remove --privileged and grant only what the container needs:
+one capability with --cap-add, one device with --device.

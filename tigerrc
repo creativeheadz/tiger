@@ -77,6 +77,7 @@ Tiger_Check_SUDO=Y              # Fast - sudo rules without a password or with w
 Tiger_Check_PAM=Y               # Fast - password quality and lockout in PAM
 Tiger_Check_UNITS=Y             # Fast - what enabled systemd services and timers run
 Tiger_Check_STORAGE=Y           # Fast - /tmp and /dev/shm options, encryption, core dumps
+Tiger_Check_CONTAINERS=Y        # Fast - Docker and Podman: socket, TCP API, running containers
 Tiger_Check_PKGINTEGRITY=Y      # Installed files against the rpm, apk or pacman database
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       

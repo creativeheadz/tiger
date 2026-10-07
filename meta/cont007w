@@ -1,0 +1,16 @@
+Id: cont007w
+Severity: WARN
+Category: containers
+Check: check_containers
+References: https://docs.docker.com/engine/security/#docker-daemon-attack-surface
+
+A running container has the Docker or Podman socket mounted inside it
+(-v /var/run/docker.sock:/var/run/docker.sock). Whoever controls the
+container can then drive the engine: start a privileged container that
+mounts the host's /, and so be root on the host. Mounting it read-only
+changes nothing, since the API is spoken over it, not written to it.
+Dashboards, reverse proxies and CI runners often ask for it.
+
+To fix it, give the container a socket proxy that allows only the API
+calls it needs (for a reverse proxy, reading containers and events),
+or run what needs the API outside a container.

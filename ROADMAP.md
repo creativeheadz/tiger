@@ -280,7 +280,7 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   and Ubuntu 24.04. `Tiger_Deb_StatOverride` turns it off.
 - [x] **Finding metadata.** Each id the code can emit has `meta/ID`: its
   severity (the levels the code really uses: lin002i is also a WARN),
-  one of 14 categories, the checks that report it, references, and the
+  one of 15 categories, the checks that report it, references, and the
   explanation, moved from `doc/*.txt`. `tigris explain ID` (still
   `tigexp` underneath) reads it directly, so there is no index to
   rebuild as root, and shows it as written instead of through `fmt`,
@@ -365,6 +365,15 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   Tiger_Storage_NoUSB=Y says there should be none (stor008w). Hera:
   /tmp on /, /dev/shm without noexec, nothing encrypted (its only
   battery is the mouse's).
+- [x] **`check_containers`**: the Docker or Podman socket usable by
+  anyone (cont002f) or by a group, whose members are named (cont001w);
+  the Docker API on TCP without TLS (cont003f); dockerd running as root
+  (cont009i); and each running container, from one inspect line: run
+  privileged or given SYS_ADMIN (cont004w), the host's PID namespace
+  (cont005w) or network (cont006i), the engine's socket mounted
+  (cont007w), the host's / or /etc mounted writable (cont008w). A new
+  category, containers. Hera: andrei in the docker group, dockerd as
+  root, Immich's four containers clean.
 
 ## 3.2.x: maintenance
 
@@ -497,8 +506,9 @@ open items below ship from 3.4.0 on.
   default, stays as it was.
 - [x] Storage: LUKS, mount options (`/tmp`, `/dev/shm`), core dumps, USB
   storage (`check_storage`, stor001w to stor008w; on master since 3.3.0).
-- [ ] Containers: Docker or Podman socket permissions, rootless mode,
-  privileged containers.
+- [x] Containers: Docker or Podman socket permissions, rootless mode,
+  privileged containers (`check_containers`, cont001w to cont010e, and
+  a 15th category, containers; on master since 3.3.0).
 
 ## 4.0: where Tigris beats Lynis
 

@@ -1,0 +1,10 @@
+Id: cont010e
+Severity: ERROR
+Category: containers
+Check: check_containers
+
+Docker or Podman is installed and running, but the running containers
+could not be listed ('docker ps' or 'podman ps' failed), so whether any
+is privileged or mounts what it should not is unknown. Listing them
+needs root, or membership of the group that may use the socket. Run
+Tigris as root.

@@ -1,0 +1,13 @@
+Id: cont006i
+Severity: INFO
+Category: containers
+Check: check_containers
+References: docker-run(1) --network
+
+A running container shares the host's network namespace
+(--network=host): its services listen on the host's own addresses, so
+the host's firewall, not Docker's port publishing, decides who reaches
+them, and it can see all of the host's network traffic on its
+interfaces and connect to services the host keeps on 127.0.0.1. Some
+software needs it (multicast discovery, home automation); this is
+informational.
