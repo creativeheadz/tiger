@@ -85,6 +85,8 @@ sh "$D" "$W/full.jsonl" "$W/quick.jsonl" > "$W/fq.txt"; st=$?
 grep -q 'fsys013w' "$W/fq.txt" && bad "full -> quick reports the unscanned fsys finding" || ok "full -> quick: the fsys finding is set aside, not resolved"
 [ $st -eq 0 ] && grep -q 'unchanged: 1' "$W/fq.txt" && ok "full -> quick: nothing new, the shared finding unchanged" || bad "full -> quick exit $st or counts"
 grep -q 'note: the second run did not scan the file system' "$W/fq.txt" && ok "the text says which run skipped the scan" || bad "scan note"
+sh "$D" "$W/quick.jsonl" "$W/quick.jsonl" > "$W/qq.txt"
+grep -q 'note: neither run scanned the file system, so its findings' "$W/qq.txt" && ok "and says so plainly when neither did" || bad "both-quick note: `grep note "$W/qq.txt"`"
 grep -q 'note: the runs used different configurations (tigerrc, tigerrc-quick)' "$W/fq.txt" && ok "the text says the configurations differ" || bad "config note"
 sh "$D" "$W/quick.jsonl" "$W/full.jsonl" > "$W/qf.txt"; st=$?
 [ $st -eq 0 ] && ! grep -q 'fsys013w' "$W/qf.txt" && ok "quick -> full: the fsys finding is not new" || bad "quick -> full exit $st"

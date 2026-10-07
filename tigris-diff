@@ -164,7 +164,7 @@ END {
   } else {
     printf "Tigris diff: %s -> %s\n", who(1), who(2)
     if (setaside)
-      printf "  note: the %s run did not scan the file system, so its findings (fsys*) are left out of both sides\n", (noscan1 && noscan2 ? "both" : (noscan1 ? "first" : "second"))
+      printf "  note: %s, so its findings (fsys*) are left out of both sides\n", (noscan1 && noscan2 ? "neither run scanned the file system" : (noscan1 ? "the first run did not scan the file system" : "the second run did not scan the file system"))
     if (config1 != config2)
       printf "  note: the runs used different configurations (%s, %s); a check on in only one of them shows its findings as new or resolved\n", (config1 == "" ? "?" : config1), (config2 == "" ? "?" : config2)
     printf "  new (%d):\n", nadd
