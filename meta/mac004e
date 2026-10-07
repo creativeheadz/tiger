@@ -1,0 +1,11 @@
+Id: mac004e
+Severity: ERROR
+Category: kernel
+Check: check_mac
+
+AppArmor is active, but the list of its loaded profiles could not be
+read, so whether any is enforced is unknown. The list is in
+/sys/kernel/security/apparmor/profiles: only root can read it, and only
+where securityfs is mounted on /sys/kernel/security (systemd mounts it;
+a container usually does not have it). Run Tigris as root, or check
+with 'aa-status'.

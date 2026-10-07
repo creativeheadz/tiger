@@ -146,6 +146,14 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   $SYSTEMDIR/check_secureboot
 }
 
+[ "$Tiger_Check_MAC" != 'N' ] && {
+  $SYSTEMDIR/check_mac
+}
+
+[ "$Tiger_Check_AUDIT" != 'N' ] && {
+  $SYSTEMDIR/check_audit
+}
+
 [ "$Tiger_Check_PASSWD" != 'N' -a "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
   $SYSTEMDIR/check_passwdspec
 }

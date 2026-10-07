@@ -1,0 +1,16 @@
+Id: mac002w
+Severity: WARN
+Category: kernel
+Check: check_mac
+References: selinux(8), setenforce(8)
+
+SELinux is loaded but in permissive mode: it logs every access its
+policy would deny and denies none of them, so it protects nothing.
+Permissive mode is for finding what a policy would break, briefly.
+
+To fix it, look at what was logged ('ausearch -m avc -ts recent', or
+'sealert -a /var/log/audit/audit.log'), fix the labels or booleans it
+points at, then 'setenforce 1' and set SELINUX=enforcing in
+/etc/selinux/config so it stays that way after a reboot. One domain can
+be left permissive ('semanage permissive -a DOMAIN') while the rest
+enforces.

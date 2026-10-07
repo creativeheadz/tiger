@@ -1,0 +1,9 @@
+Id: aud004e
+Severity: ERROR
+Category: logging
+Check: check_audit
+
+auditd is running, but its rules could not be listed: auditctl is not
+installed, or it failed (it needs root; the detail gives its error).
+Whether any rules are loaded is unknown. Run Tigris as root, or check
+with 'auditctl -l'.

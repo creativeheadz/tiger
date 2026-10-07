@@ -1,0 +1,16 @@
+Id: aud002w
+Severity: WARN
+Category: logging
+Check: check_audit
+References: audit.rules(7), augenrules(8)
+
+auditd is running, but no audit rules are loaded ('auditctl -l' says
+"No rules"), so it records little beyond what the kernel and PAM send
+it anyway. Rules say what to watch.
+
+To fix it, put rules in /etc/audit/rules.d/ and load them with
+'augenrules --load'. The audit package ships examples (under
+/usr/share/doc/audit*/rules/ or /usr/share/audit/sample-rules/): a
+sound start watches /etc/passwd, /etc/shadow, /etc/group, /etc/sudoers
+and /etc/sudoers.d for writes, records program execution by root, and
+ends with -e 2 so the rules cannot be changed without a reboot.

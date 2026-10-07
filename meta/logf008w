@@ -1,0 +1,17 @@
+Id: logf008w
+Severity: WARN
+Category: logging
+Check: check_audit
+References: journald.conf(5)
+
+The system's logs are not kept across a reboot. journald keeps them in
+memory (/run/log/journal) when Storage= is volatile or none, or when it
+is auto (the default) and /var/log/journal does not exist, and no
+syslog daemon (rsyslog, syslog-ng) is running to write them to disk.
+A reboot, including the one that follows a crash or an intrusion,
+erases everything that led up to it.
+
+To fix it, set Storage=persistent in /etc/systemd/journald.conf (or in
+a drop-in under /etc/systemd/journald.conf.d/), or create
+/var/log/journal, then 'systemctl restart systemd-journald'. Set
+SystemMaxUse= there too if disk space is tight.

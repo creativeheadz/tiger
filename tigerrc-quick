@@ -82,6 +82,8 @@ Tiger_Check_SYSCTL=Y            # Fast - kernel, file system and IPv6 hardening 
 Tiger_Check_SYSTEMD=Y           # Fast - sandboxing of network-facing systemd services
 Tiger_Check_FIREWALL=Y          # Fast - incoming traffic denied by default (nftables, iptables)
 Tiger_Check_SECUREBOOT=Y        # Fast - Secure Boot on, and the kernel locked down under it
+Tiger_Check_MAC=Y               # Fast - AppArmor or SELinux enforcing
+Tiger_Check_AUDIT=Y             # Fast - auditd with rules, logs kept across reboots
 Tiger_Check_PKGINTEGRITY=Y      # Installed files against the rpm, apk or pacman database
 # - Debian specific checks:
 Tiger_Deb_CheckMD5Sums=Y       

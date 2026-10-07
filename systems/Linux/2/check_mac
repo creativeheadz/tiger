@@ -1,0 +1,129 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_mac: is a mandatory access control system (AppArmor or SELinux)
+#                 confining anything.
+#
+# 10/07/2026 atrimbitas - Initial version. The active security modules are
+#                 /sys/kernel/security/lsm; AppArmor's loaded profiles and
+#                 their modes are in its securityfs (readable by root
+#                 only), SELinux's mode in /sys/fs/selinux/enforce. Profiles
+#                 in complain mode are listed in the summary rather than
+#                 reported one by one: Ubuntu ships several that way.
+#                 Tiger_Sysctl_Root prefixes /sys for the tests.
+#
+# References:
+#   https://gitlab.com/apparmor/apparmor/-/wikis/Documentation
+#   man 8 selinux
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT SED || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT SED || exit 1
+
+sys="${Tiger_Sysctl_Root:-}/sys"
+# Nothing to judge without the kernel's view (a container without /sys)
+[ -d "$sys/kernel" ] || exit 0
+
+echo
+echo "# Checking mandatory access control (AppArmor, SELinux)..."
+
+# The active security modules; older kernels have no list, and then the
+# modules' own files say whether they are on
+lsm=`$CAT "$sys/kernel/security/lsm" 2>/dev/null`
+if [ -z "$lsm" ]; then
+  [ "`$CAT "$sys/module/apparmor/parameters/enabled" 2>/dev/null`" = Y ] && lsm="$lsm,apparmor"
+  [ -r "$sys/fs/selinux/enforce" ] && lsm="$lsm,selinux"
+fi
+
+case ",$lsm," in
+  *,selinux,*)
+    case "`$CAT "$sys/fs/selinux/enforce" 2>/dev/null`" in
+      1) message INFO mac003i "" "SELinux is enforcing." ;;
+      0) message WARN mac002w "SELinux denies nothing in permissive mode; it only logs. Set SELINUX=enforcing in /etc/selinux/config (and 'setenforce 1' for now) once the logged denials ('ausearch -m avc') are dealt with." "SELinux is in permissive mode: it logs what its policy would deny, and denies nothing." ;;
+      *) message WARN mac001w "SELinux is active but has no policy loaded." "No mandatory access control is enforcing: a compromised service can reach everything its user can." ;;
+    esac
+    ;;
+  *,apparmor,*)
+    profiles="$sys/kernel/security/apparmor/profiles"
+    if ! $CAT "$profiles" > /dev/null 2>&1; then
+      message ERROR mac004e "" "AppArmor is active, but its profiles cannot be read from $profiles: that needs root, and securityfs mounted on /sys/kernel/security."
+    else
+      # one line per profile, "name (mode)"
+      set -- `$AWK '{ m = $NF; gsub(/[()]/, "", m); n[m]++ } END { print n["enforce"] + 0, n["complain"] + 0, n["unconfined"] + 0 }' "$profiles"`
+      enforce=$1 complain=$2 unconfined=$3
+      names=`$SED -n 's/ (complain)$//p' "$profiles" | $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }'`
+      if [ "$enforce" -eq 0 ]; then
+        message WARN mac001w "AppArmor is active, but no profile is in enforce mode ($complain in complain mode, $unconfined unconfined)." "No mandatory access control is enforcing: a compromised service can reach everything its user can."
+      else
+        trail=
+        [ "$complain" -gt 0 ] && trail="In complain mode, which logs and does not deny: $names."
+        p=profiles; [ "$enforce" -eq 1 ] && p=profile
+        message INFO mac003i "$trail" "AppArmor is enforcing $enforce $p ($complain in complain mode, $unconfined unconfined)."
+      fi
+    fi
+    ;;
+  *)
+    message WARN mac001w "Neither AppArmor nor SELinux is active (security modules: ${lsm:-none listed})." "No mandatory access control is enforcing: a compromised service can reach everything its user can."
+    ;;
+esac
+
+exit 0

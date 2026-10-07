@@ -1,0 +1,19 @@
+Id: mac001w
+Severity: WARN
+Category: kernel
+Check: check_mac
+References: apparmor(7), selinux(8)
+
+No mandatory access control system is confining anything: AppArmor and
+SELinux are both off, or one is on with no policy enforced. Then a
+service that is compromised can do everything the account it runs as
+can, and a service running as root everything at all. With a profile,
+a web server that is broken into still cannot read /etc/shadow, start a
+shell, or write outside its directories.
+
+To fix it, use the one the distribution ships: AppArmor on Debian,
+Ubuntu and SUSE (install apparmor and apparmor-profiles, check with
+'aa-status'), SELinux on Fedora, RHEL and their rebuilds (SELINUX=enforcing
+in /etc/selinux/config, check with 'getenforce'). Both may need a kernel
+parameter (apparmor=1 security=apparmor, or selinux=1) where the kernel
+does not turn them on by default.

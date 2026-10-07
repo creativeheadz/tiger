@@ -1,0 +1,19 @@
+Id: aud001w
+Severity: WARN
+Category: logging
+Check: check_audit
+References: auditd(8), audit.rules(7)
+
+auditd, the Linux audit daemon, is not running. Without it the kernel's
+audit events (logins, changes to accounts and to watched files, use of
+privileges, programs run by root) are not recorded, or only the few
+that reach the journal, mixed with everything else and without the
+rules that say what to watch. Investigating a break-in then has little
+to go on, and
+compliance frameworks (the CIS benchmarks, PCI DSS requirement 10) ask
+for an audit trail of this kind.
+
+To fix it, install it (the auditd package on Debian and Ubuntu, audit
+on Fedora, RHEL and SUSE), start it with 'systemctl enable --now
+auditd', and load rules (see aud002w). On a desktop where nobody will
+read the trail, accepting the finding with tigris-accept is reasonable.

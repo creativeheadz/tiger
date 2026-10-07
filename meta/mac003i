@@ -1,0 +1,14 @@
+Id: mac003i
+Severity: INFO
+Category: kernel
+Check: check_mac
+
+A mandatory access control system is enforcing: SELinux in enforcing
+mode, or AppArmor with profiles in enforce mode. The message counts
+AppArmor's profiles by mode, and the detail names the ones in complain
+mode, which log what they would deny and deny nothing; Ubuntu ships a
+few that way. 'aa-enforce PROFILE' moves one to enforce mode once its
+logged denials ('journalctl -k | grep apparmor') are understood.
+"Unconfined" profiles are AppArmor's way of granting a program a
+permission (such as user namespaces) without confining it. This is
+informational.

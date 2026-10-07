@@ -1,0 +1,8 @@
+Id: aud003i
+Severity: INFO
+Category: logging
+Check: check_audit
+
+auditd is running and the message gives how many audit rules are
+loaded. Whether they watch what matters is worth a look with
+'auditctl -l'. This is informational.

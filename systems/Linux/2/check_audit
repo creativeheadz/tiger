@@ -1,0 +1,156 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_audit: is there an audit trail: auditd running with rules, and
+#                 logs that survive a reboot.
+#
+# 10/07/2026 atrimbitas - Initial version. auditd is looked for among the
+#                 running processes (/proc/PID/comm) and its rules asked of
+#                 auditctl -l. journald keeps its logs across reboots when
+#                 Storage= is persistent, or auto (the default) with
+#                 /var/log/journal present; the setting is the last one in
+#                 journald.conf and its drop-ins, ordered as systemd orders
+#                 them (by file name, /etc over /run over /usr/lib). A
+#                 syslog daemon writing to disk keeps them too.
+#                 Tiger_Sysctl_Root prefixes /proc, /etc, /run, /usr and
+#                 /var, and Tiger_Auditctl_Cmd replaces auditctl -l, for
+#                 the tests.
+#
+# References:
+#   man 8 auditd, man 8 auditctl, man 5 journald.conf
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP SED SORT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP SED SORT || exit 1
+
+root=${Tiger_Sysctl_Root:-}
+
+echo
+echo "# Checking the audit trail (auditd, persistent logs)..."
+
+# running NAME...: is a process with one of these names running
+running()
+{
+  __names=$*
+  $CAT "$root"/proc/[0-9]*/comm 2>/dev/null |
+    $AWK -v names=" $__names " 'index(names, " " $0 " ") { found = 1; exit } END { exit !found }'
+}
+
+#
+# auditd
+#
+if ! running auditd; then
+  message WARN aud001w "Install the audit package (auditd on Debian and Ubuntu, audit on Fedora and RHEL), enable it with 'systemctl enable --now auditd', and load rules: the distribution's examples are in /usr/share/doc/audit*/rules." "auditd is not running: logins, changes to accounts and watched files, and the use of privileges are not recorded in an audit trail."
+else
+  ac_cmd=${Tiger_Auditctl_Cmd:-}
+  if [ -z "$ac_cmd" ]; then
+    for d in /usr/sbin /sbin /usr/bin /bin
+    do
+      [ -x "$d/auditctl" ] && { ac_cmd="$d/auditctl -l"; break; }
+    done
+  fi
+  if [ -z "$ac_cmd" ]; then
+    message ERROR aud004e "" "auditd is running, but auditctl is not installed, so its rules cannot be listed."
+  else
+    out=`$ac_cmd 2>&1`; st=$?
+    if [ $st -ne 0 ]; then
+      message ERROR aud004e "`echo "$out" | $SED -n 1p`" "auditd is running, but its rules cannot be listed ($ac_cmd); that needs root."
+    elif [ -z "$out" ] || [ "$out" = "No rules" ]; then
+      message WARN aud002w "Rules go in /etc/audit/rules.d/*.rules and are loaded with 'augenrules --load'. A start: watch /etc/passwd, /etc/shadow, /etc/group, /etc/sudoers and /etc/sudoers.d, and record execve by root." "auditd is running with no rules loaded, so it records almost nothing."
+    else
+      n=`echo "$out" | $GREP -c '^-'`
+      message INFO aud003i "" "auditd is running with $n rules loaded."
+    fi
+  fi
+fi
+
+#
+# Logs across reboots: journald's Storage=, or a syslog daemon
+#
+if [ -d "$root/run/systemd/journal" ] || running systemd-journald; then
+  # The drop-ins by file name; one name in /etc hides it in /run and
+  # /usr/lib, one in /run hides it in /usr/lib
+  dropins=`for d in /usr/lib /usr/local/lib /run /etc
+  do
+    for f in "$root$d"/systemd/journald.conf.d/*.conf
+    do
+      [ -f "$f" ] && echo "${f##*/} $f"
+    done
+  done | $AWK '{ path[$1] = $2 } END { for (n in path) print n, path[n] }' | $SORT | $AWK '{ print $2 }'`
+  storage=`$CAT "$root/etc/systemd/journald.conf" $dropins 2>/dev/null |
+    $SED -n 's/^[[:space:]]*Storage[[:space:]]*=[[:space:]]*\([a-z]*\).*/\1/p' | $SED -n '$p'`
+  storage=${storage:-auto}
+  case "$storage" in
+    persistent) kept=Y ;;
+    auto) if [ -d "$root/var/log/journal" ]; then kept=Y; else kept=N; fi ;;
+    *) kept=N ;;
+  esac
+  if [ "$kept" = N ] && ! running rsyslogd syslog-ng syslogd; then
+    case "$storage" in
+      auto) why="Storage=auto, and /var/log/journal does not exist" ;;
+      *) why="Storage=$storage" ;;
+    esac
+    message WARN logf008w "journald: $why, and no syslog daemon is running. Set Storage=persistent in /etc/systemd/journald.conf (or create /var/log/journal) and restart systemd-journald." "Logs are not kept across reboots: journald holds them in memory only, so a reboot erases what led up to it."
+  fi
+fi
+
+exit 0

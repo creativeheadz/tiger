@@ -45,8 +45,8 @@ Unknown keys are an error, so a typo does not go unnoticed.
 | `firewall`   | The packet filter, and ports Docker publishes past it                 |
 | `integrity`  | File integrity tools (AIDE, integrit, Tripwire) and signatures        |
 | `intrusion`  | Signs of compromise: rootkits, known intruder files, promiscuous mode |
-| `kernel`     | Kernel and file-system hardening settings, CPU vulnerabilities        |
-| `logging`    | Log files and their permissions                                       |
+| `kernel`     | Kernel hardening: sysctl settings, lockdown, AppArmor and SELinux, CPU vulnerabilities |
+| `logging`    | Log files and their permissions, auditd, logs kept across reboots     |
 | `network`    | Network settings, listening processes, NFS                            |
 | `packages`   | Installed files against the package manager, updates, OS version     |
 | `services`   | Services and their configuration: mail, web, inetd, systemd units     |

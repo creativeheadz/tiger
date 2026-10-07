@@ -311,6 +311,16 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   lets root load unsigned code into it (lin040w). Says nothing in a
   container, whose /sys/firmware is empty. Hera: on, lockdown
   integrity. `tests/secureboot_check.sh` builds a /sys per case.
+- [x] **`check_mac`**: AppArmor or SELinux enforcing (mac003i, with
+  AppArmor's profiles counted by mode and the complain ones named), or
+  not: neither active, or AppArmor with no profile enforced (mac001w),
+  SELinux permissive (mac002w). Complain-mode profiles are not a finding
+  of their own, since Ubuntu ships several that way (Transmission,
+  LibreOffice on Hera). **`check_audit`**: auditd running (aud001w), with
+  rules (aud002w, aud003i), and logs kept across reboots: journald's
+  Storage= as systemd resolves journald.conf and its drop-ins, or a
+  syslog daemon (logf008w). Hera: AppArmor enforcing 26 profiles, no
+  auditd, journal on disk.
 
 ## 3.2.x: maintenance
 
@@ -429,7 +439,9 @@ open items below ship from 3.4.0 on.
   fire006i; on master since 3.3.0).
 - [x] Kernel lockdown and Secure Boot (`check_secureboot`, boot009w to
   boot013e and lin040w; on master since 3.3.0).
-- [ ] AppArmor or SELinux enforcing, auditd, journald persistence.
+- [x] AppArmor or SELinux enforcing, auditd, journald persistence
+  (`check_mac`, mac001w to mac004e; `check_audit`, aud001w to aud004e
+  and logf008w; on master since 3.3.0).
 - [ ] Time sync (chrony, timesyncd) instead of the NTP-only check.
 - [ ] Updates: automatic security updates configured, pending security
   updates, reboot required. The existing `check_patches` is apt-only and
