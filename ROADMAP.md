@@ -7,7 +7,7 @@ reference point because it is the tool people compare against.
 
 *Last updated 7 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
 Everything marked done is on `master`; "released" means tagged (the last
-tag is `version_3_3_0`).
+tag is `version_3_4_0`).
 
 ## Contents
 
@@ -51,18 +51,18 @@ Settled, so they do not have to be argued again:
 
 ## Where things stand
 
-|                      | Tigris 3.3.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
+|                      | Tigris 3.4.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
-| Checks               | 46 check scripts, 308 finding ids, every one explained          | ~470 test ids in 42 categories           |
+| Checks               | 58 check scripts, 392 finding ids in 15 categories, each explained | ~470 test ids in 42 categories        |
 | Platforms            | Linux: Debian/Ubuntu, Fedora/RHEL/SUSE, Alpine, Arch            | Linux, macOS, BSD, Solaris, AIX          |
 | Machine output       | JSON Lines with a versioned schema, next to the text report     | `report.dat` (key=value)                 |
-| Explanations         | `tigexp ID` (all 308 written, most predate 2008; 22 this week)  | Suggestions linked to the CISOfy website |
+| Explanations         | `tigris explain ID`, one metadata file per id (severity, category, checks) | Suggestions linked to the CISOfy website |
 | Compliance mapping   | None yet                                                        | Enterprise (paid) edition only           |
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
-| Tests                | 12 fixture suites, 11 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 27 fixture suites, 11 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
@@ -72,12 +72,16 @@ other tools can use, on honest evidence, and on engineering quality.
 12 threads, 62 GB, a 1.8 TB root disk and a 3.6 TB data disk holding
 1.9 TB, 2.4k packages), run as root on an otherwise idle machine:
 
-| | 3.2.4 as released | 3.3.0, full | 3.3.0, `tigerrc-quick` |
-|---|---|---|---|
-| Report | 49,651 lines; 24 checks refused to run | 218 lines: 12 FAIL, 50 WARN | 176 lines: 12 FAIL, 34 WARN |
-| Wall time | 7:16 | 1:58 | 0:58 |
-| CPU (user + system) | not recorded | 105 s + 90 s | 62 s + 42 s |
-| Peak memory | 159 MB | 34.6 MB | 13.9 MB |
+| | 3.2.4 as released | 3.3.0, full | 3.3.0, `tigerrc-quick` | 3.4.0, full | 3.4.0, `--profile quick` |
+|---|---|---|---|---|---|
+| Report | 49,651 lines; 24 checks refused to run | 218 lines: 12 FAIL, 50 WARN | 176 lines: 12 FAIL, 34 WARN | 306 lines: 13 FAIL, 61 WARN | 266 lines: 13 FAIL, 46 WARN |
+| Wall time | 7:16 | 1:58 | 0:58 | 1:58 | 1:02 |
+| CPU (user + system) | not recorded | 105 s + 90 s | 62 s + 42 s | 107 s + 92 s | 65 s + 45 s |
+| Peak memory | 159 MB | 34.6 MB | 13.9 MB | 134 MB | 134 MB |
+
+3.4.0's peak is apt-get mapping its package cache for under a second
+when check_updates asks what is waiting; without that check the quick
+run peaks at 32 MB (the docker CLI, asked by check_containers).
 
 The full run took 3:11 when a second run was reading the same disks, and
 up to 3:21 on 5 October while other services were busy. Everything except
@@ -114,6 +118,12 @@ fast the disks can be walked (a bare `find` over the same disks takes
    with 16,000 lines of dangling symlinks hides the few that matter.
 
 ## What has shipped
+
+**Released: 3.4.0 (7 October 2026).** Twelve new checks for how a Linux
+system is run today, profiles, a non-root mode that says what it
+skipped, and one metadata file per finding id; two incompatible changes
+(the exit status, and nine ids that gained their level's letter). The
+full list is in `CHANGES`.
 
 **Released: 3.3.0 (7 October 2026).** The first release as Tigris:
 everything in the lists below, from running properly on a modern Linux to
@@ -202,7 +212,7 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   GitHub's private vulnerability reporting switched on so the route the
   policy names actually works.
 
-**On master since 3.3.0, for 3.4.0 (unreleased):**
+**In 3.4.0** (on master since 3.3.0):
 - [x] **Exit status** from the worst finding: 0 nothing at WARN or
   above, 2 a check could not run, 3 WARN, 4 FAIL, 5 ALERT; 1 still means
   the audit did not run. Accepted findings do not count. An incompatible
@@ -477,9 +487,9 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
 What the system looks like in 2026, not 2003. **3.3.0 was released on
 7 October 2026** with its gate met: profiles (at least `quick`), the
 dead-service checks retired, every id explained and tested, `SECURITY.md`.
-The next release is 3.4.0, not 3.3.1: the exit status from the worst
-finding changes what scripts and cron see (decided 7 October 2026). The
-open items below ship from 3.4.0 on.
+**3.4.0 was released on 7 October 2026** with every item below; it is
+3.4.0, not 3.3.1, because the exit status from the worst finding changes
+what scripts and cron see.
 
 **Clear out the old**
 - [x] Other Unixes to the attic.
@@ -496,19 +506,19 @@ open items below ship from 3.4.0 on.
   full run takes about three minutes on a busy disk.
 - [x] `server`, `desktop` and `container`, each a short tigerrc selecting
   the checks and the prune list that make sense for that kind of machine
-  (`--profile NAME`, files in `profiles/`; on master since 3.3.0).
+  (`--profile NAME`, files in `profiles/`; in 3.4.0).
 - [x] A non-root mode that reports "skipped: needs root" for the checks
-  that need it, instead of guessing (on master since 3.3.0).
+  that need it, instead of guessing (in 3.4.0).
 
 **Package integrity**
 - [x] rpm, apk and pacman alongside dpkg.
 - [x] Setuid and setgid files compared with what the package manager says
   should be setuid, not only with Tigris's own lists. rpm, apk and
   pacman only: dpkg records no modes (below). (`util/pkgspecial`, used
-  by check_suid and check_sgid; on master since 3.3.0.)
+  by check_suid and check_sgid; in 3.4.0.)
 - [x] dpkg: the entries of `dpkg-statoverride --list`, the one place
   dpkg records a mode and owner, compared with the files themselves
-  (`deb_statoverride`, lin039w; on master since 3.3.0).
+  (`deb_statoverride`, lin039w; in 3.4.0).
 - `lin038w` for dpkg: **not possible, dropped** (decided 7 October
   2026). dpkg records no mode or owner for the files it installs:
   `dpkg --verify` checks md5 sums only, and the database holds file
@@ -524,30 +534,30 @@ open items below ship from 3.4.0 on.
 - [x] sudo and `sudoers.d`, PAM (password quality, `faillock`), and
   accounts without passwords (`check_sudo`, sudo001w to sudo006e;
   `check_pam`, pam001w to pam003w; empty passwords were already
-  pass011f; on master since 3.3.0).
+  pass011f; in 3.4.0).
 - [x] systemd: enabled services and timers next to cron (`check_units`,
-  sysd004 to sysd008i; on master since 3.3.0).
+  sysd004 to sysd008i; in 3.4.0).
 - [x] Firewall: incoming traffic denied by default, for IPv4 and IPv6,
   whatever wrote the rules (`check_firewall`, fire001w to fire004e; on
   master since 3.3.0).
 - [x] Ports Docker publishes, which bypass the input chain (fire005w,
-  fire006i; on master since 3.3.0).
+  fire006i; in 3.4.0).
 - [x] Kernel lockdown and Secure Boot (`check_secureboot`, boot009w to
-  boot013e and lin040w; on master since 3.3.0).
+  boot013e and lin040w; in 3.4.0).
 - [x] AppArmor or SELinux enforcing, auditd, journald persistence
   (`check_mac`, mac001w to mac004e; `check_audit`, aud001w to aud004e
-  and logf008w; on master since 3.3.0).
+  and logf008w; in 3.4.0).
 - [x] Time sync (chrony, timesyncd) beside the NTP-only check
-  (`check_timesync`, time001w to time004w; on master since 3.3.0).
+  (`check_timesync`, time001w to time004w; in 3.4.0).
 - [x] Updates: automatic security updates configured, pending security
   updates, reboot required (`check_updates`, upd001w to upd004i; on
   master since 3.3.0). `check_patches`, apt-only, networked and off by
   default, stays as it was.
 - [x] Storage: LUKS, mount options (`/tmp`, `/dev/shm`), core dumps, USB
-  storage (`check_storage`, stor001w to stor008w; on master since 3.3.0).
+  storage (`check_storage`, stor001w to stor008w; in 3.4.0).
 - [x] Containers: Docker or Podman socket permissions, rootless mode,
   privileged containers (`check_containers`, cont001w to cont010e, and
-  a 15th category, containers; on master since 3.3.0).
+  a 15th category, containers; in 3.4.0).
 
 ## 4.0: where Tigris beats Lynis
 

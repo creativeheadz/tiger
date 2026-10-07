@@ -1,6 +1,170 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
+Changes (v 3.4.0)
+--------------------
+
+Twelve new checks for how a Linux system is run today (Secure Boot,
+AppArmor and SELinux, auditd, time, updates, sudo, PAM, systemd units,
+storage, containers, the firewall and the ports Docker publishes past
+it), profiles, a non-root mode that says what it skipped, and one
+metadata file per finding id with a category in the JSON.
+
+On the reference machine (Linux Mint 22.3, kernel 7.0), as root with
+nothing else running: a full run takes 1:58 (107 s user, 92 s system)
+and writes 306 lines (13 FAIL, 61 WARN); the quick profile takes 1:02.
+Peak memory is 134 MB in both, for under a second, from apt-get mapping
+its package cache when check_updates asks what is waiting (file-backed
+pages, shared with apt itself). Without check_updates the quick run
+peaks at 32 MB, the docker CLI that check_containers asks; 3.3.0 peaked
+at 34.6 MB full and 13.9 MB quick.
+
+Incompatible changes
+
+- The exit status is the worst finding of the run: 0 nothing at WARN or
+  above, 2 a check could not run (an ERROR, or a check skipped because
+  it needs root), 3 WARN, 4 FAIL, 5 ALERT; 1 still means the audit did
+  not run. It was 0 for every audit that finished, so a script that
+  treats anything else as a failure has to change. -q now silences the
+  run itself, not only the banner.
+
+- Nine ids reported through pathmsg carry the letter of their level, as
+  every other id does and the JSON schema requires: ali003, ali007 and
+  cron002 become ...w or ...i; ali004, ali008, cron003 and suid002
+  become ...f, ...w or ...i; path006 and path007 become path011w/i and
+  path012f/w/i (path006w and path007w meant other things before). A
+  3.3.0 report compared with a 3.4.0 one shows those findings resolved
+  and new once, and an accept file that names the old ids needs the new
+  ones.
+
+- Explanations live in meta/ID, one file per finding id, instead of
+  doc/*.txt and the index util/genmsgidx built (both gone, as are
+  util/doc2html and util/convert2html). tigexp keeps its options and
+  reads them directly; nothing needs rebuilding as root. The
+  explanations of the 210 ids nothing emits any more are in git, under
+  doc/*.txt at the tag version_3_3_0.
+
+- Run as an ordinary user, the checks that need root are skipped
+  instead of run (see below): a user's run reports less, and exits 2.
+
+- check_listeningprocs reports IPv6 listeners, which it never saw
+  before: the first 3.4.0 run on a host with services on [::] shows
+  them as new.
+
+- lin019f is gone: check_firewall replaces it (fire001w to fire004e).
+
+New checks
+
+- check_firewall: is incoming traffic denied unless something accepts
+  it, for IPv4 and IPv6, read from the kernel's ruleset whatever wrote
+  it (nft, iptables-nft, ufw, firewalld, legacy iptables): fire001w to
+  fire004e. And the ports Docker publishes, which are forwarded before
+  the input chain: with ufw enabled, a listener on the host did not
+  answer from outside and a published port did (fire005w, fire006i).
+
+- check_secureboot: Secure Boot off, in setup mode or on, and a kernel
+  Secure Boot verified that is not locked down (boot009w to boot013e,
+  lin040w).
+
+- check_mac: AppArmor or SELinux enforcing, permissive, or absent, with
+  AppArmor's profiles counted by mode (mac001w to mac004e).
+
+- check_audit: auditd running with rules, and logs kept across reboots,
+  journald's Storage= resolved as systemd resolves it or a syslog
+  daemon (aud001w to aud004e, logf008w).
+
+- check_timesync: a time daemon, one only, and the clock synchronised,
+  asked of chronyc for chrony (time001w to time004w). check_ntp stays
+  for an ntpd's configuration.
+
+- check_updates, offline: security updates waiting from what apt, dnf
+  or zypper has cached, whether they are installed automatically
+  (unattended-upgrades, Linux Mint's update automation, dnf-automatic),
+  and a reboot pending (upd001w to upd004i). check_patches, which goes
+  to the network and is off by default, stays.
+
+- check_sudo, from cvtsudoers: NOPASSWD for every command or for some,
+  !authenticate, wildcards, sudoers files not root's alone (sudo001w to
+  sudo006e). check_pam: no password quality module, a minimum length
+  under 8, no lockout after failed logins (pam001w to pam003w).
+
+- check_units: what enabled systemd services, and the services their
+  timers and sockets start, run: their programs and every directory
+  above them, owned and writable as cron's commands are checked
+  (sysd004, sysd005), their unit files root's alone (sysd006f), and
+  which are local or changed locally (sysd007i, sysd008i).
+
+- check_storage: /tmp and /dev/shm without nosuid, nodev or noexec, /tmp
+  not separate, disks not encrypted (a WARN on a machine with a battery
+  of its own), swap unencrypted under an encrypted root, core dumps as
+  files, and USB storage where Tiger_Storage_NoUSB=Y forbids it
+  (stor001w to stor008w).
+
+- check_containers: who may use the Docker or Podman socket (root in
+  effect), the Docker API on TCP without TLS, dockerd as root, and
+  running containers that are privileged, share the host's PID or
+  network namespace, or have the engine's socket or the host's / or
+  /etc mounted (cont001w to cont010e).
+
+- deb_statoverride: files that differ from what dpkg-statoverride sets
+  for them (lin039w), the only modes dpkg records. lin038w stays rpm,
+  apk and pacman only.
+
+Checks improved
+
+- check_listeningprocs: IPv6, from ss when there is one, then lsof,
+  netstat or /proc itself (Alpine without iproute2 has only busybox's
+  lsof and netstat, which it read as nothing); the user is each
+  process's effective uid, as lsof had it; a process's ephemeral UDP
+  ports are one finding with the ports in the detail.
+
+- check_suid and check_sgid compare with what the installed packages
+  ship setuid or setgid where the package manager records modes (rpm,
+  pacman, apk), rather than Tigris's static list.
+
+- pathmsg passes over a sticky directory above a path (/tmp), which
+  lets nobody replace what is not theirs.
+
+Running
+
+- tigris --profile NAME (or -p): a short file in profiles/ read on top
+  of the tigerrc. quick (no filesystem scan, the same as tigerrc-quick,
+  which stays), server, desktop, container; a site's own go in a
+  profiles directory beside its tigerrc.
+
+- tigris --since RUN|last prints only what changed since that run and
+  takes its exit status from the new findings: tigris -q --since last
+  in cron mails only when something changed.
+
+- Without root, a check whose header says "# Tigris: needs root" is
+  skipped: a line in the report, a skip record in the JSON, a count in
+  the summary. Twelve checks are marked: nine whose answers as a user
+  were false or missing on the reference machine, and check_audit,
+  pkg_integrity and check_finddeleted, which cannot read what they need
+  without root.
+
+- tigris explain ID shows what a finding means, with its severity,
+  category and the checks that report it.
+
+Output
+
+- Every finding in the JSON carries its category, one of 15 (accounts,
+  boot, containers, cron, filesystem, firewall, integrity, intrusion,
+  kernel, logging, network, packages, services, ssh, tigris). The run
+  record names the profile; the summary counts skipped checks; skip
+  records are new. tigris-diff leaves a check skipped in either run out
+  of both sides, and counts a different profile as a different
+  configuration. All of it additions to schema 1.
+
+- make builds doc/explanations.html, one page of every finding by
+  category.
+
+Engineering
+
+- 27 fixture suites in tests/ (12 in 3.3.0), each with a CI step; the
+  new ones pass under mawk, gawk and busybox awk. ShellCheck blocks the
+  build at the error level.
+
 Changes (v 3.3.0)
 --------------------
 
