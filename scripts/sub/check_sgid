@@ -77,10 +77,18 @@ haveallcmds FILECMD LS SGREP STRINGS && {
   echo
 }
 
+# What is expected to be setgid: what the installed packages ship setgid,
+# where the package manager records modes (rpm, pacman, apk), else
+# Tigris's list for the platform
+source=
 haveallcmds SORT COMM CAT && {
-  if [ -n "$SGID_LIST" -a -s "$SGID_LIST" ]; then
+  if sh $BASEDIR/util/pkgspecial sgid > $WORKDIR/sgid.pkg.$$ 2>/dev/null; then
+    $SORT $inputfile | $COMM -23 - $WORKDIR/sgid.pkg.$$ > $WORKDIR/sgid.list.$$
+    source="Not setgid in any installed package ($LXPKGMGR's database)."
+  elif [ -n "$SGID_LIST" -a -s "$SGID_LIST" ]; then
     $SORT $SGID_LIST |
     $COMM -23 $inputfile - > $WORKDIR/sgid.list.$$
+    source="Not in Tigris's list of the setgid programs this platform ships."
   else
     message CONFIG fsys003c "" 'No setgid list... listing all setgid files'
     $CAT $inputfile > $WORKDIR/sgid.list.$$
@@ -89,7 +97,7 @@ haveallcmds SORT COMM CAT && {
 
 haveallcmds LS AWK && {
   [ -s $WORKDIR/sgid.list.$$ ] && {
-    message ALERT fsys011a "" 'The following setgid programs are non-standard:'
+    message ALERT fsys011a "$source" 'The following setgid programs are non-standard:'
     while read file
     do
       $LS $LSGROUP -ld "$file"
@@ -139,4 +147,4 @@ haveallfiles SIGNATURE_FILE && {
   done
 }
 fi
-delete $WORKDIR/sgid.list.$$ $WORKDIR/sgid.$$
+delete $WORKDIR/sgid.list.$$ $WORKDIR/sgid.pkg.$$ $WORKDIR/sgid.$$

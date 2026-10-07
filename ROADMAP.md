@@ -374,6 +374,14 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   (cont007w), the host's / or /etc mounted writable (cont008w). A new
   category, containers. Hera: andrei in the docker group, dockerd as
   root, Immich's four containers clean.
+- [x] **Setuid and setgid against the package database**: fsys004a and
+  fsys011a now compare with what the installed packages ship setuid or
+  setgid (`util/pkgspecial`: rpm's file modes, pacman's mtree files,
+  apk's installed database), where Tigris's static per-platform list
+  was all there was; dpkg, which records no modes, keeps the list. The
+  detail says which was used. `util/pkgspecial` agreed exactly with
+  `find -perm` in Fedora (9 setuid), Arch (12 setuid, 3 setgid) and
+  Alpine with sudo and shadow added (7, 1).
 
 ## 3.2.x: maintenance
 
@@ -464,9 +472,10 @@ open items below ship from 3.4.0 on.
 
 **Package integrity**
 - [x] rpm, apk and pacman alongside dpkg.
-- [ ] Setuid and setgid files compared with what the package manager says
+- [x] Setuid and setgid files compared with what the package manager says
   should be setuid, not only with Tigris's own lists. rpm, apk and
-  pacman only: dpkg records no modes (below).
+  pacman only: dpkg records no modes (below). (`util/pkgspecial`, used
+  by check_suid and check_sgid; on master since 3.3.0.)
 - [x] dpkg: the entries of `dpkg-statoverride --list`, the one place
   dpkg records a mode and owner, compared with the files themselves
   (`deb_statoverride`, lin039w; on master since 3.3.0).

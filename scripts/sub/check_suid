@@ -166,10 +166,18 @@ haveallcmds FILECMD LS SGREP STRINGS && {
   echo
 }
 
+# What is expected to be setuid: what the installed packages ship setuid,
+# where the package manager records modes (rpm, pacman, apk), else
+# Tigris's list for the platform
+source=
 haveallcmds SORT COMM CAT && {
-  if [ -n "$SUID_LIST" -a -s "$SUID_LIST" ]; then
+  if sh $BASEDIR/util/pkgspecial suid > $WORKDIR/suid.pkg.$$ 2>/dev/null; then
+    $SORT $inputfile | $COMM -23 - $WORKDIR/suid.pkg.$$ > $WORKDIR/suid.list.$$
+    source="Not setuid in any installed package ($LXPKGMGR's database)."
+  elif [ -n "$SUID_LIST" -a -s "$SUID_LIST" ]; then
     $SORT $SUID_LIST |
     $COMM -23 $inputfile - > $WORKDIR/suid.list.$$
+    source="Not in Tigris's list of the setuid programs this platform ships."
   else
     message CONFIG fsys003c "" 'No setuid list... listing all setuid files'
     $CAT $inputfile > $WORKDIR/suid.list.$$
@@ -178,7 +186,7 @@ haveallcmds SORT COMM CAT && {
 
 haveallcmds LS AWK && {
   [ -s $WORKDIR/suid.list.$$ ] && {
-    message ALERT fsys004a "" 'The following setuid programs are non-standard:'
+    message ALERT fsys004a "$source" 'The following setuid programs are non-standard:'
     while read file
     do
       $LS $LSGROUP -ld "$file"
@@ -227,4 +235,4 @@ haveallfiles SIGNATURE_FILE && {
   done
 }
 
-delete $WORKDIR/suid.list.$$ $WORKDIR/suid.$$
+delete $WORKDIR/suid.list.$$ $WORKDIR/suid.pkg.$$ $WORKDIR/suid.$$

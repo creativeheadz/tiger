@@ -73,6 +73,8 @@ jobs:
         run: sh tests/storage_check.sh
       - name: check_containers against sockets, processes and inspect output
         run: sh tests/containers_check.sh
+      - name: check_suid and check_sgid against the package database
+        run: sh tests/suid_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: ShellCheck (errors)

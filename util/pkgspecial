@@ -1,0 +1,96 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# pkgspecial suid|sgid: the files the installed packages ship setuid (or
+#                 setgid), one per line, sorted; exit status 1 when the
+#                 package manager records no modes (dpkg) or cannot be read.
+#
+# 10/07/2026 atrimbitas - Initial version. rpm: each file's mode from
+#                 rpm -qa. pacman: the mode= of each entry in the packages'
+#                 mtree files, or of the /set line before it. apk: the
+#                 a:uid:gid:mode line after each R: file in its installed
+#                 database. The mode's fourth digit from the right holds
+#                 setuid (4) and setgid (2). Run from check_suid and
+#                 check_sgid, with config's settings in the environment;
+#                 Tiger_Sysctl_Root prefixes the databases and
+#                 Tiger_Rpm_Modes_Cmd replaces the rpm query, for the tests.
+#
+#-----------------------------------------------------------------------------
+#
+which=$1
+case "$which" in
+  suid) bits=4567 ;;
+  sgid) bits=2367 ;;
+  *) echo "usage: pkgspecial suid|sgid" >&2; exit 2 ;;
+esac
+root=${Tiger_Sysctl_Root:-}
+AWK=${AWK:-awk} SORT=${SORT:-sort}
+
+# Is there a database with modes in it? Decided here, before the
+# pipeline, so that the exit status says so
+case "$LXPKGMGR" in
+  rpm) [ -n "$Tiger_Rpm_Modes_Cmd" ] || command -v rpm >/dev/null 2>&1 || exit 1 ;;
+  pacman) [ -d "$root/var/lib/pacman/local" ] || exit 1 ;;
+  apk) [ -f "$root/lib/apk/db/installed" ] || exit 1 ;;
+  *) exit 1 ;;
+esac
+
+# "MODE PATH" for the packaged files, the mode in octal
+modes()
+{
+  case "$LXPKGMGR" in
+    rpm)
+      if [ -n "$Tiger_Rpm_Modes_Cmd" ]; then
+        $Tiger_Rpm_Modes_Cmd
+      else
+        rpm -qa --qf '[%{FILEMODES:octal} %{FILENAMES}\n]'
+      fi 2>/dev/null
+      ;;
+    pacman)
+      for m in "$root"/var/lib/pacman/local/*/mtree
+      do
+        [ -f "$m" ] || continue
+        gzip -dc "$m" 2>/dev/null | $AWK '
+          /^#/ { next }
+          /^\/set / { for (i = 2; i <= NF; i++) if ($i ~ /^mode=/) dmode = substr($i, 6); next }
+          /^\.\// {
+            mode = dmode; type = "file"
+            for (i = 2; i <= NF; i++) {
+              if ($i ~ /^mode=/) mode = substr($i, 6)
+              if ($i ~ /^type=/) type = substr($i, 6)
+            }
+            if (type == "file") { p = $1; sub(/^\./, "", p); print mode, p }
+          }'
+      done
+      ;;
+    apk)
+      $AWK -F: '
+        /^F:/ { dir = substr($0, 3) }
+        /^R:/ { file = "/" dir "/" substr($0, 3) }
+        /^a:/ && file != "" { print $4, file; file = "" }' "$root/lib/apk/db/installed"
+      ;;
+  esac
+}
+
+# The permission bits are the mode's last four digits; the first of them
+# holds setuid (4) and setgid (2)
+modes | $AWK -v bits="$bits" '
+  {
+    n = length($1); s = (n >= 4) ? substr($1, n - 3, 1) : "0"
+    if (index(bits, s)) { p = $0; sub(/^[^ ]* /, "", p); print p }
+  }' | $SORT -u
+exit 0
