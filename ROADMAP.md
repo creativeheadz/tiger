@@ -7,7 +7,7 @@ reference point because it is the tool people compare against.
 
 *Last updated 7 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
 Everything marked done is on `master`; "released" means tagged (the last
-tag is `version_3_4_0`).
+tag is `version_3_5_0`).
 
 ## Contents
 
@@ -51,18 +51,19 @@ Settled, so they do not have to be argued again:
 
 ## Where things stand
 
-|                      | Tigris 3.4.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
+|                      | Tigris 3.5.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
-| Checks               | 58 check scripts, 392 finding ids in 15 categories, each explained | ~470 test ids in 42 categories        |
+| Checks               | 58 check scripts, 400 finding ids in 15 categories, each explained | ~470 test ids in 42 categories        |
 | Platforms            | Linux: Debian/Ubuntu, Fedora/RHEL/SUSE, Alpine, Arch            | Linux, macOS, BSD, Solaris, AIX          |
 | Machine output       | JSON Lines with a versioned schema, next to the text report     | `report.dat` (key=value)                 |
 | Explanations         | `tigris explain ID`, one metadata file per id (severity, category, checks) | Suggestions linked to the CISOfy website |
 | Compliance mapping   | None yet                                                        | Enterprise (paid) edition only           |
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
-| Tests                | 27 fixture suites, 11 CI jobs on every push                     | No per-check suite found in the repository |
+| Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
+| Tests                | 33 fixture suites, 12 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
@@ -72,12 +73,17 @@ other tools can use, on honest evidence, and on engineering quality.
 12 threads, 62 GB, a 1.8 TB root disk and a 3.6 TB data disk holding
 1.9 TB, 2.4k packages), run as root on an otherwise idle machine:
 
-| | 3.2.4 as released | 3.3.0, full | 3.3.0, `tigerrc-quick` | 3.4.0, full | 3.4.0, `--profile quick` |
+| | 3.2.4 as released | 3.4.0, full | 3.4.0, `--profile quick` | 3.5.0, full | 3.5.0, `--profile quick` |
 |---|---|---|---|---|---|
-| Report | 49,651 lines; 24 checks refused to run | 218 lines: 12 FAIL, 50 WARN | 176 lines: 12 FAIL, 34 WARN | 306 lines: 13 FAIL, 61 WARN | 266 lines: 13 FAIL, 46 WARN |
-| Wall time | 7:16 | 1:58 | 0:58 | 1:58 | 1:02 |
-| CPU (user + system) | not recorded | 105 s + 90 s | 62 s + 42 s | 107 s + 92 s | 65 s + 45 s |
-| Peak memory | 159 MB | 34.6 MB | 13.9 MB | 134 MB | 134 MB |
+| Report | 49,651 lines; 24 checks refused to run | 306 lines: 13 FAIL, 61 WARN | 266 lines: 13 FAIL, 46 WARN | 318 lines: 13 FAIL, 67 WARN | 267 lines: 13 FAIL, 47 WARN |
+| Wall time | 7:16 | 1:58 | 1:02 | 1:59 | 1:00 |
+| CPU (user + system) | not recorded | 107 s + 92 s | 65 s + 45 s | 102 s + 83 s | 59 s + 35 s |
+| Peak memory | 159 MB | 134 MB | 134 MB | 134 MB | 134 MB |
+
+3.3.0 took 1:58 and 34.6 MB full, 0:58 and 13.9 MB quick. The 134 MB is
+apt-get mapping its package cache for under a second. An offline audit
+of a Debian 13 image with systemd and sshd (3.5.0) takes 9 seconds and
+peaks at 67 MB.
 
 3.4.0's peak is apt-get mapping its package cache for under a second
 when check_updates asks what is waiting; without that check the quick
@@ -578,7 +584,7 @@ what scripts and cron see.
 - [x] **Drift**: `tigris-diff` and `tigris-accept`, and the main
   command takes `--since RUN` (a report, or `last`) and prints only what
   changed, so cron needs no wrapper: `tigris -q --since last`.
-- [ ] **Offline audit**: `tigris --root /mnt/image` audits a mounted disk,
+- [x] **Offline audit** (3.5.0): `tigris --root /mnt/image` audits a mounted disk,
   a container image's root filesystem or a VM snapshot without booting
   it. Lynis cannot do this. On master: the option, links resolved inside
   the root (`util/rootpath`), the host's package tools pointed at the
@@ -600,6 +606,8 @@ what scripts and cron see.
   check_neverlogin) still cannot read an offline root. A container image
   (`docker run -v ROOTFS:/target:ro tigris --root /target`) carries
   every distribution's package tools for it.
+- [ ] **Offline audit, the rest**: the 16 of TIGER's original checks
+  listed above, so that an image reads as fully as a running system.
 - [ ] **A transparent summary**: counts by severity and category, and any
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old

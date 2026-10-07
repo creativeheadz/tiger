@@ -1,8 +1,39 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
-Changes since 3.4.0 (unreleased)
---------------------------------
+Changes (v 3.5.0)
+--------------------
+
+tigris --root audits a Linux system that is not running: a disk from
+another machine, a container image, a VM snapshot. Nothing in it is run,
+its links are followed inside it, its own passwd names its files'
+owners, and this host's package tools read its databases; 23 checks
+read an image, the file system scan among them, and a container image
+of Tigris carries every distribution's package tools to do it with.
+Cron and the account checks were overhauled on the way, and a hole in
+check_path that let any user's .profile truncate a file as root is
+closed.
+
+On the reference machine (Linux Mint 22.3, kernel 7.0), as root with
+nothing else running: a full run takes 1:59 (102 s user, 83 s system)
+and writes 318 lines (13 FAIL, 67 WARN); the quick profile takes 1:00
+(59 s, 35 s), 267 lines (13 FAIL, 47 WARN). Peak memory is 134 MB in
+both, apt-get mapping its cache as in 3.4.0. An offline audit of a
+Debian 13 image with systemd and sshd takes 9 seconds and peaks at
+67 MB.
+
+Changes you will see
+
+- pass019w (no password aging) reports accounts again: it never fired
+  before (see below). On the reference machine that is one account.
+- Cron's files and jobs in /etc/crontab and /etc/cron.d are checked,
+  which they never were, with three new ids (cron008f/w, cron009w,
+  cron010w); jobs whose command has "--" in it are checked too.
+- On a system without cron, "Use of cron is not restricted" (cron005w)
+  is no longer said.
+- check_passwdformat no longer reports _apt and the like, nor the
+  accounts Red Hat's family and Alpine install with gid 0.
+- A run as an ordinary user no longer prints a grep error.
 
 - tigris --root DIR audits a system that is not running: a disk mounted
   from another machine, a container image unpacked into a directory, a
@@ -19,9 +50,9 @@ Changes since 3.4.0 (unreleased)
   deb_statoverride, check_updates (without the reboot question),
   check_pam, check_ssh, check_sudo, the account checks, cron,
   check_units, check_sysctl, check_network_config, check_storage and
-  the file system scan. Those marked "# Tigris: live system" (processes, sockets,
-  the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
-  reason, and the rest as "not offline yet"; each skip is in the report
+  the file system scan. Those marked "# Tigris: live system"
+  (processes, sockets, the firewall, Secure Boot, ...) are skipped with
+  that reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
   record carries the root, so tigris-diff counts it as part of the
   configuration. A --root without an etc directory, or with characters
