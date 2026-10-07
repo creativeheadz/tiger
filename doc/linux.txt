@@ -162,6 +162,11 @@ For 2.2 kernels remove this option with:
 For 2.4 and later kernels you might need to patch the kernel or configure
 your firewalling rules properly (i.e. defining anti-spoofing rules).
 %lin019f
+Retired in Tigris after 3.3.0: the firewall is checked by check_firewall
+(fire001w, fire002w, fire003i, fire004e), which reads the nftables ruleset and
+the legacy iptables tables instead of comparing "iptables -nL" with an
+empty table.
+
 The system has no firewalling rules in place to limit access to network
 services and protocols. Considering configuring a set of local firewall
 rules adapted to your needs. There are multiple firewall generation software 

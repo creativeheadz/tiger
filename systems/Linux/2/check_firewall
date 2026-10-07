@@ -1,0 +1,253 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_firewall: is incoming traffic denied unless something accepts it,
+#                 for IPv4 and for IPv6, whatever wrote the rules (nft,
+#                 iptables-nft, iptables-legacy, ufw, firewalld).
+#
+# 10/07/2026 atrimbitas - Initial version. Replaces lin019f, which compared
+#                 "iptables -nL" with an empty table: Docker's rules made
+#                 it pass while INPUT accepted everything, and a firewall
+#                 written in nftables alone made it fail. The kernel's
+#                 ruleset is read instead. In nftables every base chain on
+#                 the input hook sees the packet, so one chain that drops
+#                 what it does not accept (policy drop, or an
+#                 unconditional drop or reject as its last rule, which is
+#                 how firewalld does it) is a default-deny for its family.
+#                 Legacy iptables tables are read too when they exist.
+#                 Neither nft nor iptables is run unless its tables are
+#                 already in the kernel, since both would load modules.
+#                 Tiger_NFT_Cmd, Tiger_IPT_Legacy_Cmd, Tiger_IP6T_Legacy_Cmd
+#                 and Tiger_Firewall_Frontends let the tests feed fixtures;
+#                 Tiger_Sysctl_Root prefixes /proc and /sys.
+#
+# References:
+#   https://wiki.nftables.org/wiki-nftables/index.php/Configuring_chains
+#   man nft (CHAINS: base chains, hooks, priorities and policies)
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK GREP CAT SED || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK GREP CAT SED || exit 1
+haveallfiles BASEDIR WORKDIR || exit 1
+
+echo
+echo "# Checking that incoming traffic is denied by default (firewall)..."
+
+root=${Tiger_Sysctl_Root:-}
+
+findtool()
+{
+  for d in /usr/sbin /sbin /usr/bin /bin
+  do
+    [ -x "$d/$1" ] && { echo "$d/$1"; return 0; }
+  done
+  return 1
+}
+
+# IPv6 matters only when the kernel has it and it is not switched off
+v6=Y
+[ -e "$root/proc/net/if_inet6" ] || v6=N
+[ "`$CAT "$root/proc/sys/net/ipv6/conf/all/disable_ipv6" 2>/dev/null`" = 1 ] && v6=N
+
+rules=$WORKDIR/fw.rules.$$
+errs=$WORKDIR/fw.errs.$$
+safe_temp $rules $errs
+trap 'delete $rules $errs ; exit 1' 1 2 3 15
+: > $rules
+
+# One line per input chain: "deny|open v4|v6 description"
+nft_chains()
+{
+  $AWK '
+  function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+  # The verdict of a rule that matches everything (counters and a log
+  # statement allowed), or "" when the rule has a condition
+  function verdict(r) {
+    r = trim(r); sub(/ *# handle [0-9]+$/, "", r)
+    gsub(/counter( packets [0-9]+ bytes [0-9]+)? */, "", r)
+    r = trim(r)
+    # log statements take these options; anything else is a condition
+    lo = "^log( (prefix|level|flags|group|snaplen|queue-threshold) (\"[^\"]*\"|[^ ]+))* "
+    if (match(r, lo)) r = substr(r, RLENGTH + 1)
+    if (r == "drop") return "drop"
+    if (r ~ /^reject( with [a-z0-9 -]+)?$/) return "reject"
+    return ""
+  }
+  /^table / { fam = $2; tbl = $3; next }
+  /^[ \t]*chain / { chain = $2; base = 0; pol = ""; last = ""; next }
+  chain != "" && /hook input/ {
+    base = 1; pol = "accept"
+    if (match($0, /policy [a-z]+/)) pol = substr($0, RSTART + 7, RLENGTH - 7)
+    next
+  }
+  chain != "" && /^[ \t]*}/ {
+    if (base && (fam == "inet" || fam == "ip" || fam == "ip6")) {
+      v = verdict(last)
+      if (pol == "drop") how = "policy drop"
+      else if (v != "") how = "ends with an unconditional " v
+      else how = "policy " pol
+      deny = (pol == "drop" || v != "") ? "deny" : "open"
+      desc = "nftables " fam " " tbl " " chain ": " how
+      if (fam != "ip6") print deny, "v4", desc
+      if (fam != "ip") print deny, "v6", desc
+    }
+    chain = ""; next
+  }
+  chain != "" && NF { last = $0 }
+  '
+}
+
+# The same from "iptables -S INPUT" output: family and tool name as $1 $2
+ipt_chain()
+{
+  $AWK -v fam="$1" -v tool="$2" '
+  /^-P INPUT / { pol = $3 }
+  /^-A INPUT / { last = $0 }
+  END {
+    if (pol == "") exit
+    v = ""
+    if (last == "-A INPUT -j DROP") v = "drop"
+    else if (last ~ /^-A INPUT -j REJECT( --reject-with [a-z0-9-]+)?$/) v = "reject"
+    how = (pol == "DROP" ? "policy DROP" : (v != "" ? "ends with an unconditional " v : "policy " pol))
+    print ((pol == "DROP" || v != "") ? "deny" : "open"), fam, tool " INPUT: " how
+  }'
+}
+
+#
+# nftables (and iptables-nft, whose tables are nftables tables)
+#
+nft_cmd=${Tiger_NFT_Cmd:-}
+if [ -z "$nft_cmd" ] && [ -d "$root/sys/module/nf_tables" ]; then
+  if nft=`findtool nft`; then
+    nft_cmd="$nft list ruleset"
+  elif ipt=`findtool iptables`; then
+    # no nft: iptables-nft shows its own tables, which is what it can
+    nft_cmd=
+    $ipt -S INPUT 2>$errs | ipt_chain v4 iptables >> $rules
+    [ "$v6" = Y ] && ip6t=`findtool ip6tables` && $ip6t -S INPUT 2>>$errs | ipt_chain v6 ip6tables >> $rules
+  else
+    message ERROR fire004e "" "nf_tables is loaded in the kernel but neither nft nor iptables is installed to read its rules, so whether incoming traffic is filtered is unknown."
+  fi
+fi
+if [ -n "$nft_cmd" ]; then
+  if $nft_cmd > $WORKDIR/fw.nft.$$ 2>$errs; then
+    nft_chains < $WORKDIR/fw.nft.$$ >> $rules
+  else
+    message ERROR fire004e "`$SED -n 1p $errs`" "The nftables ruleset could not be read ($nft_cmd), so whether incoming traffic is filtered is unknown."
+    delete $WORKDIR/fw.nft.$$ $rules $errs
+    exit 0
+  fi
+  delete $WORKDIR/fw.nft.$$
+fi
+
+#
+# Legacy iptables, a separate set of tables the kernel also applies. Only
+# when they are loaded: otherwise there is nothing to read, and running
+# iptables-legacy would load them.
+#
+ipt_legacy=${Tiger_IPT_Legacy_Cmd:-}
+if [ -z "$ipt_legacy" ] && $GREP -qx filter "$root/proc/net/ip_tables_names" 2>/dev/null; then
+  if t=`findtool iptables-legacy`; then ipt_legacy="$t -S INPUT"; fi
+fi
+[ -n "$ipt_legacy" ] && $ipt_legacy 2>/dev/null | ipt_chain v4 iptables-legacy >> $rules
+
+ip6t_legacy=${Tiger_IP6T_Legacy_Cmd:-}
+if [ -z "$ip6t_legacy" ] && $GREP -qx filter "$root/proc/net/ip6_tables_names" 2>/dev/null; then
+  if t=`findtool ip6tables-legacy`; then ip6t_legacy="$t -S INPUT"; fi
+fi
+[ "$v6" = Y ] && [ -n "$ip6t_legacy" ] && $ip6t_legacy 2>/dev/null | ipt_chain v6 ip6tables-legacy >> $rules
+
+#
+# What would turn one on, for the advice
+#
+frontends=${Tiger_Firewall_Frontends-unset}
+if [ "$frontends" = unset ]; then
+  frontends=
+  findtool ufw >/dev/null && frontends="$frontends ufw"
+  findtool firewall-cmd >/dev/null && frontends="$frontends firewalld"
+fi
+case " $frontends " in
+  *" ufw "*) advice="ufw is installed: 'ufw enable' turns on its default-deny policy." ;;
+  *" firewalld "*) advice="firewalld is installed: 'systemctl enable --now firewalld' starts it, and its zones reject what they do not allow." ;;
+  *) advice="An nftables chain on the input hook with 'policy drop', after rules that accept established connections, loopback and the services meant to be reachable, sets one." ;;
+esac
+
+for fam in v4 v6
+do
+  [ "$fam" = v6 ] && [ "$v6" = N ] && continue
+  case $fam in v4) name=IPv4 id=fire001w ;; v6) name=IPv6 id=fire002w ;; esac
+  denied=`$AWK -v f=$fam '$1 == "deny" && $2 == f { $1 = ""; $2 = ""; sub(/^ +/, ""); print; exit }' $rules`
+  if [ -n "$denied" ]; then
+    message INFO fire003i "" "Incoming $name traffic is denied by default ($denied)."
+  else
+    seen=`$AWK -v f=$fam '$2 == f { $1 = ""; $2 = ""; sub(/^ +/, ""); printf "%s%s", (n++ ? "; " : ""), $0 }' $rules`
+    if [ -n "$seen" ]; then
+      trail="Input chains: $seen. $advice"
+    else
+      trail="No chain on the input hook filters $name (rules for forwarding or NAT, such as Docker's, do not filter traffic to the host itself). $advice"
+    fi
+    message WARN $id "$trail" "Incoming $name traffic is not denied by default: no input chain drops what it does not accept."
+  fi
+done
+
+delete $rules $errs
+exit 0

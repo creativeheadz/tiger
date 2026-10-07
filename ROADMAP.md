@@ -226,6 +226,19 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   listener on every interface was reported as a WARN and again as an
   INFO (`&& message || message`, and `message()` returns non-zero).
   `tests/listening_check.sh` feeds `lsof -F` fixtures (`Tiger_LSOF_Cmd`).
+- [x] **`check_firewall`**: is incoming traffic denied unless something
+  accepts it, for IPv4 and IPv6 separately. Reads the kernel's ruleset
+  (`nft list ruleset`, and the legacy iptables tables when they are
+  loaded), so it works the same for nft, iptables-nft, ufw and
+  firewalld; a default-deny is a chain on the input hook with policy
+  drop or an unconditional drop or reject as its last rule (firewalld
+  ends with a reject). Never runs nft or iptables unless their tables
+  are already in the kernel (both would load modules). Replaces
+  `lin019f`, which compared `iptables -nL` with an empty table: Docker's
+  rules made it pass on Hera while INPUT accepted everything, and an
+  nftables-only firewall made it fail. Fixtures captured from real
+  rulesets in containers with their own network namespace (ufw on
+  Ubuntu, firewalld on Fedora, nft on Debian); 15 assertions.
 
 ## 3.2.x: maintenance
 
@@ -326,8 +339,9 @@ The open items below ship as 3.3.x.
 - [ ] sudo and `sudoers.d`, PAM (password quality, `faillock`), and
   accounts without passwords.
 - [ ] systemd: enabled services and timers next to cron.
-- [ ] Firewall: nftables, iptables, ufw or firewalld present, with a
-  default-deny policy.
+- [x] Firewall: incoming traffic denied by default, for IPv4 and IPv6,
+  whatever wrote the rules (`check_firewall`, fire001w to fire004e; on
+  master since 3.3.0).
 - [ ] Kernel lockdown and Secure Boot.
 - [ ] AppArmor or SELinux enforcing, auditd, journald persistence.
 - [ ] Time sync (chrony, timesyncd) instead of the NTP-only check.

@@ -138,6 +138,10 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   $SYSTEMDIR/check_systemd
 }
 
+[ "$Tiger_Check_FIREWALL" != 'N' ] && {
+  $SYSTEMDIR/check_firewall
+}
+
 [ "$Tiger_Check_PASSWD" != 'N' -a "$Tiger_Check_PASSWD_SHADOW" != 'N' ] && {
   $SYSTEMDIR/check_passwdspec
 }
