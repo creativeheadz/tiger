@@ -362,7 +362,9 @@ root for a reliable result.
 %lin038w
 A file installed by a package has a different mode or owner than the
 package set. The check asks the package manager (rpm -V, apk audit,
-pacman -Qk), so it covers RPM, Alpine and Arch systems; the dpkg checks
+pacman -Qk), so it covers RPM, Alpine and Arch systems. It is not
+reported on Debian or Ubuntu: dpkg records no mode or owner for the files
+it installs (dpkg --verify checks md5 sums only), so the dpkg checks
 compare content only. A binary that has become world-writable, or
 changed owner, can be replaced by whoever it now belongs to. Restore it
 with the package manager's own tool (rpm --setperms PACKAGE, apk fix

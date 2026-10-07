@@ -202,7 +202,7 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   GitHub's private vulnerability reporting switched on so the route the
   policy names actually works.
 
-**On master since 3.3.0 (unreleased):**
+**On master since 3.3.0, for 3.4.0 (unreleased):**
 - [x] **Exit status** from the worst finding: 0 nothing at WARN or
   above, 2 a check could not run, 3 WARN, 4 FAIL, 5 ALERT; 1 still means
   the audit did not run. Accepted findings do not count. An incompatible
@@ -318,7 +318,9 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
 What the system looks like in 2026, not 2003. **3.3.0 was released on
 7 October 2026** with its gate met: profiles (at least `quick`), the
 dead-service checks retired, every id explained and tested, `SECURITY.md`.
-The open items below ship as 3.3.x.
+The next release is 3.4.0, not 3.3.1: the exit status from the worst
+finding changes what scripts and cron see (decided 7 October 2026). The
+open items below ship from 3.4.0 on.
 
 **Clear out the old**
 - [x] Other Unixes to the attic.
@@ -341,9 +343,17 @@ The open items below ship as 3.3.x.
 **Package integrity**
 - [x] rpm, apk and pacman alongside dpkg.
 - [ ] Setuid and setgid files compared with what the package manager says
-  should be setuid, not only with Tigris's own lists.
-- [ ] `lin038w`-style mode and owner comparison for dpkg systems
-  (`dpkg --verify`); today the dpkg checks compare content only.
+  should be setuid, not only with Tigris's own lists. rpm, apk and
+  pacman only: dpkg records no modes (below).
+- [ ] dpkg: the entries of `dpkg-statoverride --list`, the one place
+  dpkg records a mode and owner, compared with the files themselves.
+- `lin038w` for dpkg: **not possible, dropped** (decided 7 October
+  2026). dpkg records no mode or owner for the files it installs:
+  `dpkg --verify` checks md5 sums only, and the database holds file
+  lists and sums. `lin038w` stays rpm, apk and pacman only, and its
+  explanation says so. Reading modes from cached `.deb` files was
+  rejected: the cache is often cleaned, and a `dpkg-deb -c` per package
+  is slow.
 
 **New checks**
 - [x] SSH from `sshd -T`.
