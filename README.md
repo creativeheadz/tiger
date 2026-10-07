@@ -79,7 +79,7 @@ firewall, kernel settings) are skipped, and so, for now, are the checks
 that cannot read an offline root yet; the report lists each one with
 the reason. The checks that can: package integrity, updates waiting,
 PAM, sshd's configuration (worked out from its files, as sshd would),
-and dpkg's mode overrides. Tigris writes nothing into the root,
+sudo's rules, and dpkg's mode overrides. Tigris writes nothing into the root,
 but the package tools may write their logs and caches there as they
 would on that system; mount it read-only if it must stay unchanged.
 

@@ -28,12 +28,23 @@
 #                 in check_passwd stays where it is.
 #                 Tiger_Cvtsudoers_Cmd replaces the cvtsudoers call and
 #                 Tiger_Sysctl_Root prefixes /etc, for the tests.
+# 10/07/2026 atrimbitas - An offline root (--root): its files through
+#                 rootfile and rootls, and its rules flattened first, every
+#                 @include and @includedir (or #include, #includedir) read
+#                 inside the root, the way sudo reads them: relative paths
+#                 from the including file's directory, a directory's files
+#                 in lexical order without those that end in ~ or have a
+#                 dot. This host's cvtsudoers reads the result, so that it
+#                 does not follow the includes on this host.
+#                 openSUSE's /usr/etc/sudoers, read when there is no
+#                 /etc/sudoers, and its sudoers.d.
 #
 # References:
 #   man 5 sudoers, man 1 cvtsudoers
 #
 # Tigris: needs root
 #   /etc/sudoers is root's to read.
+# Tigris: offline
 #
 #-----------------------------------------------------------------------------
 #
@@ -84,9 +95,11 @@ done
 
 haveallcmds AWK LS SED SORT || exit 1
 
-root=${Tiger_Sysctl_Root:-}
-sudoers="$root/etc/sudoers"
-# Without sudo there is nothing to check
+# openSUSE ships /usr/etc/sudoers, which sudo reads when there is no
+# /etc/sudoers; without either there is no sudo to check
+main=/etc/sudoers
+sudoers=`rootfile $main`
+[ -e "$sudoers" ] || { main=/usr/etc/sudoers; sudoers=`rootfile $main`; }
 [ -e "$sudoers" ] || exit 0
 
 echo
@@ -95,42 +108,82 @@ echo "# Checking sudo's rules..."
 #
 # The files: root's, and written by root alone
 #
-for f in "$sudoers" "$root/etc/sudoers.d" "$root"/etc/sudoers.d/*
+for f in $main /etc/sudoers.d `rootls /etc/sudoers.d` `[ $main = /usr/etc/sudoers ] && { echo /usr/etc/sudoers.d; rootls /usr/etc/sudoers.d; }`
 do
-  [ -e "$f" ] || continue
-  set -- `$LS -lnd "$f" 2>/dev/null`
+  here=`rootfile "$f"`
+  [ -e "$here" ] || continue
+  set -- `$LS -lnd "$here" 2>/dev/null`
   mode=$1 uid=$3
   case "$mode" in
     ?????w????*|????????w?*) bad="writable by others ($mode)" ;;
     *) bad= ;;
   esac
   [ "$uid" != 0 ] && bad="${bad:+$bad, }owned by uid $uid"
-  [ -n "$bad" ] && message WARN sudo005w "Run 'chown root:root' and 'chmod 0440' on it (0755 for the directory)." "\`${f#$root}' is $bad: whoever can write sudo's rules can give themselves root."
+  [ -n "$bad" ] && message WARN sudo005w "Run 'chown root:root' and 'chmod 0440' on it (0755 for the directory)." "\`$f' is $bad: whoever can write sudo's rules can give themselves root."
 done
+
+# expand_sudoers FILE DEPTH: FILE (a path of the audited system) with its
+# include lines replaced by the files they name, read inside the root
+expand_sudoers()
+{
+  (
+  __f=$1 __d=$2
+  __h=`rootfile "$__f"`
+  [ -f "$__h" ] && [ "$__d" -le 16 ] || exit 0
+  while IFS= read -r __l || [ -n "$__l" ]
+  do
+    case "$__l" in
+      [@#]include[\ \	]*|[@#]includedir[\ \	]*)
+        __kw=${__l%%[ 	]*}; __p=${__l#"$__kw"}; __p=`echo $__p`
+        case "$__p" in /*) ;; *) __p=${__f%/*}/$__p ;; esac
+        case "$__kw" in
+          *includedir)
+            for __n in `rootls "$__p" | $SED 's,.*/,,' | $SORT`
+            do
+              case "$__n" in *~|*.*) continue ;; esac
+              expand_sudoers "$__p/$__n" `expr $__d + 1`
+            done ;;
+          *) expand_sudoers "$__p" `expr $__d + 1` ;;
+        esac ;;
+      *) printf '%s\n' "$__l" ;;
+    esac
+  done < "$__h"
+  )
+}
 
 #
 # The rules, flattened by cvtsudoers
 #
+tmp=$WORKDIR/sudo.$$
+flat=$WORKDIR/sudoers.$$
+input=$sudoers
 cmd=${Tiger_Cvtsudoers_Cmd:-}
+[ -n "$TIGRIS_ROOT" ] && {
+  safe_temp $flat
+  expand_sudoers $main 0 > $flat
+  input=$flat
+  [ -n "$cmd" ] && cmd="$cmd $flat"
+}
+trap 'delete $tmp $flat ; exit 1' 1 2 3 15
 if [ -z "$cmd" ]; then
   for d in /usr/bin /bin /usr/sbin /sbin
   do
-    [ -x "$d/cvtsudoers" ] && { cmd="$d/cvtsudoers -e -f sudoers $sudoers"; break; }
+    [ -x "$d/cvtsudoers" ] && { cmd="$d/cvtsudoers -e -f sudoers $input"; break; }
   done
 fi
 if [ -z "$cmd" ]; then
   message ERROR sudo006e "" "sudo's rules cannot be read: cvtsudoers, which comes with sudo 1.8.23 and later, is not installed."
+  delete $flat
   exit 0
 fi
 rules=`$cmd 2>&1`
 if [ $? -ne 0 ]; then
   message ERROR sudo006e "`echo "$rules" | $SED -n 1p`" "sudo's rules cannot be read ($cmd); reading /etc/sudoers needs root."
+  delete $flat
   exit 0
 fi
 
-tmp=$WORKDIR/sudo.$$
 safe_temp $tmp
-trap 'delete $tmp ; exit 1' 1 2 3 15
 
 # One line per finding, "KIND who<TAB>command": the continuation lines
 # joined, comments left out, the runas lists dropped, each command with
@@ -185,5 +238,5 @@ nopw=`$AWK -F'\t' '$1 ~ /^nopw / { sub(/^nopw /, "", $1); print $1 ": " $2 }' $t
   $AWK '{ printf "%s%s", (NR > 1 ? "; " : ""), $0 }'`
 [ -n "$nopw" ] && message INFO sudo002i "$nopw." "Some commands may be run with sudo without a password."
 
-delete $tmp
+delete $tmp $flat
 exit 0

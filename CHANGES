@@ -17,7 +17,7 @@ Changes since 3.4.0 (unreleased)
   is run. A check marks itself "# Tigris: offline" when it can read an
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
   deb_statoverride, check_updates (without the reboot question),
-  check_pam and check_ssh. Those marked "# Tigris: live system" (processes, sockets,
+  check_pam, check_ssh and check_sudo. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -42,6 +42,19 @@ Changes since 3.4.0 (unreleased)
   Debian, Fedora, Arch, openSUSE Tumbleweed and Alpine with
   openssh-server installed, the findings from a copy of the root are
   the findings sshd -T gives on the system.
+
+- check_sudo reads an offline root too: its sudoers is flattened first,
+  every @include and @includedir (and #include, #includedir) read
+  inside the root as sudo reads them (relative paths from the including
+  file's directory; a directory's files in lexical order, without those
+  ending in ~ or with a dot), and this host's cvtsudoers reads the
+  result, so it does not follow the includes on this host. On Debian,
+  Fedora, Arch, Alpine and openSUSE Tumbleweed with sudo installed, the
+  findings from a copy of the root are those from the system.
+
+- check_sudo reads openSUSE's /usr/etc/sudoers, which sudo reads when
+  there is no /etc/sudoers (Tumbleweed ships none), and its sudoers.d:
+  until now a Tumbleweed system's sudo rules went unchecked.
 
 - deb_checkmd5sums checks every package with one md5sum run instead of
   one per package: on the reference machine 17.5 s instead of 20.5,
