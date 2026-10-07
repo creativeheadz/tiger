@@ -27,6 +27,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+sys.dont_write_bytecode = True     # no __pycache__ left in art/
 import kp  # noqa: E402
 
 # The Kestrel's SCREEN palette (dyad, app/look.py), in declared order.
