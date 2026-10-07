@@ -3,8 +3,14 @@
 # tests/ssh_check.sh - check_ssh against canned sshd -T output
 #
 # Feeds the check a fixture in which every setting is wrong, then one in
-# which every setting is right, through Tiger_SSHD_Cmd. Needs no root and
-# no sshd.
+# which every setting is right, through Tiger_SSHD_Cmd. Then an offline
+# root (TIGRIS_ROOT, as tigris --root sets it), where sshd is not run and
+# the configuration is worked out from the files: an Include whose file
+# sets PasswordAuthentication before the main file does (the first value
+# wins), Keyword=value, the old ChallengeResponseAuthentication name,
+# LoginGraceTime in minutes, a Match block whose settings must not count,
+# an included file that is an absolute link inside the root, and defaults
+# for what is not set. Needs no root and no sshd.
 #
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 W=`mktemp -d`
@@ -55,6 +61,8 @@ run()
 }
 
 fail=0
+ok()  { echo "ok   $1"; }
+bad() { echo "FAIL $1"; fail=1; }
 run "$W/bad.txt" > "$W/bad.out"
 for code in ssh004w ssh006f ssh007f ssh008w ssh009w ssh010w ssh011w ssh012w ssh013w ssh014w ssh015w ssh016w ssh017w ssh018w ssh019w
 do
@@ -70,5 +78,40 @@ if grep -q -- '--\(WARN\|FAIL\|ALERT\)--' "$W/good.out"; then
 else
   echo "ok   nothing reported for the good fixture"
 fi
+# An offline root
+R=$W/img
+mkdir -p "$R/etc/ssh/sshd_config.d" "$R/usr/share/ssh"
+cat > "$R/etc/ssh/sshd_config" <<'CONF'
+# as Debian ships it: the drop-ins first
+Include /etc/ssh/sshd_config.d/*.conf
+PasswordAuthentication yes
+PermitRootLogin=yes
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+LoginGraceTime 2m
+Ciphers aes256-gcm@openssh.com,aes128-cbc
+Match User backup
+	PermitEmptyPasswords yes
+	MaxAuthTries 10
+CONF
+echo 'PasswordAuthentication no' > "$R/etc/ssh/sshd_config.d/10-nopass.conf"
+# a drop-in that is an absolute link: read inside the root, its LogLevel
+# counts; followed on this host it would name nothing
+echo 'LogLevel QUIET' > "$R/usr/share/ssh/20-log.conf"
+ln -s /usr/share/ssh/20-log.conf "$R/etc/ssh/sshd_config.d/20-log.conf"
+echo 'IgnoreRhosts no' > "$R/etc/ssh/sshd_config.d/30-skipped.conf.disabled"
+( cd "$W" && TIGRIS_ROOT=$R TIGERHOMEDIR=$W sh scripts/check_ssh 2>&1 ) > "$W/root.out"
+codes=`grep -o '\[ssh0[0-9][0-9][a-z]\]' "$W/root.out" | sort -u | tr -d '[]' | tr '\n' ' '`
+[ "$codes" = "ssh006f ssh008w ssh009w ssh012w ssh016w ssh017w " ] &&
+  ok "offline root: root login, X11, the default MaxAuthTries, LoginGraceTime 2m, the linked drop-in's LogLevel, a CBC cipher; nothing else" || { bad "offline codes: $codes"; cat "$W/root.out"; }
+grep -q 'Checking the sshd configuration written in /etc/ssh/sshd_config and its Include files' "$W/root.out" &&
+  ok "offline root: says the configuration was read, not asked of sshd" || bad "offline heading"
+grep -q 'logingracetime is 120:' "$W/root.out" && grep -q 'maxauthtries is 6:' "$W/root.out" &&
+  ok "offline root: 2m is 120 seconds; the Match block's MaxAuthTries 10 does not count, the default 6 does" || { bad "offline values"; cat "$W/root.out"; }
+rm "$R/etc/ssh/sshd_config" "$R/etc/ssh/sshd_config.d"/*
+( cd "$W" && TIGRIS_ROOT=$R TIGERHOMEDIR=$W sh scripts/check_ssh 2>&1 ) > "$W/none.out"
+grep -q -- '--\(WARN\|FAIL\)--' "$W/none.out" && bad "a root without sshd_config: findings" || ok "a root without sshd_config: nothing to say"
+
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- bad.out"; cat "$W/bad.out"; }
 exit $fail

@@ -18,6 +18,14 @@
 # check_ssh - Checks for configuration directives in the SSH configuration
 #             file.
 #
+# 10/07/2026 - atrimbitas - Auditing an offline root (--root), sshd is not
+#             run (it would be this host's, reading this host's keys): the
+#             effective configuration is worked out from the root's
+#             sshd_config as sshd would, Include files read in place
+#             (relative ones from /etc/ssh), the first value of a keyword
+#             kept, Match blocks set aside, OpenSSH's defaults for what is
+#             not set (no UsePAM where sshd has no PAM stack: Alpine), and
+#             checked as sshd -T's output is.
 # 01/07/2004 - rbrad - Applied Savannah Patch: 2439 to make POSIX compliant.
 # 11/19/2003 - jfs - This script is not POSIX compliant (yet)
 # 09/19/2003 - jfs - Applied patch from Ryan Braderitch fixing typoes (sp?)
@@ -33,6 +41,7 @@
 #   - Currently suited for OpenSSH needs to be tested with other SSH daemons
 # Tigris: needs root
 #   sshd -T needs root (it reads the host keys).
+# Tigris: offline
 #
 #-----------------------------------------------------------------------------
 #
@@ -186,8 +195,83 @@ parse_sshd_config_file()
 	}
 }
 
+# sshd_written FILE: sshd -T's output (lower case "keyword value" lines) as
+# worked out from the configuration files of the system audited, without
+# running sshd. expand_sshd FILE DEPTH writes FILE with each Include line
+# replaced by the files it names, in their lexical order, every file
+# between "#tigris-begin" and "#tigris-end" lines.
+expand_sshd()
+{
+	(
+	__f=$1 __d=$2
+	__h=`rootfile "$__f"`
+	[ -f "$__h" ] && [ "$__d" -le 16 ] || exit 0
+	echo "#tigris-begin"
+	$AWK '{ l = $0; sub(/^[ \t]+/, "", l)
+		if (tolower(l) ~ /^include([ \t=]|$)/) { sub(/^[^ \t=]*[ \t]*=?[ \t]*/, "", l); print "#tigris-include " l }
+		else print }' "$__h" |
+	while IFS= read -r __l
+	do
+		case "$__l" in
+		"#tigris-include "*)
+			set -f
+			for __p in ${__l#\#tigris-include }
+			do
+				set +f
+				case "$__p" in /*) ;; *) __p=/etc/ssh/$__p ;; esac
+				__dir=${__p%/*} __glob=${__p##*/}
+				for __n in `rootls "${__dir:-/}" | $SED 's,.*/,,' | $SORT`
+				do
+					case "$__n" in $__glob) expand_sshd "$__dir/$__n" `expr $__d + 1` ;; esac
+				done
+				set -f
+			done
+			set +f
+			;;
+		*) printf '%s\n' "$__l" ;;
+		esac
+	done
+	echo "#tigris-end"
+	)
+}
+sshd_written()
+{
+	# An sshd built without PAM (Alpine's openssh) has no UsePAM at all;
+	# one built with it has a PAM stack of its own
+	__pam=0
+	[ -f "`rootfile /etc/pam.d/sshd`" ] || [ -f "`rootfile /usr/lib/pam.d/sshd`" ] && __pam=1
+	expand_sshd "$1" 0 |
+	$AWK -v pam=$__pam '
+	# a Match block holds until the next Match (or "Match all") or the
+	# end of its file; an included file starts in its parent'"'"'s state
+	$0 == "#tigris-begin" { stack[++sp] = inmatch; next }
+	$0 == "#tigris-end" { inmatch = stack[sp--]; next }
+	# LoginGraceTime and the like: 1m30s, 2m, 90
+	function seconds(v,   t, n, u) {
+		t = 0
+		while (match(v, /^[0-9]+[smhdwSMHDW]?/)) {
+			n = substr(v, 1, RLENGTH); v = substr(v, RLENGTH + 1)
+			u = tolower(substr(n, length(n))); if (u ~ /[0-9]/) u = "s"; else n = substr(n, 1, length(n) - 1)
+			t += n * (u == "m" ? 60 : u == "h" ? 3600 : u == "d" ? 86400 : u == "w" ? 604800 : 1)
+		}
+		return v == "" ? t : -1
+	}
+	{ sub(/#.*/, ""); sub(/^[ \t]+/, ""); sub(/[ \t]+$/, "")
+	  if ($0 == "") next
+	  k = $0; sub(/[ \t=].*/, "", k); v = substr($0, length(k) + 1); k = tolower(k)
+	  sub(/^[ \t]*=?[ \t]*/, "", v); v = tolower(v)
+	  if (k == "match") { inmatch = (v != "all"); next }
+	  if (inmatch || (k == "usepam" && !pam)) next
+	  if (k == "challengeresponseauthentication") k = "kbdinteractiveauthentication"
+	  if (k == "logingracetime" && seconds(v) >= 0) v = seconds(v)
+	  if (!(k in seen)) { seen[k]; print k " " v } }
+	END {
+	  n = split("passwordauthentication yes|permitrootlogin prohibit-password|permitemptypasswords no|x11forwarding no|maxauthtries 6|usepam no|kbdinteractiveauthentication yes|logingracetime 120|hostbasedauthentication no|ignorerhosts yes|permituserenvironment no|loglevel info", d, "|")
+	  for (i = 1; i <= n; i++) { split(d[i], kv, " "); if (!(kv[1] in seen) && (pam || kv[1] != "usepam")) print d[i] } }'
+}
+
 # If SSHD_CONFIG is not defined we use some sane values
-[ -z "$SSHD_CONFIG" ] && {
+[ -z "$SSHD_CONFIG" ] && [ -z "$TIGRIS_ROOT" ] && {
 if [ -f /usr/local/etc/sshd_config ]; then
   SSHD_CONFIG=/usr/local/etc/sshd_config
 elif [ -f /etc/sshd_config ]; then
@@ -207,7 +291,18 @@ fi
 #
 effective=
 sshd_cmd=${Tiger_SSHD_Cmd:-}
-if [ -z "$sshd_cmd" ]; then
+if [ -n "$TIGRIS_ROOT" ] && [ -z "$sshd_cmd" ]; then
+	# An offline root's sshd_config (openSUSE ships its defaults in /usr/etc)
+	for SSHD_CONFIG in /etc/ssh/sshd_config /usr/etc/ssh/sshd_config /usr/local/etc/sshd_config ''
+	do
+		[ -z "$SSHD_CONFIG" ] || [ -f "`rootfile $SSHD_CONFIG`" ] && break
+	done
+	# no sshd_config: no sshd to check
+	[ -n "$SSHD_CONFIG" ] || exit 0
+	effective=$WORKDIR/sshd.effective.$$
+	safe_temp $effective
+	sshd_written $SSHD_CONFIG > $effective
+elif [ -z "$sshd_cmd" ]; then
 	for d in /usr/sbin /usr/local/sbin /sbin
 	do
 		[ -x "$d/sshd" ] && { sshd_cmd="$d/sshd -T"; break; }
@@ -218,7 +313,7 @@ if [ -z "$sshd_cmd" ]; then
 		*) [ -n "$sshd_cmd" ] && sshd_cmd="$sshd_cmd -f $SSHD_CONFIG" ;;
 	esac
 fi
-if [ -n "$sshd_cmd" ]; then
+if [ -z "$effective" ] && [ -n "$sshd_cmd" ]; then
 	effective=$WORKDIR/sshd.effective.$$
 	safe_temp $effective
 	$sshd_cmd 2>/dev/null | $TR 'A-Z' 'a-z' > $effective
@@ -232,7 +327,11 @@ setting()
 }
 
 if [ -n "$effective" ]; then
-	echo "# Checking the effective sshd configuration (sshd -T)..."
+	if [ -n "$TIGRIS_ROOT" ] && [ -z "$Tiger_SSHD_Cmd" ]; then
+		echo "# Checking the sshd configuration written in $SSHD_CONFIG and its Include files (sshd is not run on an offline root)..."
+	else
+		echo "# Checking the effective sshd configuration (sshd -T)..."
+	fi
 	# keyword, test, wanted, level, code, what the wrong value means.
 	# 'is' takes a case pattern; 'le' a number the value must not exceed.
 	while read key test want level code text

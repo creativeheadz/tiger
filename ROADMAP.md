@@ -583,12 +583,13 @@ what scripts and cron see.
   it. Lynis cannot do this. On master: the option, links resolved inside
   the root (`util/rootpath`), the host's package tools pointed at the
   root's databases, skip records saying "live system" or "not offline
-  yet", and six checks that read an offline root (package integrity on
-  dpkg, rpm, apk and pacman; updates waiting; PAM; dpkg's overrides).
-  Still to read one: systemd units (`systemctl --root`), the file
-  system scan, accounts and passwords, cron, SSH's configuration, sudo
-  (`cvtsudoers` on the root's sudoers), the sysctl.d files, storage's
-  fstab and crypttab.
+  yet", and the checks that read an offline root: package integrity on
+  dpkg, rpm, apk and pacman; updates waiting; PAM; dpkg's overrides;
+  sshd's configuration, worked out from its files as sshd would (the
+  same findings as `sshd -T` on five distributions). Still to read one:
+  systemd units (`systemctl --root`), the file system scan, accounts
+  and passwords, cron, sudo (`cvtsudoers` on the root's sudoers), the
+  sysctl.d files, storage's fstab and crypttab.
 - [ ] **A transparent summary**: counts by severity and category, and any
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old

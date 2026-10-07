@@ -16,8 +16,8 @@ Changes since 3.4.0 (unreleased)
   zypper --root, apk --root, pacman --sysroot. Nothing from the image
   is run. A check marks itself "# Tigris: offline" when it can read an
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
-  deb_statoverride, check_updates (without the reboot question) and
-  check_pam. Those marked "# Tigris: live system" (processes, sockets,
+  deb_statoverride, check_updates (without the reboot question),
+  check_pam and check_ssh. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -30,6 +30,18 @@ Changes since 3.4.0 (unreleased)
   the copy as of the system; tests/offline_check.sh covers the rest.
   Mounted read-only, dnf 4 and zypper cannot answer (they must write
   into the root) and upd004i quotes them.
+
+- check_ssh reads an offline root too: sshd is not run there (it would
+  be the host's, with the host's keys), so the effective configuration
+  is worked out from the root's sshd_config as sshd would: Include
+  files in place, relative ones from /etc/ssh, the first value of a
+  keyword kept, Match blocks set aside, Keyword=value, the old
+  ChallengeResponseAuthentication name, LoginGraceTime in minutes, and
+  OpenSSH's defaults for the rest (no UsePAM where sshd has no PAM
+  stack, as on Alpine). Then it is checked as sshd -T's output is. On
+  Debian, Fedora, Arch, openSUSE Tumbleweed and Alpine with
+  openssh-server installed, the findings from a copy of the root are
+  the findings sshd -T gives on the system.
 
 - deb_checkmd5sums checks every package with one md5sum run instead of
   one per package: on the reference machine 17.5 s instead of 20.5,
