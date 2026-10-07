@@ -17,8 +17,8 @@ Changes since 3.4.0 (unreleased)
   is run. A check marks itself "# Tigris: offline" when it can read an
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
   deb_statoverride, check_updates (without the reboot question),
-  check_pam, check_ssh, check_sudo, the account checks, cron and
-  check_units. Those marked "# Tigris: live system" (processes, sockets,
+  check_pam, check_ssh, check_sudo, the account checks, cron,
+  check_units, check_sysctl and check_network_config. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -66,6 +66,16 @@ Changes since 3.4.0 (unreleased)
   accounts); its group pattern's A-z also took [, \, ], ^ and the
   backquote. Without column it prints the duplicates one a line instead
   of stopping.
+
+- check_sysctl and check_network_config read an offline root: with no
+  /proc/sys of its own, its settings are the ones it applies at boot,
+  from its sysctl.d files layered as systemd-sysctl layers them (a file
+  in /etc replaces one of the same name further down, all of them in the
+  order of their names, globs such as net.ipv4.conf.*.rp_filter, keys
+  written with slashes) and /etc/sysctl.conf, read last as procps reads
+  it. A finding names the file that sets the value. A setting nothing
+  sets is left to the kernel's default, which depends on the kernel the
+  root boots, and is listed (lin041i), never guessed.
 
 - check_units reads an offline root: systemctl cat refuses --root, so
   units are read with systemd-analyze --root cat-config, which gives the

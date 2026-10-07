@@ -31,8 +31,16 @@
 #   https://www.kernel.org/doc/html/latest/admin-guide/sysctl/fs.html
 #   https://www.kernel.org/doc/html/latest/networking/ip-sysctl.html
 #
-# Tigris: live system
-#   Under --root it is skipped: it reads the running kernel's settings (/proc/sys).
+# 10/07/2026 atrimbitas - An offline root (--root): the settings it applies
+#                 at boot, from its sysctl.d files and sysctl.conf as
+#                 systemd-sysctl applies them (initdefs' sysctl_configured),
+#                 each finding naming the file that sets the value. A key
+#                 nothing sets is left to the kernel's default, which depends
+#                 on the kernel the root boots: those are listed (lin041i),
+#                 not guessed at. The CPU's flaws are the running machine's.
+#
+# Tigris: offline
+#   the settings the root applies at boot, from its sysctl.d.
 #
 #-----------------------------------------------------------------------------
 TigerInstallDir='.'
@@ -71,7 +79,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds CAT SED BASENAME || exit 1
+  haveallcmds AWK CAT SED SORT BASENAME || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
 
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -80,37 +88,22 @@ done
 
 #------------------------------------------------------------------------
 
-haveallcmds CAT SED BASENAME || exit 1
+haveallcmds AWK CAT SED SORT BASENAME || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
 sysdir="${Tiger_Sysctl_Root:-}/proc/sys"
-[ -d "$sysdir" ] || {
+[ -n "$TIGRIS_ROOT" ] || [ -d "$sysdir" ] || {
   message ERROR lin008e "" "The $sysdir filesystem is not available. Please make sure you have configured support for this pseudo-filesystem."
   exit 1
 }
-
-echo
-echo "# Checking kernel and network hardening settings (sysctl)"
 
 # One setting per line: key, test, value, level, code, what a bad value means.
 # The test is eq (must equal), ge (must be at least) or ne (must not be).
 # A setting this kernel does not have is skipped; so is one whose value is
 # not a plain number.
-while read key test want level code text
-do
-  case "$key" in ''|\#*) continue ;; esac
-  file="$sysdir/`echo "$key" | $SED 's/\./\//g'`"
-  [ -r "$file" ] || continue
-  value=`$CAT "$file" 2>/dev/null | $SED 's/[[:space:]].*//'`
-  case "$value" in ''|*[!0-9-]*) continue ;; esac
-  ok=N
-  case "$test" in
-    eq) [ "$value" -eq "$want" ] && ok=Y ;;
-    ge) [ "$value" -ge "$want" ] && ok=Y ;;
-    ne) [ "$value" -ne "$want" ] && ok=Y ;;
-  esac
-  [ "$ok" = N ] && message $level $code "" "$key is $value: $text"
-done <<EOF
+settings()
+{
+  $CAT <<EOF
 # kernel
 kernel.kptr_restrict                      ge 1 WARN lin020w kernel addresses are readable by any user
 kernel.dmesg_restrict                     eq 1 WARN lin021w the kernel log is readable by any user
@@ -134,6 +127,51 @@ net.ipv6.conf.default.accept_redirects    eq 0 WARN lin034w IPv6 ICMP redirects 
 net.ipv6.conf.all.accept_source_route     eq 0 FAIL lin035f IPv6 source routing is accepted
 net.ipv6.conf.default.accept_source_route eq 0 FAIL lin035f IPv6 source routing is accepted on new interfaces
 EOF
+}
+
+# good VALUE TEST WANT: whether VALUE passes
+good()
+{
+  case "$2" in
+    eq) [ "$1" -eq "$3" ] ;;
+    ge) [ "$1" -ge "$3" ] ;;
+    ne) [ "$1" -ne "$3" ] ;;
+  esac
+}
+
+if [ -n "$TIGRIS_ROOT" ]; then
+  echo
+  echo "# Checking the kernel and network settings $TIGRIS_ROOT applies at boot (sysctl.d)"
+  SYSCTL_CONF=$WORKDIR/sysctl.conf.$$
+  unset_keys=$WORKDIR/sysctl.unset.$$
+  safe_temp $SYSCTL_CONF $unset_keys
+  trap 'delete $SYSCTL_CONF $unset_keys; exit 1' 1 2 3 15
+  sysctl_configured > $SYSCTL_CONF
+  settings | while read key test want level code text
+  do
+    case "$key" in ''|\#*) continue ;; esac
+    set -- `sysctl_value "$key"`
+    [ $# -ge 2 ] || { echo "$key" >> $unset_keys; continue; }
+    value=$1 file=$2
+    case "$value" in ''|*[!0-9-]*) continue ;; esac
+    good "$value" "$test" "$want" || message $level $code "" "$key is $value (set in $file): $text"
+  done
+  [ -s $unset_keys ] && message INFO lin041i "`$SORT -u $unset_keys | $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }'`." "Some hardening settings are set by nothing in $TIGRIS_ROOT's sysctl configuration: they are left to the kernel's defaults, which depend on the kernel it boots."
+  delete $SYSCTL_CONF $unset_keys
+  exit 0
+fi
+
+echo
+echo "# Checking kernel and network hardening settings (sysctl)"
+settings | while read key test want level code text
+do
+  case "$key" in ''|\#*) continue ;; esac
+  file="$sysdir/`echo "$key" | $SED 's/\./\//g'`"
+  [ -r "$file" ] || continue
+  value=`$CAT "$file" 2>/dev/null | $SED 's/[[:space:]].*//'`
+  case "$value" in ''|*[!0-9-]*) continue ;; esac
+  good "$value" "$test" "$want" || message $level $code "" "$key is $value: $text"
+done
 
 # The kernel's own verdict on each hardware speculation flaw: "Not affected",
 # "Mitigation: ..." or "Vulnerable", sometimes with a reason after a colon.

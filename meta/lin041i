@@ -1,0 +1,16 @@
+Id: lin041i
+Severity: INFO
+Category: kernel
+Check: check_sysctl
+References: sysctl.d(5), systemd-sysctl(8)
+
+Auditing a system that is not running (tigris --root), the kernel and
+network settings are read from what it applies at boot: its sysctl.d
+files and sysctl.conf. The settings listed are hardening ones that
+nothing there sets, so they take the kernel's own default when it boots,
+and that depends on the kernel: its version, how it was configured and
+what its distribution changed. Some kernels default to the safe value
+and some do not; Tigris cannot know which this one will boot.
+
+To be sure, set each in a file of /etc/sysctl.d (for example
+/etc/sysctl.d/90-hardening.conf) to the value the live check wants.

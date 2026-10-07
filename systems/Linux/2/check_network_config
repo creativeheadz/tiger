@@ -34,8 +34,14 @@
 # http://www.linuxsecurity.com/articles/network_security_article-4528.html
 # http://linux.oreillynet.com/pub/a/linux/2000/11/16/LinuxAdmin.html
 # 
-# Tigris: live system
-#   Under --root it is skipped: it reads the running kernel's network settings (/proc).
+# 10/07/2026 atrimbitas - An offline root (--root): the IPv4 settings it applies
+#   at boot, from its sysctl.d files and sysctl.conf (initdefs'
+#   sysctl_configured). A setting nothing there sets is left alone: its
+#   value is the kernel's default, which depends on the kernel the root
+#   boots (check_sysctl lists such settings, lin041i).
+#
+# Tigris: offline
+#   the network settings the root applies at boot, from its sysctl.d.
 #
 #-----------------------------------------------------------------------------
 # TODO
@@ -78,14 +84,14 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds CAT || exit 1
+  haveallcmds AWK CAT TR || exit 1
   haveallfiles PROCDIR BASEDIR WORKDIR || exit 1
   
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
   exit 0
 }
 #------------------------------------------------------------------------
-haveallcmds CAT || exit 1
+haveallcmds AWK CAT TR || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 haveallfiles PROCDIR || {
         message ERROR lin008e "" "The $PROCDIR filesystem is not available. Please make sure you have configured support for this pseudo-filesystem."
@@ -97,9 +103,25 @@ echo "# Checking network configuration"
 # Instead of using the sysctl interface we are going to $CAT from the
 # specified locations
 
+# On an offline root, the settings it applies at boot
+[ -n "$TIGRIS_ROOT" ] && {
+	SYSCTL_CONF=$WORKDIR/sysctl.conf.$$
+	safe_temp $SYSCTL_CONF
+	trap 'delete $SYSCTL_CONF; exit 1' 1 2 3 15
+	sysctl_configured > $SYSCTL_CONF
+}
+
 read_if_exist() {
 # Reads a file if it exists
 # Otherwise returns 1
+# On an offline root: the value its sysctl.d sets, or 3 when nothing sets
+# it (the kernel's default, unknown here), which no test below acts on
+	if [ -n "$TIGRIS_ROOT" ]; then
+		key=`echo "${1#/proc/sys/}" | $TR / .`
+		set -- `sysctl_value "$key"`
+		case "$1" in 0|1|2) return $1 ;; esac
+		return 3
+	fi
 	file=$1
 	value=1
 	[ -f $1 ] && value=`$CAT $file`
@@ -181,4 +203,5 @@ secure_redirects=$?
 
 # The local firewall test that was here (lin019f) is check_firewall now
 
+[ -n "$TIGRIS_ROOT" ] && delete $SYSCTL_CONF
 exit 0

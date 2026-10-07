@@ -680,6 +680,61 @@ rootls()
   done
 }
 
+# sysctl_configured: the kernel settings the system audited applies at
+# boot, "key<TAB>value<TAB>file" in the order they are applied (the last of
+# a key wins), as systemd-sysctl applies them: the *.conf files of
+# /etc/sysctl.d, /run/sysctl.d, /usr/local/lib/sysctl.d, /usr/lib/sysctl.d
+# and /lib/sysctl.d, one of a name (the first of those directories that
+# has it), in the order of their names; then /etc/sysctl.conf, as procps'
+# sysctl --system reads it, unless one of those files is a link to it.
+# Keys written with / are given with dots; a key may be a glob. For an
+# offline root, where /proc/sys is not that system's.
+sysctl_configured()
+{
+  __main=`rootfile /etc/sysctl.conf`
+  safe_temp $WORKDIR/sysctl.files.$$
+  {
+    for __d in /etc/sysctl.d /run/sysctl.d /usr/local/lib/sysctl.d /usr/lib/sysctl.d /lib/sysctl.d
+    do
+      rootls $__d
+    done | $AWK '/\.conf$/ { n = $0; sub(/.*\//, "", n); if (!(n in seen)) { seen[n]; print n "\t" $0 } }' |
+      $SORT | $AWK -F'\t' '{ print $2 }'
+  } | while IFS= read -r __f
+  do
+    __h=`rootfile "$__f"`
+    [ "$__h" = "$__main" ] && __main=
+    printf '%s\t%s\n' "$__f" "$__h"
+  done > $WORKDIR/sysctl.files.$$
+  [ -n "$__main" ] && [ -f "$__main" ] && printf '/etc/sysctl.conf\t%s\n' "$__main" >> $WORKDIR/sysctl.files.$$
+  while IFS='	' read -r __f __h
+  do
+    [ -f "$__h" ] || continue
+    $AWK -v src="$__f" '
+      { sub(/^[ \t]+/, "") }
+      /^[#;]/ || !/=/ { next }
+      {
+        k = $0; sub(/[ \t]*=.*/, "", k); sub(/^-/, "", k); gsub(/\//, ".", k)
+        v = $0; sub(/^[^=]*=[ \t]*/, "", v); sub(/[ \t]+$/, "", v)
+        if (k != "") printf "%s\t%s\t%s\n", k, v, src
+      }' "$__h"
+  done < $WORKDIR/sysctl.files.$$
+  delete $WORKDIR/sysctl.files.$$
+}
+
+# sysctl_value KEY: the value an offline root sets KEY to at boot, and the
+# file that sets it, "value<TAB>file"; nothing when nothing sets it. Reads
+# what sysctl_configured wrote to $SYSCTL_CONF.
+sysctl_value()
+{
+  $AWK -F'\t' -v key="$1" '
+    {
+      p = $1
+      gsub(/\./, "\\.", p); gsub(/\*/, ".*", p); gsub(/\?/, ".", p)
+      if (key ~ ("^" p "$")) { v = $2; f = $3 }
+    }
+    END { if (f != "") printf "%s\t%s\n", v, f }' "$SYSCTL_CONF"
+}
+
 # skip_check SCRIPT: whether a check runs here, from what its header says.
 # When it does not, a "# Skipped" line goes in the report and a skip record
 # in the JSON, and it returns 0.

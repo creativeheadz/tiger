@@ -65,6 +65,8 @@ run()
 }
 
 fail=0
+ok()  { echo "ok   $1"; }
+bad() { echo "FAIL $1"; fail=1; }
 build "$W/bad" 2
 run "$W/bad" > "$W/bad.out"
 for code in $expected
@@ -93,5 +95,32 @@ else
   echo "ok   a missing setting is skipped"
 fi
 
-[ $fail -eq 0 ] && echo "PASS" || { echo "--- bad.out"; cat "$W/bad.out"; }
+# An offline root (TIGRIS_ROOT, as tigris --root sets it): no /proc/sys of
+# its own, so the settings it applies at boot, from its sysctl.d files the
+# way systemd-sysctl layers them, for check_sysctl and check_network_config
+R=$W/img
+mkdir -p "$R/etc/sysctl.d" "$R/usr/lib/sysctl.d"
+printf 'net.ipv4.ip_forward = 1\nkernel/sysrq=1\n' > "$R/usr/lib/sysctl.d/50-vendor.conf"
+printf 'net.ipv4.ip_forward=0\n' > "$R/etc/sysctl.d/50-vendor.conf"
+printf -- '-net.ipv4.conf.*.accept_redirects = 1\n; a comment\nkernel.randomize_va_space = 1\n' > "$R/etc/sysctl.d/60-local.conf"
+printf 'kernel.dmesg_restrict = 0\n' > "$R/etc/sysctl.conf"
+echo "Tiger_Show_INFO_Msgs=Y" >> "$W/tigerrc"
+for c in check_sysctl check_network_config
+do
+  ( cd "$W" && TIGRIS_ROOT=$R TIGERHOMEDIR=$W sh systems/Linux/2/$c 2>&1 )
+done | awk '/^--/ { if (l != "") print l; l = $0; next } /^[ \t]/ { sub(/^[ \t]+/, " "); l = l $0; next } { if (l != "") print l; l = "" } END { if (l != "") print l }' |
+  tr -s ' ' > "$W/root.out"
+has() { grep -F -q -- "$1" "$W/root.out"; }
+has '[lin023f] kernel.randomize_va_space is 1 (set in /etc/sysctl.d/60-local.conf)' &&
+  ok "offline root: a setting from its sysctl.d, naming the file: lin023f" || bad "offline lin023f"
+has '[lin021w] kernel.dmesg_restrict is 0 (set in /etc/sysctl.conf)' && ok "offline root: /etc/sysctl.conf, read last" || bad "offline sysctl.conf"
+has 'kernel.sysrq is' && bad "offline root: a vendor file replaced by one of the same name in /etc was read" ||
+  ok "offline root: /etc/sysctl.d/50-vendor.conf replaces the vendor's file of that name"
+has '[lin015w]' && bad "offline root: ip_forward from the replaced file" || ok "offline root: the replacing file's ip_forward=0 holds"
+has '[lin012w] The system accepts ICMP redirection messages' &&
+  ok "offline root: a glob (net.ipv4.conf.*.accept_redirects) reaches all and default: lin012w" || bad "offline glob"
+has '[lin041i]' && has 'kernel.kptr_restrict' && ok "offline root: settings nothing sets are listed, not guessed: lin041i" || bad "offline lin041i"
+has '[lin013f]' && bad "offline root: an unset tcp_syncookies was taken for 0" || ok "offline root: an unset setting is no finding"
+
+[ $fail -eq 0 ] && echo "PASS" || { echo "--- bad.out"; cat "$W/bad.out"; echo "--- root.out"; cat "$W/root.out"; }
 exit $fail
