@@ -164,6 +164,13 @@ echo "       -c name"
 echo "              Specify  an  alternate  name for the tigerrc control"
 echo "              file.  The default is '$RCFILE'."
 echo ""
+echo "       -p name, --profile name"
+echo "              Apply a profile on top of the tigerrc: its settings"
+echo "              replace the tigerrc's. Profiles are files in the"
+echo "              profiles directory beside the tigerrc, then in"
+echo "              Tigris's own: quick (no filesystem scan), server,"
+echo "              desktop and container."
+echo ""
 echo "       -e     This option will cause explanations to be  inserted"
 echo "              into  the  security  report following each message."
 echo "              This can greatly increase the size of  the  report,"
@@ -265,6 +272,7 @@ checkfile()
   export TIGERHOMEDIR RCFILE IGNORE_FILE ACCEPT_FILE
   export Tiger_TESTMODE TigerCleanup HTML
   SINCE_RUN=
+  PROFILE=
   doversion=0
   
   while [ $# != 0 ]
@@ -277,6 +285,9 @@ checkfile()
      -w) WORKDIR=$2; shift;;
      -b) BINDIR=$2; shift;;
      -c) RCFILE=$2; shift;;
+     -p|--profile)
+        [ $# -ge 2 ] || { echo "--ERROR-- [con013e] $1 needs the name of a profile: quick, server, desktop, container."; exit 1; }
+        PROFILE=$2; shift;;
      -e) EXPLAINREPORT=I;;
      -E) EXPLAINREPORT=Y;;
      -G) do_siggen;;
@@ -454,6 +465,29 @@ checkfile()
     $SED -e 's/^\(.*\)=/export \1; \1=/' > $tempfile
     . $tempfile
     $RM -f $tempfile
+  }
+
+  #
+  # A profile, read the same way after the tigerrc, so its settings win:
+  # the site's (profiles beside the tigerrc) before Tigris's own
+  #
+  [ -n "$PROFILE" ] && {
+    case "$PROFILE" in
+      *[!a-z0-9_-]*) echo "--ERROR-- [con013e] There is no profile '$PROFILE': a profile's name is letters, digits, - and _."; exit 1 ;;
+    esac
+    pfile=
+    case "$RCFILE" in */*) rcdir=${RCFILE%/*} ;; *) rcdir=. ;; esac
+    for dir in "$rcdir/profiles" "$BASEDIR/profiles"
+    do
+      [ -f "$dir/$PROFILE" ] && checkfile "$dir/$PROFILE" "$dir/$PROFILE" && { pfile="$dir/$PROFILE"; break; }
+    done
+    [ -n "$pfile" ] || { echo "--ERROR-- [con013e] There is no profile '$PROFILE' (in $rcdir/profiles or $BASEDIR/profiles)."; exit 1; }
+    tempfile=`mktemp "$WORKDIR/rcfile.XXXXXX" 2>/dev/null` || tempfile=$WORKDIR/rcfile.$$
+    $GREP -v '^#' "$pfile" |
+    $SED -e 's/^\(.*\)=/export \1; \1=/' > $tempfile
+    . $tempfile
+    $RM -f $tempfile
+    export PROFILE
   }
 
   HOSTNAME=`$GETHOSTNAME`

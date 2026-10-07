@@ -146,7 +146,12 @@ END {
     for (i = 1; i <= nold; i++) if (substr(oldorder[i], index(oldorder[i], "\t") + 1, 4) == "fsys") { delete old[oldorder[i]]; oldorder[i] = "" }
     for (i = 1; i <= nnew; i++) if (substr(neworder[i], index(neworder[i], "\t") + 1, 4) == "fsys") { delete new[neworder[i]]; neworder[i] = "" }
   }
-  config1 = jtext(run[1], "config"); config2 = jtext(run[2], "config")
+  # a profile on top of the tigerrc counts as part of the configuration
+  for (r = 1; r <= 2; r++) {
+    c = jtext(run[r], "config"); p = jtext(run[r], "profile")
+    cfg[r] = c "|" p; show[r] = (c == "" ? "?" : c) (p == "" ? "" : " with profile " p)
+  }
+  config1 = cfg[1]; config2 = cfg[2]
   nres = 0; nadd = 0; same = 0
   for (i = 1; i <= nold; i++) { k = oldorder[i]; if (k == "") continue; if (!(k in new)) resolved[++nres] = k; else same++ }
   nopen = 0
@@ -166,7 +171,7 @@ END {
     if (setaside)
       printf "  note: %s, so its findings (fsys*) are left out of both sides\n", (noscan1 && noscan2 ? "neither run scanned the file system" : (noscan1 ? "the first run did not scan the file system" : "the second run did not scan the file system"))
     if (config1 != config2)
-      printf "  note: the runs used different configurations (%s, %s); a check on in only one of them shows its findings as new or resolved\n", (config1 == "" ? "?" : config1), (config2 == "" ? "?" : config2)
+      printf "  note: the runs used different configurations (%s, %s); a check on in only one of them shows its findings as new or resolved\n", show[1], show[2]
     printf "  new (%d):\n", nadd
     for (i = 1; i <= nadd; i++) { r = new[added[i]]; printf "    + %-5s %s %s%s\n", jtext(r, "level"), jtext(r, "id"), jtext(r, "message"), (index(r, "\"accepted\":{") ? " (accepted)" : "") }
     printf "  resolved (%d):\n", nres

@@ -169,6 +169,7 @@ MISCDIRS=./bin \
 	./doc \
 	./html \
 	./meta \
+	./profiles \
 	./scripts/sub \
 	./systems
 

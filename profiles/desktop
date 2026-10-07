@@ -1,0 +1,15 @@
+#
+# Profile "desktop": one person's workstation or laptop. The checks for
+# what only servers run are left out; the rest stays, the filesystem scan
+# included.
+#
+#   sudo ./tigris --profile desktop
+#
+# Read after the tigerrc; only what differs from it.
+#
+# Stringent checks of network servers' configuration.
+Tiger_Check_STRICTNW=N
+# NFS exports and mail aliases: a workstation exports nothing and runs no
+# mail server.
+Tiger_Check_EXPORTS=N
+Tiger_Check_ALIASES=N

@@ -5,11 +5,13 @@
 # minute on a machine whose full run takes three.
 #
 # Run it with:  sudo ./tigris -c tigerrc-quick
+# or, the same:  sudo ./tigris --profile quick
 #
-# This file is a copy of tigerrc with one change (FILESYSTEM below).
-# Keep it in step with tigerrc: copy that file over this one and flip
-# the switch again. Profiles cannot be short: an unset Tiger_Check_*
-# means "run", so every profile repeats the whole file.
+# This file is a copy of tigerrc with one change (FILESYSTEM below), kept
+# for those who used it with 3.3.0. Profiles are now short files in
+# profiles/ read on top of the tigerrc (--profile); tests/profile_check.sh
+# holds this file to tigerrc plus profiles/quick. Keep it in step with
+# tigerrc: copy that file over this one and flip the switch again.
 #
 # This file is preprocessed, and thus can *only* contain variable
 # assignments and comments.

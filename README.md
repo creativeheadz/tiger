@@ -53,7 +53,14 @@ report is written to
 In a hurry, run the quick profile instead: everything except the
 filesystem scan, about a minute where the full run takes three:
 
-    sudo ./tigris -c tigerrc-quick
+    sudo ./tigris --profile quick
+
+A profile is a short file in `profiles/` read on top of `tigerrc`.
+Besides `quick` there are `server` (no USB storage, every account's
+PATH, processes using deleted files), `desktop` (without the checks for
+what only servers run) and `container` (for an image or a container,
+without the host's kernel, boot, firewall and disks). A profile of your
+own goes in a `profiles/` directory beside your `tigerrc`.
 
 Tigris needs no compiler. If you have one, `make && make -C c install`
 builds a few small C helpers into `bin/`, which Tigris then prefers to

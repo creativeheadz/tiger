@@ -382,6 +382,15 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   detail says which was used. `util/pkgspecial` agreed exactly with
   `find -perm` in Fedora (9 setuid), Arch (12 setuid, 3 setgid) and
   Alpine with sudo and shadow added (7, 1).
+- [x] **Profiles as overlays**: `tigris --profile NAME` (or `-p`) reads
+  `profiles/NAME` after the tigerrc, beside it first, then Tigris's own,
+  so a profile holds only what differs: `quick` (no filesystem scan, the
+  same as `tigerrc-quick`, which stays), `server` (USB storage
+  forbidden, every account's PATH, processes using deleted files),
+  `desktop` (no checks for server-only services), `container` (none of
+  the host's kernel, boot, firewall, systemd or disks). An unknown
+  profile stops the run (con013e). The run record names the profile,
+  and tigris-diff counts it as part of the configuration.
 
 ## 3.2.x: maintenance
 
@@ -465,8 +474,9 @@ open items below ship from 3.4.0 on.
 **Profiles** (also the answer to "lean")
 - [x] `quick`: leaves the filesystem scan out. 62 s on Hera, where the
   full run takes about three minutes on a busy disk.
-- [ ] `server`, `desktop` and `container`, each a short tigerrc selecting
-  the checks and the prune list that make sense for that kind of machine.
+- [x] `server`, `desktop` and `container`, each a short tigerrc selecting
+  the checks and the prune list that make sense for that kind of machine
+  (`--profile NAME`, files in `profiles/`; on master since 3.3.0).
 - [ ] A non-root mode that reports "skipped: needs root" for the checks
   that need it, instead of guessing.
 

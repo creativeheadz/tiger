@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# tests/profile_check.sh - tigerrc-quick differs from tigerrc in one line
+# tests/profile_check.sh - tigerrc-quick differs from tigerrc in one line,
+# and the profiles are overlays config applies
 #
 # The quick profile is a full copy of tigerrc with the filesystem scan
 # turned off (an unset Tiger_Check_* means "run", so profiles cannot be
@@ -28,8 +29,10 @@ norm() {
 
 norm "$TIGER/tigerrc" > "$W/rc.txt"
 norm "$TIGER/tigerrc-quick" > "$W/quick.txt"
-diff "$W/rc.txt" "$W/quick.txt" > "$W/diff.txt"; st=$?
-if [ $st -eq 0 ]; then
+# comm, not diff: busybox's diff and an image without diffutils differ.
+# Lines only in tigerrc come out as "< line", only in tigerrc-quick "> line"
+comm -3 "$W/rc.txt" "$W/quick.txt" | sed -e 's/^	/> /' -e 's/^\([^>]\)/< \1/' > "$W/diff.txt"
+if [ ! -s "$W/diff.txt" ]; then
   bad "tigerrc-quick is identical to tigerrc; it must turn the scan off"
 elif [ "`grep -c '^[<>]' "$W/diff.txt"`" -eq 2 ] && \
      grep -q '^< Tiger_Check_FILESYSTEM=Y$' "$W/diff.txt" && \
@@ -37,9 +40,46 @@ elif [ "`grep -c '^[<>]' "$W/diff.txt"`" -eq 2 ] && \
   ok "tigerrc-quick differs from tigerrc only in Tiger_Check_FILESYSTEM"
 else
   bad "settings drifted between tigerrc and tigerrc-quick:"
-  grep '^[<>]' "$W/diff.txt" | sed -e 's/^< /     tigerrc:       /' -e 's/^> /     tigerrc-quick: /'
+  sed -e 's/^< /     tigerrc:       /' -e 's/^> /     tigerrc-quick: /' "$W/diff.txt"
   fail=1
 fi
+
+# The profiles are overlays: each sets only settings the tigerrc has (a
+# mistyped name would otherwise do nothing), and quick is what turns
+# tigerrc into tigerrc-quick
+known=`sed -n 's/^\([A-Za-z_][A-Za-z_0-9]*\)=.*/\1/p' "$W/rc.txt" | sort -u`
+for p in "$TIGER"/profiles/*
+do
+  name=${p##*/}
+  unknown=`norm "$p" | sed -n 's/^\([A-Za-z_][A-Za-z_0-9]*\)=.*/\1/p' | sort -u | while read v; do echo "$known" | grep -qx "$v" || echo "$v"; done`
+  [ -z "$unknown" ] && ok "profile $name sets only settings tigerrc has" || bad "profile $name sets settings tigerrc does not have: `echo $unknown`"
+  case "$name" in *[!a-z0-9_-]*) bad "profile name $name is not letters, digits, - and _" ;; esac
+done
+# tigerrc with the quick profile on top, as config reads them: later wins
+norm "$TIGER/profiles/quick" > "$W/pquick.txt"
+awk -F= 'NR == FNR { p[$1] = $0; next } { print ($1 in p) ? p[$1] : $0 }' "$W/pquick.txt" "$W/rc.txt" | sort > "$W/overlay.txt"
+if [ -z "`comm -3 "$W/overlay.txt" "$W/quick.txt"`" ]; then
+  ok "tigerrc with profiles/quick on top is tigerrc-quick"
+else
+  bad "tigerrc + profiles/quick differs from tigerrc-quick:"; comm -3 "$W/overlay.txt" "$W/quick.txt" | sed 's/^/     /'
+fi
+
+# config itself: --profile applies it, a missing one stops the run
+X=`mktemp -d`
+( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$X" && tar -xf - )
+mkdir -p "$X/run" "$X/log"
+printf 'basedir=$TIGERHOMEDIR\n. $basedir/config\necho "FILESYSTEM=$Tiger_Check_FILESYSTEM USB=$Tiger_Storage_NoUSB PROFILE=$PROFILE"\n' > "$X/drive.sh"
+( cd "$X" && TIGERHOMEDIR=$X sh ./drive.sh --profile quick 2>&1 ) | grep -q '^FILESYSTEM=N USB=N PROFILE=quick$' &&
+  ok "--profile quick turns the scan off" || bad "--profile quick"
+( cd "$X" && TIGERHOMEDIR=$X sh ./drive.sh -p server 2>&1 ) | grep -q '^FILESYSTEM=Y USB=Y PROFILE=server$' &&
+  ok "-p server forbids USB storage and keeps the scan" || bad "-p server"
+mkdir -p "$X/profiles"; printf 'Tiger_Storage_NoUSB=Y\n' > "$X/profiles/site"; chmod 644 "$X/profiles/site"
+( cd "$X" && TIGERHOMEDIR=$X sh ./drive.sh -c "$X/tigerrc" --profile site 2>&1 ) | grep -q 'USB=Y PROFILE=site$' &&
+  ok "a site's own profile, beside the tigerrc" || bad "site profile"
+out=`cd "$X" && TIGERHOMEDIR=$X sh ./drive.sh --profile nosuch 2>&1`; st=$?
+[ $st -ne 0 ] && echo "$out" | grep -q 'con013e.*There is no profile .nosuch.' && ! echo "$out" | grep -q '^FILESYSTEM=' &&
+  ok "an unknown profile: con013e, and the run stops" || bad "unknown profile: $out"
+rm -rf "$X"
 
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

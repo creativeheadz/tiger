@@ -1,0 +1,12 @@
+Id: con013e
+Severity: ERROR
+Category: tigris
+Check: config
+
+The profile given with --profile (or -p) does not exist, or its name is
+not letters, digits, - and _. Profiles are files read after the tigerrc,
+looked for in the profiles directory beside it, then in Tigris's own
+(quick, server, desktop, container). The run stops before any check, so
+that a mistyped name does not quietly audit with the wrong settings. A
+profile file writable by its group or by anyone is ignored, as a tigerrc
+is (con003c).

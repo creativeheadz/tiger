@@ -75,6 +75,11 @@
           "type": "string",
           "description": "Path of the tigerrc the run used."
         },
+        "profile": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$",
+          "description": "The profile applied on top of the tigerrc (--profile), when there was one: quick, server, desktop, container, or a site's own. Absent in reports older than the field, and when none was."
+        },
         "start": {
           "$ref": "#/$defs/timestamp"
         },

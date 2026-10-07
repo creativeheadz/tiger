@@ -27,6 +27,7 @@ order:
 | `tool`, `version` | `tigris` and the release that produced the file. |
 | `host`, `os`, `release`, `arch` | What was audited. `release` is the kernel on Linux. |
 | `config` | The `tigerrc` the run used, since that decides what was checked. |
+| `profile` | Optional. The profile applied on top of it (`--profile`): `quick`, `server`, `desktop`, `container`, or a site's own. A diff between runs with different configs or profiles says `configs_differ`. |
 | `filesystem_scan` | `false` when the filesystem scan was switched off (the quick profile). Such a run has no `fsys*` findings because it did not look for them, not because there are none. Absent in reports from before the field existed, which always scanned. |
 | `start` | UTC, `YYYY-MM-DDTHH:MM:SSZ`. |
 

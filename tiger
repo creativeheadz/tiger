@@ -244,7 +244,10 @@ echo "Tiger security scripts *** $version ***"
     # findings, which tigris-diff must not read as "resolved"
     fsscan=true
     [ "$Tiger_Check_FILESYSTEM" = 'N' ] && fsscan=false
-    echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\",\"filesystem_scan\":$fsscan,\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
+    # the profile (--profile) applied on top of the tigerrc, when one was
+    profile=
+    [ -n "$PROFILE" ] && profile=",\"profile\":\"$PROFILE\""
+    echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\"$profile,\"filesystem_scan\":$fsscan,\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
   }
 }
 
