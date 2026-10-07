@@ -665,7 +665,8 @@ noroot=`$GREP -c '^# Skipped [^:]*: it needs root' $logtmp 2>/dev/null`
         i = index(s, "\"new\":["); j = index(s, "],\"resolved\":[")
         k = index(s, "],\"unchanged\":")
         new = substr(s, i + 7, j - i - 7); res = substr(s, j + 14, k - j - 14)
-        n = (new == "" ? 0 : split(new, r, "{\"type\":\"finding\",") - 1)
+        # [{]: busybox awk takes a leading { in a pattern for a repetition
+        n = (new == "" ? 0 : split(new, r, "[{]\"type\":\"finding\",") - 1)
         w = 0
         for (m = 2; m <= n + 1; m++) {
           if (index(r[m], "\"accepted\":{")) continue
@@ -676,7 +677,7 @@ noroot=`$GREP -c '^# Skipped [^:]*: it needs root' $logtmp 2>/dev/null`
           else if (r[m] ~ /^"level":"ERROR"/) l = 2
           if (l > w) w = l
         }
-        print w, n, (res == "" ? 0 : split(res, x, "{\"type\":\"finding\",") - 1)
+        print w, n, (res == "" ? 0 : split(res, x, "[{]\"type\":\"finding\",") - 1)
       }'`
       tiger_status=${1:-0}
       # a run with skipped checks is still one where checks could not run

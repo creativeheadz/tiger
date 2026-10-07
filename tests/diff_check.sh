@@ -39,7 +39,7 @@ sh "$D" "$A" "$B" > "$W/out.txt"; st=$?
 grep -q '^  new (2):' "$W/out.txt" && grep -q '+ WARN  dev004w /dev/kmsg is world readable' "$W/out.txt" && ok "the new finding is listed" || bad "new finding"
 grep -q '^  resolved (2):' "$W/out.txt" && grep -q -- '- WARN  ssh004w sshd: passwordauthentication' "$W/out.txt" && ok "the resolved finding is listed" || bad "resolved finding"
 grep -q 'unchanged: 1 (INFO not compared' "$W/out.txt" && ok "one unchanged, INFO left out" || bad "unchanged count"
-grep -q "$(printf '/etc/odd "quoted" caf\351 is a dangling symlink (still)')" "$W/out.txt" && ok "message with escapes decoded for display" || bad "decoding"
+grep -F -q "$(printf '/etc/odd "quoted" caf\351 is a dangling symlink (still)')" "$W/out.txt" && ok "message with escapes decoded for display" || bad "decoding"
 grep -q 'Tigris diff: box 2026-10-04T10:00:00Z -> box 2026-10-04T11:00:00Z' "$W/out.txt" && ok "header names host and times" || bad "header"
 grep -q 'cron004w\|lin002i' "$W/out.txt" && bad "INFO leaked into the default diff" || ok "INFO not in the default diff"
 

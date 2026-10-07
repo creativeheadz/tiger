@@ -50,7 +50,12 @@ else
   [ "`grep -c '^# Skipped ' "$report"`" = 0 ] && grep -q '"type":"summary".*"skipped":0}' "$json" &&
     ok "as root: nothing skipped, \"skipped\":0" || { bad "root skipped something"; grep Skipped "$report"; }
 fi
-sh "$W/tests/schema_check.sh" "$json" > "$W/schema.out" 2>&1 && ok "the report validates" || { bad "schema"; cat "$W/schema.out"; }
+sh "$W/tests/schema_check.sh" "$json" > "$W/schema.out" 2>&1
+case $? in
+  0) ok "the report validates" ;;
+  2) ok "(the schema is not checked here: `tail -1 "$W/schema.out"`)" ;;
+  *) bad "schema"; cat "$W/schema.out" ;;
+esac
 
 # tigris-diff: a check skipped in one run is left out of both sides
 cat > "$W/a.jsonl" <<'EOF'
@@ -70,8 +75,11 @@ grep -q '"resolved":\[{"type":"finding","level":"WARN","id":"time001w"' "$W/diff
   ok "tigris-diff: the skipped check's finding is not resolved; the other one is" || { bad "diff"; cat "$W/diff.json"; }
 sh "$W/tigris-diff" "$W/a.jsonl" "$W/b.jsonl" | grep -q 'note: skipped in either run (not root, or a check that cannot read an offline root), so left out of both sides: check_sudo' &&
   ok "tigris-diff's text says so" || bad "diff text"
-sh "$W/tests/schema_check.sh" "$W/a.jsonl" > /dev/null 2>&1 && sh "$W/tests/schema_check.sh" "$W/b.jsonl" > /dev/null 2>&1 &&
-  ok "both hand-made reports validate" || bad "schema of the hand-made reports"
+sh "$W/tests/schema_check.sh" "$W/a.jsonl" > /dev/null 2>&1; sa=$?
+sh "$W/tests/schema_check.sh" "$W/b.jsonl" > /dev/null 2>&1; sb=$?
+if [ $sa = 0 ] && [ $sb = 0 ]; then ok "both hand-made reports validate"
+elif [ $sa = 2 ] && [ $sb = 2 ]; then ok "(the schema is not checked here)"
+else bad "schema of the hand-made reports"; fi
 
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

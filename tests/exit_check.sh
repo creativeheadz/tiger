@@ -13,6 +13,8 @@ W=`mktemp -d`
 trap 'rm -rf "$W"' 0
 ( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
 mkdir -p "$W/log" "$W/run"
+# as root, the tree must be root's for Tigris to run its scripts
+[ "`id -u`" = 0 ] && chown -R 0:0 "$W"
 fail=0
 ok()   { echo "ok   $1"; }
 bad()  { echo "FAIL $1"; fail=1; }

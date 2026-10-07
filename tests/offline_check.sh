@@ -75,7 +75,12 @@ grep -q '{"type":"skip","check":"check_timesync","reason":"live system"}' "$json
 grep -q "\"type\":\"run\".*\"root\":\"$R\"" "$json" && ok "the run record names the root" || { bad "run record"; head -1 "$json"; }
 [ "$st" = 3 ] && ok "exit status 3: the WARN; skipping what does not apply to an offline root is not an error" || bad "exit status $st"
 grep -q "Checking time synchronisation\|signature check of system binaries" "$report" && bad "a skipped check ran" || ok "the skipped checks did not run"
-sh "$W/tests/schema_check.sh" "$json" > "$W/schema.out" 2>&1 && ok "the report validates" || { bad "schema"; cat "$W/schema.out"; }
+sh "$W/tests/schema_check.sh" "$json" > "$W/schema.out" 2>&1
+case $? in
+  0) ok "the report validates" ;;
+  2) ok "(the schema is not checked here: `tail -1 "$W/schema.out"`)" ;;
+  *) bad "schema"; cat "$W/schema.out" ;;
+esac
 
 # util/rootpath on its own
 T=$W/rp

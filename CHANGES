@@ -15,6 +15,17 @@ Changes since 3.5.0 (unreleased)
 
 - tigris -h says to report bugs to this fork's tracker, not TIGER's.
 
+- tigris --since works under busybox awk (Alpine): the split that counted
+  new and resolved findings used a pattern starting with "{", which
+  busybox's regex engine takes for a repetition and rejects, so every
+  --since run there reported nothing new and exited 0.
+
+- CI runs every fixture suite under mawk (Debian), gawk (Arch) and
+  busybox awk (Alpine), as root in each, through tests/all.sh; it found
+  the --since bug. The suites run as root there make their tree root's
+  (exit_check did not) and count a schema check that has no jsonschema
+  to run as skipped, not failed.
+
 - Open compliance mapping. Every finding maps to the controls it is
   evidence about in CIS Controls v8 (safeguards), NIST SP 800-53 Rev. 5,
   ISO/IEC 27001:2022 Annex A and UK Cyber Essentials (its five themes).
