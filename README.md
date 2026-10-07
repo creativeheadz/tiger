@@ -1,174 +1,300 @@
-# Tigris
+<p align="center">
+  <img src="art/banner.png" width="100%" alt="TIGRIS: a pixel-art tiger, half lit and half in shadow, beside the word TIGRIS in amber, over the line: security audits for Linux">
+</p>
 
-[![CI](https://github.com/creativeheadz/tigris/actions/workflows/ci.yml/badge.svg)](https://github.com/creativeheadz/tigris/actions/workflows/ci.yml)
-[![Licence: GPL-2.0-or-later](https://img.shields.io/badge/Licence-GPL--2.0--or--later-blue.svg)](COPYING)
+<p align="center">
+  <b>A security auditor for Linux, in plain POSIX shell.</b><br>
+  TIGER's thirty years of checks, rebuilt for how Linux is run today.
+</p>
 
-<pre>
-      ##    ##                               ##
-     ##########                              ##
-     ###########                             ##
-  ###############                          ##
-   ############################################
-    ################# ##### ##### ###########
-    #######################################
-     ####################################
-     ######   #####    ######  ########
-     #####    #####    #####   #####
-     #####    #####    #####   #####
-     #####    #####    #####   #####
-     ######   ######   ######  ######
- ______________________________________________
-</pre>
+<p align="center">
+  <a href="https://github.com/creativeheadz/tigris/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/creativeheadz/tigris/ci.yml?branch=master&style=flat-square&label=CI&labelColor=0f1822" alt="CI"></a>
+  <a href="https://github.com/creativeheadz/tigris/releases/latest"><img src="https://img.shields.io/github/v/release/creativeheadz/tigris?style=flat-square&label=release&color=ffb02e&labelColor=0f1822" alt="Latest release"></a>
+  <a href="COPYING"><img src="https://img.shields.io/badge/licence-GPL--2.0--or--later-52c7e8?style=flat-square&labelColor=0f1822" alt="Licence: GPL-2.0-or-later"></a>
+  <img src="https://img.shields.io/badge/written%20in-POSIX%20sh%20%2B%20awk-4fd67f?style=flat-square&labelColor=0f1822" alt="Written in POSIX sh and awk">
+  <br>
+  <img src="https://img.shields.io/badge/finding%20ids-393-e8833a?style=flat-square&labelColor=0f1822" alt="393 finding ids">
+  <img src="https://img.shields.io/badge/categories-15-e8833a?style=flat-square&labelColor=0f1822" alt="15 categories">
+  <img src="https://img.shields.io/badge/test%20suites-30-e8833a?style=flat-square&labelColor=0f1822" alt="30 test suites">
+  <img src="https://img.shields.io/badge/CI-Debian%20%C2%B7%20Ubuntu%20%C2%B7%20Fedora%20%C2%B7%20Rocky%20%C2%B7%20openSUSE%20%C2%B7%20Alpine%20%C2%B7%20Arch-c6d6e2?style=flat-square&labelColor=0f1822" alt="Tested on Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch">
+</p>
 
-Tigris is a security auditor for Linux: a set of shell scripts that check
-accounts and passwords, file permissions, network configuration, cron,
-installed packages against the package manager, signs of intrusion and
-more, and report only what changed since the last run when scheduled.
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#what-it-checks">What it checks</a> ·
+  <a href="#audit-a-system-that-is-not-running">Offline audit</a> ·
+  <a href="#reports-drift-and-exit-status">Reports and drift</a> ·
+  <a href="#install">Install</a> ·
+  <a href="ROADMAP.md">Roadmap</a>
+</p>
 
-It is descended from **TIGER**, written at Texas A&M University in 1993 by
-Douglas Lee Schales, David K. Hess and David R. Safford, and maintained
-on GNU Savannah from 2001 to 2019 by Javier Fernández-Sanguino Peña.
-Tigris is an independent fork of that code, started in October 2026 from
-the Savannah history and maintained by Andrei Trimbitas. The official
-TIGER remains at <https://savannah.nongnu.org/projects/tiger/>; fixes
-made here that apply to it are offered back there and to the Debian bug
-tracker.
+---
+
+## Why Tigris
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Nothing to install.** Clone it and run it: shell and awk, no
+compiler, no interpreter, no agent, no network. It runs under mawk, gawk
+and busybox awk, and stays light enough for a Raspberry Pi.
+
+</td>
+<td width="50%" valign="top">
+
+**Reads the system as it is.** Installed files are checked against
+dpkg, rpm, apk and pacman. The firewall is read from the kernel's own
+ruleset, whatever wrote it. sshd is asked for its effective
+configuration.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Says what it did not check.** A check that cannot run properly, for
+lack of root or on an offline image, is skipped and listed with the
+reason, never guessed at. The exit status is the worst finding.
+
+</td>
+<td valign="top">
+
+**Drift, not noise.** `tigris -q --since last` prints only what changed
+since the last run, so a nightly cron mails only when there is news.
+Findings you accept stay accepted, with a reason and an expiry date.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Audits images without booting them.** `tigris --root /mnt/image`
+reads a mounted disk, an unpacked container image or a VM snapshot.
+Nothing in the image is ever run.
+
+</td>
+<td valign="top">
+
+**A contract for machines.** Every run also writes JSON Lines with a
+versioned schema and a category per finding, and `tigris explain ID`
+says what any of the 393 finding ids means and how to fix it.
+
+</td>
+</tr>
+</table>
+
+## Quick start
+
+```sh
+git clone https://github.com/creativeheadz/tigris.git
+cd tigris
+sudo ./tigris                     # the full audit, about two minutes
+sudo ./tigris --profile quick     # everything but the filesystem scan, about one
+./tigris explain upd003f          # what a finding means and how to fix it
+```
+
+The report lands in `log/`, as text and as JSON Lines. Run without root,
+Tigris skips the checks that need it and lists them. It will not run check
+scripts owned by anyone but the user running it, with one exception: a
+tree owned by the person who ran `sudo` is theirs to run. A copy that cron
+runs, or an installed one, must belong to root. `./tiger` still works and
+does the same as `./tigris`.
+
+### What a report looks like
+
+From an offline audit of a Debian 12 container image (abridged):
+
+```text
+# Checking security updates (apt)...
+--FAIL-- [upd003f] 7 security updates are waiting to be installed (apt).
+         libgcrypt20, libgnutls30, liblzma5, libpcre2-8-0, libtasn1-6,
+         perl-base, tzdata. The package lists were last updated today. Install
+         them with 'apt-get upgrade'.
+--WARN-- [upd002w] Security updates are not installed automatically: each
+         waits until someone installs it.
+# Checking PAM's password quality and lockout...
+--WARN-- [pam003w] Accounts are not locked after repeated failed logins: no
+         pam_faillock or pam_tally2 in an auth stack, so passwords can be
+         guessed for as long as it takes.
+```
+
+```text
+$ ./tigris explain upd003f
+Severity: FAIL
+Category: packages
+Check: check_updates
+
+Security updates are available and not installed: the packages named
+in the detail have known holes that their new versions close, and the
+holes are public. ...
+```
+
+## What it checks
+
+Every finding id has an explanation in [`meta/`](meta), a severity and one
+of fifteen categories, which the JSON carries. `make` builds them all into
+`doc/explanations.html`.
+
+| Category | Ids | What is looked at |
+|---|---:|---|
+| **accounts** | 69 | Password and shadow files, root's account, groups, sudo's rules (NOPASSWD, wildcards, `!authenticate`), PAM's password quality and lockout, every account's PATH, login shells |
+| **filesystem** | 74 | Setuid and setgid files against what the packages ship, world-writable files and directories, devices, files nobody owns, `/tmp` and `/dev/shm` mount options, disk encryption, swap, core dumps, umask |
+| **services** | 43 | What enabled systemd services and timers run, their unit files and sandboxing, time synchronisation, inetd, sendmail, Apache |
+| **network** | 36 | What listens on which port, IPv4 and IPv6, and as whom; network sysctls; NFS exports; NTP; sendmail's configuration |
+| **tigris** | 33 | Tigris's own configuration and the run itself |
+| **intrusion** | 21 | Rootkit traces, processes running deleted binaries, `.exrc` files, places intruders are known to use |
+| **kernel** | 18 | Hardening sysctls, AppArmor or SELinux enforcing, kernel lockdown |
+| **packages** | 18 | Installed files against dpkg, rpm, apk and pacman; security updates waiting and whether they install themselves; dpkg's mode overrides |
+| **ssh** | 18 | sshd's effective configuration: root login, passwords, empty passwords, X11, PAM, weak ciphers, MACs and key exchange |
+| **boot** | 14 | Secure Boot (off, in setup mode, on), lockdown, single-user mode, the boot loader's password |
+| **logging** | 12 | Log files, auditd running with rules, logs kept across reboots |
+| **integrity** | 11 | Signatures of system binaries, and AIDE, Tripwire or integrit when installed |
+| **containers** | 10 | Who can use the Docker or Podman socket, the Docker API on TCP without TLS, privileged containers, host namespaces, the host's `/` mounted in one |
+| **cron** | 10 | Crontabs: who owns them and what they run |
+| **firewall** | 6 | Incoming traffic denied unless something accepts it, IPv4 and IPv6, read from the kernel's ruleset (nft, iptables, ufw, firewalld), and the ports Docker publishes past it |
+
+### Profiles
+
+A profile is a short file in [`profiles/`](profiles), read on top of
+`tigerrc`: `sudo ./tigris --profile NAME`.
+
+| Profile | For |
+|---|---|
+| `quick` | Everything except the filesystem scan: about a minute where the full run takes two |
+| `server` | A server: USB storage is expected to be off, and every account's PATH and the processes using deleted files are checked too |
+| `desktop` | A desktop: without the checks for what only servers run |
+| `container` | An image or a container: without the host's kernel, boot, firewall, systemd and disks |
+
+Your own profiles go in a `profiles/` directory beside your `tigerrc`.
+
+## Audit a system that is not running
+
+```sh
+sudo ./tigris --root /mnt/image
+```
+
+A disk mounted from another machine, a container image unpacked into a
+directory, a VM snapshot: Tigris reads its files under that directory and
+follows its symbolic links inside it, so an absolute link in the image
+never leads to this machine's files. This machine's dpkg, apt, rpm, dnf,
+zypper, apk or pacman are pointed at the image's package databases.
+Nothing in the image is run.
+
+| Reads an offline root | Skipped there, with the reason |
+|---|---|
+| Package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, kernel settings, Secure Boot), and the checks that cannot read an offline root yet |
+
+On Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch the package
+checks report the same of a copy of a system as of the system itself, and
+CI checks that they go on doing so; the sshd and sudo checks were compared
+against the live system the same way. Tigris writes nothing into the
+root, but the package tools may write their logs and caches there as they
+would on that system: mount it read-only if it must stay unchanged.
+
+## Reports, drift and exit status
+
+Every run writes `log/security.report.HOST.DATE` and, beside it, the same
+findings as JSON Lines: a `run` record, one `finding` per message with its
+`level`, `id`, `check`, `category`, `message` and `detail`, `skip` records
+for what did not run, and a `summary`. The format is a documented contract
+with a version field and a JSON Schema:
+[doc/json-format.md](doc/json-format.md).
+
+```json
+{"type":"finding","level":"FAIL","id":"upd003f","check":"check_updates","message":"7 security updates are waiting to be installed (apt).","detail":"libgcrypt20, libgnutls30, ...","category":"packages"}
+```
+
+**Drift.** `tigris-diff` compares two runs and lists what is new and what
+was resolved (with no arguments, the last two in `log/`; `-j` for JSON).
+`tigris` does it itself with `--since`, and with `-q` prints nothing when
+nothing changed:
+
+```sh
+sudo ./tigris -q --since last        # nightly cron: mail only when there is news
+./tigris-diff old.jsonl new.jsonl    # any two runs
+```
+
+**Accepting a finding.** A finding you have looked at and decided to live
+with stays out of the text report, and in the JSON marked `accepted`, until
+its date passes:
+
+```sh
+./tigris-accept lin015w -r "Docker needs IP forwarding"
+./tigris-accept sysd001w -m "docker.service*" -r "sandboxing tracked in #12" -u 2027-01-31
+./tigris-accept -l
+```
+
+**Exit status.** The worst finding of the run (with `--since`, the worst
+new one), for CI and monitoring:
+
+| Status | Meaning |
+|:---:|---|
+| 0 | Nothing at WARN or above |
+| 1 | The audit did not run |
+| 2 | A check could not run (an ERROR, or a check skipped for lack of root) |
+| 3 | WARN |
+| 4 | FAIL |
+| 5 | ALERT |
+
+## Install
+
+Tigris needs no compiler. If you have one, `make && make -C c install`
+builds a few small C helpers into `bin/`, which Tigris then prefers to its
+shell equivalents. To install system-wide:
+
+```sh
+./configure
+make install
+```
+
+Tested in CI on Debian stable and sid, Ubuntu 24.04, Fedora, Rocky Linux 9,
+openSUSE Tumbleweed, Alpine and Arch, under mawk, gawk and busybox awk.
+On Debian and Ubuntu, `apt install tiger` gives the original TIGER from the
+archive, not this fork.
+
+## Where it is going
+
+[ROADMAP.md](ROADMAP.md) has the decisions, the status and what is next.
+In progress: the offline audit, check by check, until an image reads as
+fully as a running system. Ahead: a free compliance mapping (CIS Controls,
+ISO 27001, NIST 800-53, Cyber Essentials) carried in the JSON, a
+transparent summary, and later a PowerShell engine for Windows against
+the same contract. Every change is measured for wall time, CPU and memory.
+
+## Lineage
+
+Tigris descends from **TIGER**, written at Texas A&M University in 1993 by
+Douglas Lee Schales, David K. Hess and David R. Safford, and maintained on
+GNU Savannah from 2001 to 2019 by Javier Fernández-Sanguino Peña. Tigris is
+an independent fork of that code, started in October 2026 from the
+Savannah history and maintained by Andrei Trimbitas. The official TIGER
+remains at <https://savannah.nongnu.org/projects/tiger/>; fixes made here
+that apply to it are offered back there and to the Debian bug tracker.
 
 The name is the Latin for tiger, and the root of the Icelandic
 *tígrisdýr*; there was never a Norse word for an animal no Norseman saw.
 
-## Running it
+The 3.2.4 release here finished the release candidate TIGER left in 2018;
+3.3.0 was the first release as Tigris. See [CHANGES](CHANGES). TIGER's
+configurations for AIX, HP-UX, IRIX, NeXT, SunOS, Tru64, UNICOS and Mac OS X
+were retired after that release; they are in the git history under the tag
+`attic/other-unix-2026-10`. [AUTHORS](AUTHORS) and [CREDITS](CREDITS) list
+everyone who built TIGER. The original [README](README) and [USING](USING)
+still describe the internals accurately.
 
-From your own checkout:
+<p align="center">
+  <img src="art/tiger-full.png" width="192" alt="A pixel-art tiger's face, front view, fully lit">
+</p>
 
-    sudo ./tigris
-
-(`./tiger` still works and does the same.) Run without root, Tigris
-skips the checks that need it, rather than guess at what it cannot
-read, and lists them in the report. Tigris will not run check
-scripts owned by someone other than the user running it, with one
-exception: a tree owned by the person who ran `sudo` is theirs to run.
-A copy that cron runs, or an installed one, must belong to root. The
-report is written to
-`log/`. To look up what a message code in it means, run, for example,
-`./tigris explain lin005f`. Choose which checks run, and how, in `tigerrc`.
-In a hurry, run the quick profile instead: everything except the
-filesystem scan, about a minute where the full run takes three:
-
-    sudo ./tigris --profile quick
-
-A profile is a short file in `profiles/` read on top of `tigerrc`.
-Besides `quick` there are `server` (no USB storage, every account's
-PATH, processes using deleted files), `desktop` (without the checks for
-what only servers run) and `container` (for an image or a container,
-without the host's kernel, boot, firewall and disks). A profile of your
-own goes in a `profiles/` directory beside your `tigerrc`.
-
-To audit a system that is not running (a disk mounted from another
-machine, a container image unpacked into a directory, a VM snapshot),
-name its root:
-
-    sudo ./tigris --root /mnt/image
-
-Its files are read in that directory, its symbolic links followed
-inside it (an absolute link in the image does not lead to this
-machine's files), and this machine's dpkg, apt, rpm, dnf, zypper, apk
-or pacman are pointed at its package databases. Nothing in the image is
-run. Checks that read a running system (processes, listening ports, the
-firewall, kernel settings) are skipped, and so, for now, are the checks
-that cannot read an offline root yet; the report lists each one with
-the reason. The checks that can: package integrity, updates waiting,
-PAM, sshd's configuration (worked out from its files, as sshd would),
-sudo's rules, and dpkg's mode overrides. Tigris writes nothing into the root,
-but the package tools may write their logs and caches there as they
-would on that system; mount it read-only if it must stay unchanged.
-
-Tigris needs no compiler. If you have one, `make && make -C c install`
-builds a few small C helpers into `bin/`, which Tigris then prefers to
-its shell equivalents.
-
-To install system-wide instead:
-
-    ./configure
-    make install
-
-Installed files are checked against the package manager on Debian and
-Ubuntu (dpkg), Fedora, RHEL and its relatives, and openSUSE (rpm), Alpine
-(apk) and Arch (pacman). A modified file, a missing one, a changed mode
-and a stray file in a binary directory are reported with the same ids on
-all of them.
-
-On Debian and Ubuntu, `apt install tiger` gives the original TIGER from
-the archive, not this fork.
-
-## Machine-readable output
-
-Every run also writes the findings as JSON Lines to
-`log/security.report.HOST.DATE.jsonl`: a `run` record first (with an `id`
-for the run, the host, OS and the `tigerrc` used), one
-`finding` per message with `level`, `id`, `check`, `message` and an
-optional `detail`, and a `summary` with counts last. INFO findings are
-always included there, whatever the text report shows. Bytes above 127
-in a message are written as `\u00XX`, one per byte, so file names in any
-encoding survive and the file is plain ASCII. `Tiger_Output_JSON=N` in
-`tigerrc` turns it off. The format is a documented contract with a version
-field and a JSON Schema: [doc/json-format.md](doc/json-format.md).
-
-`tigris-diff` compares two of those files and lists what is new and what
-was resolved; with no arguments it takes the two most recent runs in
-`log/`. It exits 1 when anything is new, so a cron job or a CI step can
-act on it, and `-j` gives the same as one JSON object:
-
-    ./tigris-diff                      # the last two runs
-    ./tigris-diff old.jsonl new.jsonl  # any two
-
-`tigris` itself does the same with `--since`: the run happens and is
-recorded in full, and what is printed is only what changed. With `-q` it
-prints nothing at all when nothing changed, so a nightly cron job needs
-no wrapper and mails only when there is news:
-
-    sudo ./tigris -q --since last
-
-The exit status of `tigris` is the worst finding in the report (with
-`--since`, the worst new one), for CI and monitoring: 0 nothing at WARN
-or above, 2 a check could not run, 3 WARN, 4 FAIL, 5 ALERT, and 1 when
-the audit did not run at all.
-
-A finding you have looked at and decided to live with can be accepted,
-with a reason and, if you want, an expiry date:
-
-    ./tigris-accept lin015w -r "Docker needs IP forwarding" 
-    ./tigris-accept sysd001w -m "docker.service*" -r "sandboxing tracked in #12" -u 2027-01-31
-    ./tigris-accept -l
-
-An accepted finding stays out of the text report (the run says how many
-were left out) and stays in the JSON report marked `accepted` with the
-reason and date. When the date passes it is reported again, with a
-warning that the acceptance expired. The entries live in
-`tigris.accepted` next to `tigerrc`.
-
-## Where it is going
-
-[ROADMAP.md](ROADMAP.md) has the decisions, the status, what has shipped
-and what is next. Already here: package integrity on five package
-managers, a versioned JSON report, drift between runs, and a quick
-profile that skips the filesystem scan. Ahead: a free compliance
-mapping, auditing a mounted image without booting it, and later a
-PowerShell engine for Windows against the same spec. Every change is
-measured for wall time, CPU and memory; it has to stay light enough for a
-Raspberry Pi.
+The tiger keeps the idea of TIGER's 2002 logo, a face half in light and
+half in shadow with one eye watching, redrawn the way the Kestrel's
+pictures are made: rendered by FLUX.2 klein, then crushed to a 96-pixel
+grid and a 27-colour palette. How it was made, and how to make it again,
+is in [art/README.md](art/README.md).
 
 ## Licence
 
 GNU General Public License, version 2 or later; see [COPYING](COPYING).
 `c/md5.c` (RSA Data Security) and `c/snefru.c` (Xerox) carry their own
 notices.
-
-## History
-
-The 3.2.4 release here finished the release candidate TIGER left in 2018;
-3.3.0 is the first release as Tigris. See [CHANGES](CHANGES). TIGER's configurations for AIX, HP-UX, IRIX,
-NeXT, SunOS, Tru64, UNICOS and Mac OS X were retired after that release;
-they are in the git history under the tag `attic/other-unix-2026-10`. [AUTHORS](AUTHORS) and [CREDITS](CREDITS) list
-everyone who built TIGER. The original [README](README) and
-[USING](USING) still describe the internals accurately.
