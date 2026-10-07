@@ -174,7 +174,8 @@ do
 		echo $WORKDIR/etc_passwd.$$ >> $outfile
 	    fi
 	   
-	   [ "$source" = "files" ] && $GREP '^+' $WORKDIR/etc_passwd.$$ && {
+	   # (not written when /etc/shadow could not be read: run001e)
+	   [ "$source" = "files" ] && [ -f $WORKDIR/etc_passwd.$$ ] && $GREP -q '^+' $WORKDIR/etc_passwd.$$ && {
 	     echo "--WARN-- [pass022w] The '+' key in the /etc/passwd file should only be used in nsswitch 'compat' mode."
 	   }
 
