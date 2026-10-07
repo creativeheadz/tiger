@@ -9,10 +9,11 @@ jobs:
   lint:
     name: Syntax and ShellCheck
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Python jsonschema, for the schema test
-        run: sudo apt-get install -y -qq python3-jsonschema
+        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 install -y -qq python3-jsonschema
       - name: sh -n on every shell script
         run: |
           fail=0; n=0
@@ -95,6 +96,7 @@ jobs:
   build:
     name: Build C helpers and docs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - run: ./configure
@@ -110,15 +112,17 @@ jobs:
   smoke:
     name: Full run on Ubuntu
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Python jsonschema, so the smoke run validates its JSON
-        run: sudo apt-get install -y -qq python3-jsonschema
+        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 install -y -qq python3-jsonschema
       - run: sudo sh tests/smoke.sh
 
   package-managers:
     name: Package integrity (${{ matrix.image }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -138,6 +142,7 @@ jobs:
   debian-checks:
     name: Debian checks (${{ matrix.image }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -146,7 +151,10 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - name: Node and git for actions/checkout (these images ship neither)
-        run: apt-get update -qq && apt-get install -y -qq --no-install-recommends nodejs git ca-certificates
+        run: |
+          # Retry, and give up on a mirror that stops answering, instead of hanging the job
+          echo 'Acquire::Retries "3"; Acquire::http::Timeout "20";' > /etc/apt/apt.conf.d/80ci-retries
+          apt-get update -qq && apt-get install -y -qq --no-install-recommends nodejs git ca-certificates
       - uses: actions/checkout@v4
       - name: Plant problems and check they are found
         run: sh tests/deb_checks.sh
