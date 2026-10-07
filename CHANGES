@@ -68,6 +68,20 @@ Changes since 3.4.0 (unreleased)
   backquote. Without column it prints the duplicates one a line instead
   of stopping.
 
+- A container image (Dockerfile): Tigris on Debian with every
+  distribution's package tools, dpkg and apt, rpm, dnf and zypper,
+  pacman, and the static apk Alpine ships, so that one image audits any
+  Linux root offline: docker run -v ROOTFS:/target:ro tigris --root
+  /target. CI builds it and audits a Debian root with it on every push;
+  a release tag publishes it to ghcr.io/creativeheadz/tigris (on GitHub
+  only). Its dnf is dnf 4, which cannot read the cache dnf 5 leaves in a
+  Fedora 41+ image (upd004i says so).
+
+- check_passwdformat, which an offline audit runs in pwck's place,
+  accepts the accounts distributions install that way: sync, shutdown,
+  halt and operator with gid 0 (Red Hat's family, Alpine), and root, bin
+  and daemon as members of the first three groups (Alpine).
+
 - The file system scan reads an offline root. find_files walks the root,
   leaving out its /proc, /sys and /run (a running system's, not its
   own); a file nobody owns is one whose uid or gid is no entry of the

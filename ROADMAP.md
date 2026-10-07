@@ -597,7 +597,9 @@ what scripts and cron see.
   check_aliases, check_logfiles, check_rootkit, check_known,
   check_services, check_lilo, check_single, check_rcumask,
   check_release, check_ntp, check_devices, check_embedded,
-  check_neverlogin) still cannot read an offline root.
+  check_neverlogin) still cannot read an offline root. A container image
+  (`docker run -v ROOTFS:/target:ro tigris --root /target`) carries
+  every distribution's package tools for it.
 - [ ] **A transparent summary**: counts by severity and category, and any
   score shows its formula.
 - [ ] **Rename the internals** in one release, with shims for old

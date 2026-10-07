@@ -174,6 +174,19 @@ Your own profiles go in a `profiles/` directory beside your `tigerrc`.
 sudo ./tigris --root /mnt/image
 ```
 
+Or from the container image, which carries every distribution's package
+tools (dpkg and apt, rpm, dnf, zypper, pacman, apk), so one image audits
+any Linux root:
+
+```sh
+docker build -t tigris .
+docker run --rm -v /path/to/rootfs:/target:ro -v "$PWD/reports:/opt/tigris/log" \
+  tigris --root /target
+```
+
+To audit a container image without running it, export it first
+(`docker export $(docker create IMAGE) | tar -C rootfs -xf -`).
+
 A disk mounted from another machine, a container image unpacked into a
 directory, a VM snapshot: Tigris reads its files under that directory and
 follows its symbolic links inside it, so an absolute link in the image
@@ -248,6 +261,10 @@ shell equivalents. To install system-wide:
 ./configure
 make install
 ```
+
+Or as a container: `docker build -t tigris .` builds an image with
+Tigris and every distribution's package tools, for auditing roots
+offline (above). Release tags publish it as `ghcr.io/creativeheadz/tigris`.
 
 Tested in CI on Debian stable and sid, Ubuntu 24.04, Fedora, Rocky Linux 9,
 openSUSE Tumbleweed, Alpine and Arch, under mawk, gawk and busybox awk.

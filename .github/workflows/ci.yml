@@ -131,6 +131,35 @@ jobs:
         run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 install -y -qq python3-jsonschema
       - run: sudo sh tests/smoke.sh
 
+  container:
+    name: Container image, auditing a root
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t tigris:ci .
+      - name: Audit a Debian root with it, mounted read-only
+        run: |
+          set -e
+          docker create --name root-src debian:stable >/dev/null
+          mkdir -p "$RUNNER_TEMP/root" "$RUNNER_TEMP/reports"
+          docker export root-src | sudo tar -C "$RUNNER_TEMP/root" -xf -
+          docker rm root-src >/dev/null
+          set +e
+          docker run --rm -v "$RUNNER_TEMP/root:/target:ro" -v "$RUNNER_TEMP/reports:/opt/tigris/log" tigris:ci -q --root /target
+          st=$?
+          set -e
+          echo "exit status $st"
+          case $st in 0|3|4|5) ;; *) echo "the audit did not finish"; exit 1 ;; esac
+          j=$(sudo sh -c "ls $RUNNER_TEMP/reports/*.jsonl" | head -1)
+          sudo cat "$j" > report.jsonl
+          grep -q '"type":"run".*"root":"/target"' report.jsonl
+          grep -q '"type":"summary"' report.jsonl
+          grep '"type":"finding"' report.jsonl | head -20
+          # nothing in the report names where the root is on the runner
+          ! grep -q "$RUNNER_TEMP" report.jsonl
+
   package-managers:
     name: Package integrity (${{ matrix.image }})
     runs-on: ubuntu-latest

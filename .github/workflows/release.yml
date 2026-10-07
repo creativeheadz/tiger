@@ -1,0 +1,36 @@
+name: Release image
+
+# A release tag (version_X_Y_Z, as Tigris tags its releases) builds the
+# container image and pushes it to the GitHub Container Registry as
+# ghcr.io/creativeheadz/tigris:X.Y.Z and :latest. Only on GitHub: the
+# same workflow runs on the Gitea mirror, which has no such registry.
+on:
+  push:
+    tags: ['version_*']
+
+jobs:
+  image:
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: The version, from the tag
+        id: v
+        run: echo "version=$(echo "${GITHUB_REF_NAME#version_}" | tr _ .)" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/creativeheadz/tigris:${{ steps.v.outputs.version }}
+            ghcr.io/creativeheadz/tigris:latest
+          labels: |
+            org.opencontainers.image.version=${{ steps.v.outputs.version }}
