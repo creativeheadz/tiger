@@ -256,5 +256,45 @@ has '"message":"The process `syncthing'"'"' is listening on socket 22000 (TCP on
   ok "netstat: tcp6 and udp6 listeners" || bad "netstat syncthing"
 grep -q 'NetworkManager' "$A" && bad "netstat: a raw socket was reported" || ok "netstat: raw sockets are left out"
 
+# /proc itself, the last resort (Alpine without iproute2 has only busybox's
+# lsof and netstat): the kernel's tables as Hera has them, and fd links
+# from the processes to their sockets' inodes
+P="$W/sys/proc"; mkdir -p "$P/net"
+cat > "$P/net/tcp" <<'EOF'
+  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+   0: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 7871 1 0000000000000000 100 0 0 10 0
+   1: 0100007F:0277 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 15585 1 0000000000000000 100 0 0 10 0
+   2: 8E01A8C0:DB30 84969651:01BB 01 00000000:00000000 00:00000000 00000000  1000        0 99001 1 0000000000000000 100 0 0 10 0
+EOF
+cat > "$P/net/tcp6" <<'EOF'
+  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+   0: 00000000000000000000000000000000:0016 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 8654 1 0000000000000000 100 0 0 10 0
+   1: 00000000000000000000000001000000:0277 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 15584 1 0000000000000000 100 0 0 10 0
+EOF
+cat > "$P/net/udp" <<'EOF'
+   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode ref pointer drops
+ 7397: 00000000:CA44 00000000:0000 07 00000000:00000000 00:00000000 00000000  1000        0 20752 2 0000000000000000 0
+ 9412: 00000000:5223 00000000:0000 07 00000000:00000000 00:00000000 00000000  1000        0 14323 2 0000000000000000 0
+EOF
+: > "$P/net/udp6"
+proc() {  # proc PID COMM EUID INODE...
+  pid=$1 comm=$2 uid=$3; shift 3; mkdir -p "$P/$pid/fd"
+  echo "$comm" > "$P/$pid/comm"; printf 'Name:\t%s\nUid:\t%s\t%s\t%s\t%s\n' "$comm" "$uid" "$uid" "$uid" "$uid" > "$P/$pid/status"
+  n=3; for i; do ln -s "socket:[$i]" "$P/$pid/fd/$n"; n=$((n + 1)); done
+}
+proc 1239 sshd 0 7871 8654
+proc 1221 cupsd 0 15585 15584
+proc 1988 syncthing 1000 20752 14323 99001
+go "Tiger_Listening_Source=proc" "$W/proc.jsonl"
+A="$W/proc.jsonl"
+has '"level":"WARN","id":"lin002i","check":"check_listeningprocs","message":"The process `sshd'"'"' is listening on socket 22 (TCP) on every interface."' &&
+  [ "`grep -c 'sshd' "$A"`" = 1 ] && ok "/proc: sshd on 0.0.0.0 and on :: (hex, little-endian) is one finding" || { bad "proc sshd: `grep sshd "$A"`"; }
+has '"message":"The process `cupsd'"'"' is listening on socket 631 (TCP) on loopback interface."' && [ "`grep -c cupsd "$A"`" = 1 ] &&
+  ok "/proc: 127.0.0.1 and ::1 are loopback" || bad "proc cupsd: `grep cupsd "$A"`"
+has '"message":"The process `syncthing'"'"' is listening on socket 21027 (UDP on every interface) is run by '"`name 1000`"'."' &&
+  has '"message":"The process `syncthing'"'"' is listening on ephemeral ports (UDP on every interface) is run by '"`name 1000`"'.","detail":"Port 51780;' &&
+  ok "/proc: unconnected UDP sockets, the owner from the process's euid" || bad "proc syncthing: `grep syncthing "$A"`"
+grep -q '56112\|443' "$A" && bad "/proc: a connected TCP socket was reported" || ok "/proc: a connected TCP socket (state 01) is left out"
+
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- out"; cat "$W/out"; echo "--- a.jsonl"; cat "$W/a.jsonl"; }
 exit $fail

@@ -402,6 +402,15 @@ that never reached the repository. Debian bugs #1111306 (merged-/usr),
   leaves a check skipped in either run out of both sides
   (`skipped_checks`), so comparing a root run with a user run does not
   call its findings resolved.
+- [x] **The listening check reads /proc when nothing else will do.** On
+  an Alpine without iproute2 the only lsof and netstat are busybox's,
+  which ignore the options used, so check_listeningprocs reported
+  nothing and said nothing. busybox's tools now count as missing, and
+  the last resort is the kernel's own tables (/proc/net/tcp, tcp6, udp,
+  udp6) with the processes found through their fd links; in an Alpine
+  container it now reports a busybox nc on port 2222. On Hera, as root,
+  /proc and ss give the same 12 findings. Tiger_Listening_Source=proc
+  forces it.
 
 ## 3.2.x: maintenance
 
