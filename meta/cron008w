@@ -1,0 +1,15 @@
+Id: cron008w
+Severity: WARN
+Category: cron
+Check: check_crontabs
+References: crontab(5), cron(8)
+
+A file cron reads (/etc/crontab, a file in /etc/cron.d, a script in
+/etc/cron.hourly, cron.daily, cron.weekly or cron.monthly, or a user's
+crontab in the spool) can be written by its group. Every member of the
+group decides what cron runs from it, and as whom: root, for every file
+but a user's own crontab. Debian's spool crontabs belong to the group
+crontab without its being able to write them; that is not this.
+
+Take the group's write permission away (chmod g-w), unless every member
+of the group is meant to have root.

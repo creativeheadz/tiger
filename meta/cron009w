@@ -1,0 +1,15 @@
+Id: cron009w
+Severity: WARN
+Category: cron
+Check: check_crontabs
+References: crontab(5), cron(8)
+
+A file cron reads is owned by someone other than root, or, for a user's
+crontab in the spool, other than root or that user. Its owner can change
+what cron runs from it whatever its permissions say, since the owner of
+a file can change those too: for the system's files that is root's
+cron jobs in another account's hands.
+
+Give it to root (chown root:root), or find out why it is someone else's:
+a package or a script that installed it as the wrong user, or a change
+nobody meant.

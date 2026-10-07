@@ -84,6 +84,10 @@ jobs:
         run: |
           sh tests/offline_accounts_check.sh
           sudo sh tests/offline_accounts_check.sh
+      - name: cron's files and jobs, as a user and as root
+        run: |
+          sh tests/cron_check.sh
+          sudo sh tests/cron_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: ShellCheck (errors)

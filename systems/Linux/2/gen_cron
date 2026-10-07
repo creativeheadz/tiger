@@ -16,6 +16,22 @@
 #     Please see the file `COPYING' for the complete copyright notice.
 #
 # Linux/2/gen_cron - 06/14/93
+# 10/07/2026 - atrimbitas - Rewritten. /etc/crontab and /etc/cron.d, where
+#    most of a system's cron jobs are today, were never read; a file's owner
+#    came from this host's passwd; problems were echoed as text without an
+#    id, so they never reached the JSON report. It now lists, for the
+#    system audited (an offline root's files read inside it, through
+#    initdefs' rootfile and rootls):
+#      J<TAB>user<TAB>file<TAB>command   a job, run as user, from file
+#      F<TAB>whose<TAB>file              a file cron reads, and whose it
+#                                        should be: root, or root|user for
+#                                        a user's crontab
+#      U<TAB>file                        a crontab in the spool whose name is
+#                                        no account of the system's
+#    and check_crontabs reports on them. /etc/crontab and /etc/cron.d are in
+#    the system format (a user before the command); cron.d's files are read
+#    only when their names are what cron reads (letters, digits, - and _);
+#    the cron.hourly ... cron.monthly scripts are each a job run as root.
 # 11/08/2007 - jfs - Handles properly the case when the special @daily,@reboot,
 #                    etc. definitions are used instead of real times. Also fix
 #                    bug deailing with variables in crontab contents 
@@ -27,84 +43,91 @@
 #    and list its contents.
 # 03/27/2002 - jfs 
 #    changed to add CRONSPOOLTAB and included ARSC change to not confuse
-#    empty directories 
-# 02/10/2018 - jfs - Remove unnecessary calls. 
-#                   Check if CRONSPOOL is readable or not and warn if this is
-#                   the case (happens when running as unpriviledged user)
+#    empty directories
 #
 #-----------------------------------------------------------------------------
 #
-# Defin commands we need, just in case
-[ -z "$FIND" ] && FIND=`command -v find`
-[ -z "$LS" ] && LS=`command -v ls`
-[ -z "$SED" ] && SED=`command -v sed`
-[ -z "$CRONSPOOL" ] && CRONSPOOL="/var/spool/cron/crontabs"
-
-[ ! -n "$GETUSERHOME" ] && GETUSERHOME=echo
-
 outfile=$1
-[ -z "$outfile" ] && { echo "Bad usage: $0 outfile"; exit 1;  }
-> $outfile
+[ -n "$outfile" ] || { echo "Bad usage: $0 outfile"; exit 1; }
+: > "$outfile"
 
-if [ ! -d "$CRONSPOOL" ] ; then
-    echo "--ERROR-- Cron spool directory $CRONSPOOL does not exist."
-fi
-if [ ! -r "$CRONSPOOL" ] ; then
-    echo "--ERROR-- Cannot read contents of spool directory $CRONSPOOL."
-fi
+# Run by check_crontabs, with Tigris's environment
+[ -n "$BASEDIR" ] && [ -r "$BASEDIR/initdefs" ] || { echo "$0: run by check_crontabs"; exit 1; }
+. "$BASEDIR/initdefs"
 
+# is_account NAME: whether the system audited has that account: on an
+# offline root, in its passwd file; live, as the system resolves names
+# (LDAP and the rest included), with getent, which runs nothing
+passwd=`rootfile /etc/passwd`
+is_account()
+{
+  if [ -z "$TIGRIS_ROOT" ] && [ -n "$GETENT" ]; then
+    $GETENT passwd -- "$1" >/dev/null 2>&1
+  else
+    $AWK -F: -v u="$1" '$1 == u { found = 1 } END { exit !found }' "$passwd" 2>/dev/null
+  fi
+}
 
-# First check the System's cron files (all in /etc)
-# these are output with just the cron owner and the file 
-for dir in /etc/cron.hourly /etc/cron.daily /etc/cron.weekly /etc/cron.monthly
-# TODO: consider using cron.* as suggested by unspawn instead of
-# an explicit for
+# jobs FILE USER: the jobs of a crontab, as J lines. USER is the user a
+# user's crontab runs as, or empty for the system format, where each line
+# names its user before the command. Comments, blank lines and variable
+# settings are left out, and @daily and the like stand for the five times.
+jobs()
+{
+  __src=$1 __user=$2
+  __here=`rootfile "$__src"`
+  [ -f "$__here" ] || return 0
+  $AWK -v user="$__user" -v src="$__src" '
+    { sub(/^[ \t]+/, "") }
+    /^#/ || /^$/ { next }
+    /^[A-Za-z_][A-Za-z0-9_]*[ \t]*=/ { next }
+    {
+      n = split($0, f, /[ \t]+/)
+      i = ($1 ~ /^@/) ? 2 : 6
+      who = user
+      if (who == "") { who = f[i]; i++ }
+      if (n < i) next
+      # the command is the rest of the line, as written
+      line = $0
+      for (k = 1; k < i; k++) sub(/^[^ \t]+[ \t]+/, "", line)
+      printf "J\t%s\t%s\t%s\n", who, src, line
+    }' "$__here"
+}
+
+# The system crontab and cron.d
+echo "F	root	/etc/crontab" >> "$outfile"
+jobs /etc/crontab "" >> "$outfile"
+for f in `rootls /etc/cron.d`
 do
-    if [ -d "$dir" ] && [ -r "$dir" ]; then 
-    	$FIND "$dir" -type f -printf "%p %u\n" |
-	while read  file owner
-	do
-	[ "$owner" != "root" ] && {
-		echo "--WARN-- CRON file \`$file' is owned by $owner."
-	}
-        echo "$owner $file" >> $outfile
-       done
-    fi
-done 
+  case "${f##*/}" in *[!A-Za-z0-9_-]*) continue ;; esac
+  printf 'F\troot\t%s\n' "$f" >> "$outfile"
+  jobs "$f" "" >> "$outfile"
+done
 
-# Then check the cron's spool (both of the system's and the user's)
-# TODO (fix): same as above
-if [ -d $CRONSPOOL ] && [ -r $CRONSPOOL ]; then 
-    $FIND "$CRONSPOOL" -type f -printf "%p %u %f\n" |
-    while read  file owner name
-    do
-        [ "$owner" != "root" ] && {
-            echo "--WARN-- CRON file \`$file' is owned by $owner."
-        }
-        case $name in
-            *[!a-zA-Z0-9]*)
-            echo "--WARN-- Unusual cron file \`$file' found."
-            ;;
-        *)
-            $GETUSERHOME "$file" >/dev/null 2>/dev/null
+# run-parts' directories: every file a job of root's
+for d in /etc/cron.hourly /etc/cron.daily /etc/cron.weekly /etc/cron.monthly /etc/cron.yearly
+do
+  for f in `rootls $d`
+  do
+    case "${f##*/}" in *[!A-Za-z0-9_-]*) continue ;; esac
+    [ -f "`rootfile "$f"`" ] || continue
+    printf 'F\troot\t%s\nJ\troot\t%s\t%s\n' "$f" "$f" "$f" >> "$outfile"
+  done
+done
 
-          if [ $? = 0 ]; then
-        # Parse the crontab file:
-        # - Replace '@' commands (Debian-specific), since we don't care on
-        #   times we just replace them with '0 0 0 0 0'
-        # - Remove variable definitions
-	    $SED -e 's/#.*$//' -e '/^$/d' $CRONSPOOL/$name |
-            $SED -e 's/^@[A-Za-z]*/0 0 0 0 0/' |
-            $SED -e '/^[A-Za-z]*.*=/d' |
-            while read a b c d e command
-            do
-                [ -n "$command" ] && echo "$name $command"
-                done >> $outfile
-            else
-                echo "--WARN-- Found cron file for unknown user $file."
-            fi
-            ;;
-       esac
-   done
-fi
-
+# Users' crontabs, in the spool, each named after its user: Debian's is
+# /var/spool/cron/crontabs, Red Hat's and Arch's /var/spool/cron. Both are
+# read, since an offline root's need not be this host's kind; the
+# directories in /var/spool/cron (crontabs, atjobs) are not crontabs.
+for f in `rootls /var/spool/cron/crontabs; rootls /var/spool/cron`
+do
+  [ -f "`rootfile "$f"`" ] || continue
+  u=${f##*/}
+  if is_account "$u"; then
+    printf 'F\troot|%s\t%s\n' "$u" "$f" >> "$outfile"
+    jobs "$f" "$u" >> "$outfile"
+  else
+    printf 'U\t%s\n' "$f" >> "$outfile"
+  fi
+done
+exit 0

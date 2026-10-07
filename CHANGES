@@ -17,7 +17,7 @@ Changes since 3.4.0 (unreleased)
   is run. A check marks itself "# Tigris: offline" when it can read an
   offline root: so far pkg_integrity, deb_checkmd5sums, deb_nopackfiles,
   deb_statoverride, check_updates (without the reboot question),
-  check_pam, check_ssh, check_sudo and the account checks. Those marked "# Tigris: live system" (processes, sockets,
+  check_pam, check_ssh, check_sudo, the account checks and cron. Those marked "# Tigris: live system" (processes, sockets,
   the firewall, sysctl, mounts, Secure Boot, ...) are skipped with that
   reason, and the rest as "not offline yet"; each skip is in the report
   and in the JSON, and neither counts against the exit status. The run
@@ -65,6 +65,23 @@ Changes since 3.4.0 (unreleased)
   accounts); its group pattern's A-z also took [, \, ], ^ and the
   backquote. Without column it prints the duplicates one a line instead
   of stopping.
+
+- cron: gen_cron and check_crontabs rewritten. /etc/crontab and
+  /etc/cron.d, where most of a system's cron jobs are today, were never
+  read; now they are, with the cron.hourly ... cron.monthly scripts and
+  both spool layouts (Debian's /var/spool/cron/crontabs, Red Hat's and
+  Arch's /var/spool/cron). Each file cron reads is reported when others
+  can write it (cron008f, cron008w) or it is not root's, or for a user's
+  crontab its user's (cron009w), and a spool crontab named after no
+  account is reported (cron010w): cron runs it as soon as an account of
+  that name exists. gen_cron's warnings were bare text without an id and
+  never reached the JSON. Jobs with "--" in their command were dropped by
+  the filter for that text, so "run-parts --report" and the like were
+  never checked; shell builtins (test, [, true) no longer count as
+  commands without a full path; a job's home comes from passwd, not from
+  getuserhome's bash -c "echo ~NAME"; and on a system without cron
+  nothing is said, where "Use of cron is not restricted" used to be.
+  All of it reads an offline root, owners named by its passwd.
 
 - check_ssh reads an offline root too: sshd is not run there (it would
   be the host's, with the host's keys), so the effective configuration

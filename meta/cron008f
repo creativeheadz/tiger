@@ -1,0 +1,14 @@
+Id: cron008f
+Severity: FAIL
+Category: cron
+Check: check_crontabs
+References: crontab(5), cron(8)
+
+A file cron reads (/etc/crontab, a file in /etc/cron.d, a script in
+/etc/cron.hourly, cron.daily, cron.weekly or cron.monthly, or a user's
+crontab in the spool) can be written by anyone. Whoever writes to it
+decides what cron runs next, and as whom: root, for every file but a
+user's own crontab. Any account on the system can take root this way.
+
+Take write permission away from everyone but the owner (chmod go-w), and
+look at the file's contents and at who might already have changed it.

@@ -1,0 +1,13 @@
+Id: cron010w
+Severity: WARN
+Category: cron
+Check: check_crontabs
+References: crontab(5), cron(8)
+
+The cron spool holds a crontab named after an account that does not
+exist: one deleted without its crontab, or a file put there by hand.
+cron ignores it for now, but the moment an account of that name is made
+(a new employee with an old user name, an account restored from a
+backup) cron runs it as that account, with whatever it says.
+
+Read it, and delete it unless it is meant for an account still to come.
