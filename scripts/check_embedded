@@ -20,6 +20,10 @@
 #                 special characters (such as space)
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's binaries and the paths inside them; strings runs on
+#   this host but reads only the root's bytes.
+#
 TigerInstallDir='.'
 
 #
@@ -72,6 +76,36 @@ echo "# Performing check of embedded pathnames..."
 haveallcmds CAT SORT AWK GREP || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
+# Under --root a seed pattern names the root's files: list its
+# directory inside the root and match the pattern there, the way the
+# glob would (no dotfiles unless the pattern asks for them). Patterns
+# without a slash are tiger-relative and expand on this host, as live.
+expand_root_glob()
+{
+  case "$1" in
+    *'*'*|*'?'*|*'['*)
+      case "$1" in
+        */*) ;;
+        *) eval echo "$1" | $AWK '{for(i=1;i<=NF;i++)print $i}'; return;;
+      esac
+      __edir=${1%/*}
+      __ebase=${1##*/}
+      [ -z "$__edir" ] && __edir=/
+      __elist=`rootls "$__edir"`
+      case "$__ebase" in
+        .*) ;;
+        *) __elist=`echo "$__elist" | $GREP -v '/\.[^/]*$'`;;
+      esac
+      echo "$__elist" | while read __ent
+      do
+        [ -n "$__ent" ] && {
+          case "${__ent##*/}" in $__ebase) echo "$__ent";; esac
+        }
+      done;;
+    *) echo "$1";;
+  esac
+}
+
 {
   [ -n "$TigerCheckEmbedded" -a -s "$TigerCheckEmbedded" ] && {
     $CAT $TigerCheckEmbedded
@@ -80,7 +114,11 @@ haveallfiles BASEDIR WORKDIR || exit 1
     $GREP -v '^#' "$EMBEDDEDLIST" |
     while read file
     do
-      eval echo "$file" | $AWK '{for(i=1;i<=NF;i++)print $i}' 
+      if [ -n "$TIGRIS_ROOT" ]; then
+        expand_root_glob "$file"
+      else
+        eval echo "$file" | $AWK '{for(i=1;i<=NF;i++)print $i}'
+      fi
     done
   }
 } |

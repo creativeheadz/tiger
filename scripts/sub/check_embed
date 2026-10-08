@@ -169,8 +169,9 @@ do
   $SORT -u |
   while read file
   do
-    [ -r "$file" ] && {
-      $STRINGS - $file |
+    herefile=`__here "$file"`
+    [ -r "$herefile" ] && {
+      $STRINGS - "$herefile" |
       $SED -e 's/#.*$//' -e '/^$/d' |
       $GREP '/[-a-zA-Z0-9_.][-a-zA-Z0-9_./]*' |
       $SED -e 's/[^-a-zA-Z0-9_./]/ /g' |   
@@ -198,12 +199,13 @@ do
   $COMM -23 - $record |
   while read pathname
   do
-    if [ -b "$pathname" -o -c "$pathname" -o -p "$pathname" ]; then
+    herepath=`__here "$pathname"`
+    if [ -b "$herepath" -o -c "$herepath" -o -p "$herepath" ]; then
       : # Don't process these
-    elif [ -d "$pathname" -a $info = 'Y' ]; then
+    elif [ -d "$herepath" -a $info = 'Y' ]; then
       echo "$pathname"
-    elif [ -f "$pathname" ]; then
-      if [ ! -s "$pathname" ]; then
+    elif [ -f "$herepath" ]; then
+      if [ ! -s "$herepath" ]; then
 	:  # Zero length file... the only reason for this is to skip sockets
       elif [ "x$Tiger_Embed_Check_Exec_Only" != 'xN' ]; then
 	getpermit "$pathname" | {
@@ -267,9 +269,10 @@ $AWK '
 ' |
 while read pathname source
 do
-  if [ -d "$pathname" ]; then
-    check_file 'INFO' root "$pathname" "$source" 
-  elif [ -f "$pathname" ]; then
+  herepath=`__here "$pathname"`
+  if [ -d "$herepath" ]; then
+    check_file 'INFO' root "$pathname" "$source"
+  elif [ -f "$herepath" ]; then
     getpermit "$pathname" | {
       read _f owner grp ur uw ux gr gw gx or ow ox suid sgid stk
       if [ "$ux$gx$ox" != '000' ]; then
