@@ -36,7 +36,7 @@ if run_section lint; then
   say "== lint: sh -n on every shell script"
   lintfail=0; n=0
   for f in $(git ls-files tiger tigris-diff tigris-accept tigexp tigercron config initdefs scripts systems util tests packaging); do
-    case "$f" in tests/fixtures/*|*.c|*.pl|*.txt|*.lst|*.tmpl|*.xref|*README*|*/services|*/inetd|*_list|*signatures*|*advisories*|*baseline*|*embedlist*|*facl*|*.spec) continue;; esac
+    case "$f" in tests/fixtures/*|*.c|*.pl|*.txt|*.lst|*.tmpl|*.xref|*README*|*/services|*/inetd|*_list|*signatures*|*advisories*|*baseline*|*embedlist*|*facl*|*.spec|*PKGBUILD*) continue;; esac
     [ -f "$f" ] || continue
     head -1 "$f" | grep -q 'perl' && continue
     n=$((n+1))
