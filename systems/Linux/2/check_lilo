@@ -38,6 +38,10 @@
 # Tigris: needs root
 #   the boot loader's configuration is root's to read.
 #
+# Tigris: offline
+#   the root's boot loader configuration; getpermit reads the
+#   root's files itself.
+#
 #-----------------------------------------------------------------------------
 #
 TigerInstallDir='.'
@@ -83,16 +87,21 @@ done
 haveallcmds GREP RM UNAME EGREP || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
-machine=`$UNAME -m`
-# Only applies to the x86 or amd64 architectures:
-[ -z "`echo $machine | $EGREP 'i.86$|^x86_64$'`" ] && exit 0
+# The root's architecture is not this host's: under --root a present
+# configuration file is checked, whatever this host runs on.
+if [ -z "$TIGRIS_ROOT" ]; then
+  machine=`$UNAME -m`
+  # Only applies to the x86 or amd64 architectures:
+  [ -z "`echo $machine | $EGREP 'i.86$|^x86_64$'`" ] && exit 0
+fi
 
 echo
 echo "# Checking boot loader file permissions..."
 found="N"
 
 file=/etc/lilo.conf
-if [ -r $file ]
+herefile=`__here "$file"`
+if [ -r "$herefile" ]
 then
 
 	found="Y"
@@ -112,8 +121,8 @@ then
 	done
 
 	# Lilo password checks
-	if [ -n "`$GREP ^restricted $file`" ] ; then
-            if [ -z "`$GREP ^password $file`" ] ; then
+	if [ -n "`$GREP ^restricted "$herefile"`" ] ; then
+            if [ -z "`$GREP ^password "$herefile"`" ] ; then
                 message WARN boot007w "" "The bootloader is restricted but does not seem to have a password configured."
 	    fi 
 	else
@@ -122,15 +131,15 @@ then
 
 fi
 
-if [ -r  /boot/grub/grub.cfg ] ; then
+if [ -r "`__here /boot/grub/grub.cfg`" ] ; then
     # Grub2 configuration file is  /boot/grub/grub.cfg
     # Note: This configuration file can import additional files
     # but these are not reviewed by the script
    file=/boot/grub/grub.cfg
-elif [ -r /etc/grub.conf ] ; then
+elif [ -r "`__here /etc/grub.conf`" ] ; then
    # Old SuSE versions use /etc/grub.conf.
    file=/etc/grub.conf
-elif [ -r  /boot/grub/menu.lst ] ; then
+elif [ -r "`__here /boot/grub/menu.lst`" ] ; then
    #  Old Debian version use /boot/grub/menu.lst
    file=/boot/grub/menu.lst
 else
@@ -138,12 +147,13 @@ else
    file=/boot/grub/grub.conf
 fi 
 
-if [ -r "$file" ]
+herefile=`__here "$file"`
+if [ -r "$herefile" ]
 then
 
 	found="Y"
 	# GRUB password checks
-        if [ -z "`$EGREP '^[[:blank:]]*password' $file`" ] ; then
+        if [ -z "`$EGREP '^[[:blank:]]*password' "$herefile"`" ] ; then
                 message WARN boot008w "" "The Grub bootloader configuation file ($file) does not have a password configured."
 	else 
 

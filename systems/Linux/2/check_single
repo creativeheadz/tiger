@@ -28,6 +28,9 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's lilo.conf, grub menu and inittab.
+#
 TigerInstallDir='.'
 
 #
@@ -72,9 +75,13 @@ done
 haveallcmds GREP RM UNAME EGREP || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
-machine=`$UNAME -m`
-# Only applies to the x86 architecture:
-[ -z "`echo $machine | $EGREP 'i.86$'`" ] && exit 0
+# The root's architecture is not this host's: under --root a present
+# configuration file is checked, whatever this host runs on.
+if [ -z "$TIGRIS_ROOT" ]; then
+  machine=`$UNAME -m`
+  # Only applies to the x86 architecture:
+  [ -z "`echo $machine | $EGREP 'i.86$'`" ] && exit 0
+fi
 
 echo
 echo "# Checking for single user-mode password..."
@@ -82,24 +89,27 @@ echo "# Checking for single user-mode password..."
 # if we find a boot-loader password, great. 
 # If not, look for single-user mode password in inittab 
 
-if [ -r /etc/lilo.conf ]
+LILOCONF=`__here /etc/lilo.conf`
+GRUBMENU=`__here /boot/grub/menu.lst`
+INITTAB=`__here /etc/inittab`
+if [ -r "$LILOCONF" ]
 then
-	$GREP "password=" /etc/lilo.conf 1> /dev/null
+	$GREP "password=" "$LILOCONF" 1> /dev/null
 	if [ $? -eq 0 ]
 	then
 		exit 0
 	fi
-elif [ -r /boot/grub/menu.lst ]
+elif [ -r "$GRUBMENU" ]
 then
-	$GREP "password" /boot/grub/menu.lst 1> /dev/null
+	$GREP "password" "$GRUBMENU" 1> /dev/null
 	if [ $? -eq 0 ]
 	then
 		exit 0
 	fi
-elif [ -r /etc/inittab ]
+elif [ -r "$INITTAB" ]
 then
 	SULOGIN_STRING="~~:S:wait:/sbin/sulogin"
-	$GREP "$SULOGIN_STRING" /etc/inittab 1> /dev/null
+	$GREP "$SULOGIN_STRING" "$INITTAB" 1> /dev/null
 	if [ $? -eq 1 ]
 	then
 		message FAIL sum001f "" "Recommend addition to /etc/inittab:  $SULOGIN_STRING"
