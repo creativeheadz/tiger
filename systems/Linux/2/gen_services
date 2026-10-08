@@ -20,7 +20,18 @@
 #-----------------------------------------------------------------------------
 #
 
-$GREP -v '^#' /etc/services |
+# The file read: this system's, or the offline root's (--root),
+# resolved inside it. The set still names it by its own path.
+etcfile()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then
+    printf '%s\n' "$1" | AWK=$AWK sh "$BASEDIR/util/rootpath" "$TIGRIS_ROOT" "$TIGRIS_LINKS"
+  else
+    echo "$1"
+  fi
+}
+SERVICES=`etcfile /etc/services`
+$GREP -v '^#' "$SERVICES" |
 $SORT > $WORKDIR/etc_services.$$
 echo "/etc/services" > $WORKDIR/etc_services.$$.src
 echo $WORKDIR/etc_services.$$

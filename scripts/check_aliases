@@ -19,6 +19,10 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's aliases, programs and include files; lgetpermit
+#   and pathmsg read the root themselves.
+#
 TigerInstallDir='.'
 
 #
@@ -79,8 +83,9 @@ progalias()
   [ -n "$file" ] && fmsg=" (from included file $file)"
 
   prog="`echo \"$rcpt\" | $SED -e 's/^[ 	|\"]*\([^\" ]*\).*$/\1/'`"
+  hereprog=`__here "$prog"`
 
-  if [ ! -f "$prog" ]; then
+  if [ ! -f "$hereprog" ]; then
     message INFO ali001i "$rcpt" "Program alias \`$alias' executable does not exist$fmsg"
   else
     [ -n "$TigerCheckEmbedded" ] && {
@@ -100,19 +105,20 @@ filealias()
 {
   alias="$1"
   file="`echo \"$2\" | $SED -e 's/[ 	]*:include://'`"
+  herefile=`__here "$file"`
 
-  [ ! -f "$file" ] && {
+  [ ! -f "$herefile" ] && {
     message INFO ali006i "" "Alias \`$alias' included file \`$file' does not exist$fmsg"
   }
   
   lgetpermit "$file" |
   pathmsg ali007 ali008 "$file" root "Alias \`$alias' includes${fmsg} file"
 
-  [ -r "$file" ] && {
+  [ -r "$herefile" ] && {
     while read names
     do
       checkalias "$alias" "$names" "$file"
-    done < "$file"
+    done < "$herefile"
   }
 }
 

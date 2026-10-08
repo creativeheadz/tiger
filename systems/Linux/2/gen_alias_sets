@@ -21,8 +21,19 @@
 #
 #-----------------------------------------------------------------------------
 #
-[ -f /etc/aliases ] && {
-  $GREP -v '^#' /etc/aliases |
+# The file read: this system's, or the offline root's (--root),
+# resolved inside it. The set still names it by its own path.
+etcfile()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then
+    printf '%s\n' "$1" | AWK=$AWK sh "$BASEDIR/util/rootpath" "$TIGRIS_ROOT" "$TIGRIS_LINKS"
+  else
+    echo "$1"
+  fi
+}
+ALIASES=`etcfile /etc/aliases`
+[ -f "$ALIASES" ] && {
+  $GREP -v '^#' "$ALIASES" |
   $SORT > $WORKDIR/etc_aliases.$$
   echo "/etc/aliases" > $WORKDIR/etc_aliases.$$.src
   echo $WORKDIR/etc_aliases.$$

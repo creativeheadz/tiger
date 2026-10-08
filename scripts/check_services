@@ -45,6 +45,9 @@
 #     
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's /etc/services against the reference list.
+#
 TigerInstallDir='.'
 
 #
