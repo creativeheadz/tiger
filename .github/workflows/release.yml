@@ -2,7 +2,8 @@ name: Release image
 
 # A release tag (version_X_Y_Z, as Tigris tags its releases) builds the
 # container image and pushes it to the GitHub Container Registry as
-# ghcr.io/creativeheadz/tigris:X.Y.Z and :latest. Only on GitHub: the
+# ghcr.io/creativeheadz/tigris:X.Y.Z and :latest, and creates the GitHub
+# release with the tag's CHANGES section as notes. Only on GitHub: the
 # same workflow runs on the Gitea mirror, which has no such registry.
 on:
   push:
@@ -34,3 +35,25 @@ jobs:
             ghcr.io/creativeheadz/tigris:latest
           labels: |
             org.opencontainers.image.version=${{ steps.v.outputs.version }}
+
+  notes:
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: The version, from the tag
+        id: v
+        run: echo "version=$(echo "${GITHUB_REF_NAME#version_}" | tr _ .)" >> "$GITHUB_OUTPUT"
+      - name: Create the release, with the CHANGES section as notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v='${{ steps.v.outputs.version }}'
+          tag="version_$(echo "$v" | tr . _)"
+          { printf '%s\n\n' '**This is an independent fork of TIGER, not the official project.** The official TIGER is on [GNU Savannah](https://savannah.nongnu.org/projects/tiger/), maintained by Javier Fernández-Sanguino Peña; fixes made here that apply to it are offered back there and to the Debian bug tracker.'
+            sed -n "/^Changes (v $v)/,/^Changes (v /p" CHANGES | sed '1,3d' | sed '${/^Changes (v /d;}'
+            printf 'Container image: `ghcr.io/creativeheadz/tigris:%s`\n' "$v"
+          } > notes.md
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "Tigris $v" --notes-file notes.md
