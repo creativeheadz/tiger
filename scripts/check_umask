@@ -37,6 +37,9 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's /etc/profile, /etc/csh.login and /etc/bashrc.
+#
 TigerInstallDir="."
 
 #
@@ -95,16 +98,17 @@ echo "# Checking for correct umask settings..."
 
 for file in '/etc/profile' '/etc/csh.login' '/etc/bashrc'
 do
-   [ -r $file ] && {
+   herefile=`__here "$file"`
+   [ -r "$herefile" ] && {
 
-   Occurance=`$GREP umask $file | $WC -l`
+   Occurance=`$GREP umask "$herefile" | $WC -l`
 
    if [ $Occurance = 0 ]; then
 	#echo "No umask entry"
 	message WARN misc021w "" "There are no umask entries in $file"
 
    elif [ $Occurance = 1 ]; then
-	UMASK1=`$GREP umask $file  \
+	UMASK1=`$GREP umask "$herefile"  \
            | $EXPAND \
            | $SED -e "s/^.*umask//"\
            | $CUT -d" " -f2`
@@ -119,12 +123,12 @@ do
 
 
     elif [ $Occurance = 2 ]; then
-	UMASK1=`$GREP umask $file  \
+	UMASK1=`$GREP umask "$herefile"  \
              | $EXPAND \
              | $HEAD -n 1 \
              | $SED -e "s/^.*umask//" \
              | $CUT -d" "  -f2`
-    	UMASK2=`$GREP umask $file  \
+    	UMASK2=`$GREP umask "$herefile"  \
              | $EXPAND \
              | $TAIL -n 1 \
              | $SED -e "s/^.*umask//" \

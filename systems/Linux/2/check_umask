@@ -48,6 +48,9 @@
 # 
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's login.defs, pam stack, shell start-up files and shells.
+#
 TigerInstallDir='.'
 
 #
@@ -118,8 +121,9 @@ Foundumask=0
 
 # First check PAM's default since it applies to all shells
 GLOBALFILE="/etc/login.defs"
-if [ -r $GLOBALFILE ] ; then
-    GLOBALUMASK=`$GREP  ^UMASK $GLOBALFILE  \
+GLOBALHERE=`__here "$GLOBALFILE"`
+if [ -r "$GLOBALHERE" ] ; then
+    GLOBALUMASK=`$GREP  ^UMASK "$GLOBALHERE"  \
            | $EXPAND  \
            | $SED -e"s/\s\+/ /g" \
            | $CUT -d" " -f2`
@@ -128,8 +132,9 @@ fi
 # With pam_umask in the session stack, login shells get the login.defs
 # umask from PAM and the shell start-up files need not set one
 PAMUMASK=
-[ -n "$GLOBALUMASK" ] && [ -r /etc/pam.d/common-session ] &&
-  $GREP -q '^[^#]*pam_umask\.so' /etc/pam.d/common-session && PAMUMASK=Y
+PAMSESSION=`__here /etc/pam.d/common-session`
+[ -n "$GLOBALUMASK" ] && [ -r "$PAMSESSION" ] &&
+  $GREP -q '^[^#]*pam_umask\.so' "$PAMSESSION" && PAMUMASK=Y
 if [ -z "$GLOBALUMASK" ]; then
 	message WARN misc026w "" "There is no default umask settings for user login shells in $GLOBALFILE"
 else
@@ -140,13 +145,14 @@ fi
 check_umask()
 {
    file=$1
-   [ ! -r "$file" ] && return 0
+   herefile=`__here "$file"`
+   [ ! -r "$herefile" ] && return 0
 
-    Occurance=`$GREP umask $file |$GREP -v ^# | $WC -l`
+    Occurance=`$GREP umask "$herefile" |$GREP -v ^# | $WC -l`
 
      if [ $Occurance -gt 0 ]; then
 	Foundumask=1
-	UMASK=`$GREP umask $file  \
+	UMASK=`$GREP umask "$herefile"  \
            | $GREP -v ^\# \
            | $EXPAND  \
            | $HEAD -n 1 \
@@ -172,12 +178,12 @@ shellname="dash"
 Findumask=0
 check_umask /etc/profile || Findumask=1
 # Warn if dash is installed and no definitions have been found
-if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x /bin/dash ] ; then
+if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x "`__here /bin/dash`" ] ; then
         message WARN misc021w "" "There is no umask definition for the $shellname shell"
 fi
 # Same with ksh
 shellname="ksh"
-if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x /bin/ksh ] ; then
+if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x "`__here /bin/ksh`" ] ; then
         message WARN misc021w "" "There is no umask definition for the $shellname shell"
 fi
 
@@ -191,19 +197,23 @@ do
     check_umask $file || Findumask=1
 done
 # Warn if bash is installed and no definitions have been found
-if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x /bin/bash ] ; then
+if [ $Findumask -eq 0 ] && [ -z "$PAMUMASK" ] && [ -x "`__here /bin/bash`" ] ; then
         message WARN misc021w "" "There is no umask definition for the $shellname shell"
 fi
 
 # Csh/Tcsh
 shellname="csh/tcsh"
 Findumask=0
-for file in /etc/csh.login /etc/csh.cshrc /etc/csh/login.d/* 
+# The login.d glob cannot expand on this host when the files live in a
+# root: list the root's directory instead (no dotfiles, as the glob).
+CSHGLOB='/etc/csh/login.d/*'
+[ -n "$TIGRIS_ROOT" ] && CSHGLOB="`rootls /etc/csh/login.d | $GREP -v '/\.[^/]*$'`"
+for file in /etc/csh.login /etc/csh.cshrc $CSHGLOB 
 do
     check_umask $file || Findumask=1
 done
 # Warn if csh/tcsh  are installed and no definitions have been found
-if [ $Findumask -eq 0 ] && [ -x /bin/csh -o -x /usr/bin/tcsh ] ; then
+if [ $Findumask -eq 0 ] && [ -x "`__here /bin/csh`" -o -x "`__here /usr/bin/tcsh`" ] ; then
         message WARN misc021w "" "There is no umask definition for the $shellname shell"
 fi
 

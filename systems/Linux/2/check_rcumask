@@ -42,6 +42,10 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's rc files; the systemd early exit looks at the
+#   root's /run/systemd/system.
+#
 TigerInstallDir='.'
 
 #
@@ -96,7 +100,7 @@ haveallcmds HEAD TAIL GREP EXPAND SED CUT  || exit 1
 # Under systemd the init.d scripts that remain are run by the service
 # manager with its own umask (0022 unless a unit says otherwise), not by
 # /etc/init.d/rc, so there is nothing for this check to look at
-[ -d /run/systemd/system ] && exit 0
+[ -d "`__here /run/systemd/system`" ] && exit 0
 
 
 #####
@@ -109,13 +113,14 @@ Foundumask=0
 # source for initscripts: /etc/rc.d/init.d/functions
 for file in '/etc/init.d/rcS' '/etc/rc.d/init.d/umask.sh' '/etc/init.d/umask.sh' '/etc/rc.d/init.d/functions' '/etc/init.d/rc'
 do
-   [ -r $file ] && {
+   herefile=`__here "$file"`
+   [ -r "$herefile" ] && {
 
-   Occurance=`$GREP umask $file |$GREP -v ^# | $WC -l`
+   Occurance=`$GREP umask "$herefile" |$GREP -v ^# | $WC -l`
 
    if [ $Occurance -eq 1 ]; then
 	Foundumask=1
-	UMASK1=`$GREP umask $file  \
+	UMASK1=`$GREP umask "$herefile"  \
            | $GREP -v ^\# \
            | $EXPAND  \
            | $SED -e "s/^.*umask//"\
@@ -127,13 +132,13 @@ do
 
     elif [ "$Occurance" = 2 ]; then
 	Foundumask=1
-	UMASK1=`$GREP umask $file  \
+	UMASK1=`$GREP umask "$herefile"  \
              | $GREP -v ^# \
              | $EXPAND \
              | $HEAD -n 1 \
              | $SED -e "s/^.*umask//" \
              | $CUT -d" "  -f2`
-	UMASK2=`$GREP umask $file  \
+	UMASK2=`$GREP umask "$herefile"  \
              | $GREP -v ^# \
              | $EXPAND \
              | $TAIL -n 1 \
