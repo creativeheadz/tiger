@@ -247,6 +247,10 @@ export IFCONFIG IP IPTABLES NETSTAT SS
 UNAME=`findcmd uname`
 HOSTNAME=`findcmd hostname`
 GETHOSTNAME=`findcmd hostname`
+[ ! -n "$GETHOSTNAME" ] && {
+  GETHOSTNAME=`findcmd uname`
+  [ -n "$GETHOSTNAME" ] && GETHOSTNAME="$GETHOSTNAME -n"
+}
 EXPR=`findcmd expr`
 STRINGS=`findcmd strings`
 FIND=`findcmd find`
