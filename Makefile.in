@@ -96,6 +96,11 @@ BINARIES=./tiger \
 	 ./tigexp  \
 	 ./tigercron 
 
+# tigris calls these two from BASEDIR (-E reports, --since), so they are
+# installed beside the tree as well as with the binaries.
+HELPERS=./tigexp \
+	./tigris-diff
+
 # Maybe this should be modified to be a generic ./scripts/check_*
 # otherwise sometimes a check might be 'forgotten'
 SCRIPTS=./scripts/check_accounts \
@@ -244,6 +249,18 @@ installbinaries: installdirs
 	  chmod 755 $(DESTDIR)$(TIGERBIN)/$$file ; \
 	done
 
+installhelpers: installdirs
+	@echo "Copying helper binaries beside the install..."
+	@for file in $(HELPERS); do \
+	   sed -e 's%^TigerLogDir=.*$$%TigerLogDir="'$(TIGERLOGS)'"%' \
+	         -e 's%^TigerWorkDir=.*$$%TigerWorkDir="'$(TIGERWORK)'"%' \
+	         -e 's%^TigerConfigDir=.*$$%TigerConfigDir="'$(TIGERCONFIG)'"%' \
+	         -e 's%^TigerBinDir=.*$$%TigerBinDir="'$(TIGERBIN)'"%' \
+	         -e 's%^TigerInstallDir=.*$$%TigerInstallDir="'$(TIGERHOME)'"%' \
+	         $$file > $(DESTDIR)$(TIGERHOME)/$$file; \
+	  chmod 755 $(DESTDIR)$(TIGERHOME)/$$file ; \
+	done
+
 installconfig: installdirs
 	@echo "Copying configuration files..."
 	@for file in $(CONFIGFILES); do \
@@ -258,7 +275,7 @@ installconfig: installdirs
 	 ./config >$(DESTDIR)$(TIGERHOME)/config
 	@chmod 644 $(DESTDIR)$(TIGERHOME)/config
 
-install: installdirs installbinaries installconfig installmanpages
+install: installdirs installbinaries installhelpers installconfig installmanpages
 	@if [ ! -d bin ]; then \
 	    mkdir bin; \
 	fi

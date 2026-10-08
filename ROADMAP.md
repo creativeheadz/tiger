@@ -63,7 +63,7 @@ Settled, so they do not have to be argued again:
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
-| Tests                | 36 fixture suites, 15 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 37 fixture suites, 15 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output

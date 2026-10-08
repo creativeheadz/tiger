@@ -106,6 +106,8 @@ jobs:
           sudo sh tests/offline_scan_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
+      - name: Installed tree runs its helpers
+        run: sh tests/install_check.sh
       - name: ShellCheck (errors)
         run: |
           shellcheck --version | head -2
