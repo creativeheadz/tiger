@@ -48,6 +48,9 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's device directories; every test resolves inside it.
+#
 TigerInstallDir='.'
 
 #
@@ -134,14 +137,18 @@ fi
 dirs="/dev"
 # For Solaris but maintain compatibility with others
 # (in Solaris /dev/ are symlinks to devices in /devices/pseudo)
-[ -d /devices ] && dirs="$dirs /device"
-[ -d /devices/pseudo ] && dirs="$dirs /devices/pseudo"
+[ -d "`__here /devices`" ] && dirs="$dirs /device"
+[ -d "`__here /devices/pseudo`" ] && dirs="$dirs /devices/pseudo"
 for dir in $dirs
 do
-for file in $dir/[a-z0-9]*
+# The glob cannot expand on this host when the files live in a root:
+# list the root's directory instead (same names the glob would match).
+DEVLIST="$dir/[a-z0-9]*"
+[ -n "$TIGRIS_ROOT" ] && DEVLIST="`rootls "$dir" | $GREP "^$dir/[a-z0-9]"`"
+for file in $DEVLIST
 do
 
-	[ ! -h "$file" ] && [ -f "$file" ] &&  {
+	[ ! -h "`__here "$file"`" ] && [ -f "`__here "$file"`" ] &&  {
 	file=`echo $file | $SED -e 's/"/\\\"/g'`
     	eval "case \"$file\" in
 		$EXPECTEDFILES)
@@ -153,7 +160,7 @@ do
 	esac"
 	}
 
-	[ -d "$file" ] && {
+	[ -d "`__here "$file"`" ] && {
 	eval "case \"$file\" in
 		$EXPECTEDDIRS)
 		# Expected directories
@@ -161,7 +168,7 @@ do
 		*)
 		# A directory of nothing but symlinks is an alias tree made by udev
 		# (/dev/disk/by-*) or LVM (/dev/<volume group>), not a hiding place
-		if $LS -lA \"$file\" | $SED 1d | $GREP -qv '^l' ; then
+		if $LS -lA \"`__here \"$file\"`\" | $SED 1d | $GREP -qv '^l' ; then
 		message WARN dev003w \"\" \"The directory $file resides in a device directory.\"
 		fi
 		;;
@@ -185,7 +192,7 @@ do
 	;;
 	*)
 	# Do not check directories or symbolic links
-		if [ ! -d "$file"  -a  ! -h "$file" ] 
+		if [ ! -d "`__here "$file"`"  -a  ! -h "`__here "$file"`" ] 
 		then
 		   check_dev_file $file
 		fi

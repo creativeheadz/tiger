@@ -47,6 +47,9 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's log files (paths chosen for this host's $OS).
+#
 TigerInstallDir="."
 
 #
@@ -137,10 +140,10 @@ if [ "$OS" = "Linux" ] ; then
 # The system log is /var/log/messages on Red Hat and SUSE but
 # /var/log/syslog on Debian and its derivatives, and with a persistent
 # journal (/var/log/journal) there need not be a text log at all
-	if [ ! -f "$MESSAGES" ] ; then
-		if [ -f /var/log/syslog ] ; then
+	if [ ! -f "`__here "$MESSAGES"`" ] ; then
+		if [ -f "`__here /var/log/syslog`" ] ; then
 			MESSAGES=/var/log/syslog
-		elif [ -d /var/log/journal ] && [ -n "`$LS -A /var/log/journal 2>/dev/null`" ] ; then
+		elif __journal=`__here /var/log/journal` && [ -d "$__journal" ] && [ -n "`$LS -A "$__journal" 2>/dev/null`" ] ; then
 			MESSAGES=""
 		fi
 	fi
@@ -164,7 +167,17 @@ if [ "$OS" = "Tru64" ]; then
 	MESSAGES=""
 fi
 
-if [ ! -f "$WTMP" ] ; then
+# Existence is tested inside the root; getpermit and the messages
+# keep the system's own paths.
+WTMPhere=`__here "$WTMP"`
+BTMPhere=`__here "$BTMP"`
+LASTLOGhere=`__here "$LASTLOG"`
+UTMPhere=`__here "$UTMP"`
+LOGINLOGhere=`__here "$LOGINLOG"`
+SULOGhere=`__here "$SULOG"`
+MESSAGEShere=`__here "$MESSAGES"`
+
+if [ ! -f "$WTMPhere" ] ; then
     #echo "...Warning: $WTMP does not exist"
     message FAIL logf001f "" "Log file $WTMP does not exist"
 else
@@ -179,7 +192,7 @@ else
 fi
 
 if [ -n "$BTMP" ] ; then
-    if [ ! -f "$BTMP" ] ; then
+    if [ ! -f "$BTMPhere" ] ; then
         #echo "...Warning: $BTMP does not exist"
         message FAIL logf002f "" "Log file $BTMP does not exist"
     else
@@ -194,11 +207,11 @@ if [ -n "$BTMP" ] ; then
     fi
 fi
 
-[ -n "$LASTLOG" -a ! -f "$LASTLOG" ] && 
+[ -n "$LASTLOG" -a ! -f "$LASTLOGhere" ] && 
     #echo "...Warning: $LASTLOG does not exist"
     message FAIL logf003f "" "Log file $LASTLOG does not exist"
 
-if [ ! -f "$UTMP" ] ; then
+if [ ! -f "$UTMPhere" ] ; then
     #echo "...Warning: $UTMP does not exist"
     message FAIL logf004f "" "Log file $UTMP does not exist"
 else
@@ -213,7 +226,7 @@ else
 fi
 
 if [ -n "$LOGINLOG" ] ; then
-    if [ ! -f "$LOGINLOG" ] ; then
+    if [ ! -f "$LOGINLOGhere" ] ; then
         #echo "...Warning: $LOGINGLOG does not exist"
         message FAIL logf006f "" "Log file $LOGINLOG does not exist"
     else
@@ -223,7 +236,7 @@ if [ -n "$LOGINLOG" ] ; then
 fi
 
 if [ -n "$SULOG" ] ; then
-    if [ ! -f "$SULOG" ] ; then
+    if [ ! -f "$SULOGhere" ] ; then
         message FAIL logf006f "" "Log file $SULOG does not exist"
     else
         check_fileperm $SULOG 110000000 || 
@@ -232,7 +245,7 @@ if [ -n "$SULOG" ] ; then
 fi
  
 if [ -n "$MESSAGES" ] ; then
-    if [ ! -f "$MESSAGES" ] ; then
+    if [ ! -f "$MESSAGEShere" ] ; then
         #echo "...Warning: $MESSAGES does not exist"
         message FAIL logf007f "" "Log file $MESSAGES does not exist"
     else 

@@ -30,6 +30,10 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's files against the permission database; the disk-device
+#   leg reads this host's mount table and stays live.
+#
 TigerInstallDir='.'
 
 #
@@ -98,7 +102,7 @@ display_what_access()
 
   if [ "$access" = 'X' ]; then
     access='execute'
-    [ -d "$file" ] && access='search'
+    [ -d "`__here "$file"`" ] && access='search'
   fi
 
   [ "$onoff" = '0' ] && {
@@ -184,7 +188,8 @@ check_file()
     getpermit $file |
     while read filename rowner rgroup rur ruw rux rgr rgw rgx ror row rox rsuid rsgid rstk
     do
-      test ! $TESTLINK "$filename" && [ -f "$filename" -o -d "$filename" ] &&
+      herename=`__here "$filename"`
+      test ! $TESTLINK "$herename" && [ -f "$herename" -o -d "$herename" ] &&
       if [ "$file" = "$filename" ]; then
 	check_file "$filename"
       else
@@ -196,7 +201,9 @@ check_file()
 
   saveifs=$IFS
 
-  haveallcmds GET_MOUNTS && {  
+  # The disk devices come from this host's mount table: no offline
+  # equivalent, so this leg stays live.
+  [ -z "$TIGRIS_ROOT" ] && haveallcmds GET_MOUNTS && {
     $GET_MOUNTS local all |
     while read mtpoint fstype fsdevice rdevice
     do
