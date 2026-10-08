@@ -31,8 +31,20 @@
 EXPFILE=/etc/exports
 EXPFILEW=`echo $EXPFILE | $SED -e 's/^\///' | $SED -e 's/\\//\_/g'`
 
-[ -r $EXPFILE ] && {
-  $GREP -v '^#' $EXPFILE  | {
+# The file read: this system's, or the offline root's (--root),
+# resolved inside it. The set still names it by its own path.
+etcfile()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then
+    printf '%s\n' "$1" | AWK=$AWK sh "$BASEDIR/util/rootpath" "$TIGRIS_ROOT" "$TIGRIS_LINKS"
+  else
+    echo "$1"
+  fi
+}
+EXPHERE=`etcfile $EXPFILE`
+
+[ -r "$EXPHERE" ] && {
+  $GREP -v '^#' "$EXPHERE"  | {
   while read dir acl 
   do
     echo $acl | 

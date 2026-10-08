@@ -45,6 +45,10 @@
 #
 #------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's exports and bootparams; NIS is not consulted and the
+#   host list defaults to the root's hostname unless configured.
+#
 TigerInstallDir='.'
 
 #
@@ -174,7 +178,7 @@ check_entry()
       fi
     fi
   }
-  [ $root = 1 -a -d $dir ] && {
+  [ $root = 1 -a -d "`__here "$dir"`" ] && {
     [ "$dir" = "/" ] && {
       if [ "$readonly" = "1" ]; then
 	message FAIL nfs008f "" "Exporting the root filesystem (/) R/O with root access."
@@ -230,6 +234,14 @@ parse_bootparam()
    	     }
         }'
 }
+
+# The bootparams servers are matched against this host's name by
+# default; for a root they must match the root's own, unless the site
+# configured a list (which still wins).
+if [ -n "$TIGRIS_ROOT" ] && [ "$HOSTNAMESLIST" = "$HOSTNAME" ]; then
+  __hostname=`__here /etc/hostname`
+  [ -r "$__hostname" ] && read HOSTNAMESLIST < "$__hostname"
+fi
 
 casediskless='*) dlclient=0;;'
 
