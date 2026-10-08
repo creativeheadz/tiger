@@ -28,7 +28,14 @@ carries the mechanics.
 ```sh
 for t in tests/*_check.sh; do sh "$t"; done   # fixtures, no root needed
 sudo sh tests/smoke.sh                        # full run on this machine
+sh tests/local-ci.sh                          # what CI runs, before pushing
 ```
+
+`sh tests/local-ci.sh` runs the lint, build and distribution jobs CI
+would run (a section whose tools are missing here says SKIP); add
+`smoke` to run the full run too. It mirrors `.github/workflows/ci.yml`
+step for step, with no GitHub-only service in it, so an own CI
+pipeline would run the same script.
 
 `sh -n` over the tree and ShellCheck (errors) run in CI, and both fail
 the build. Tiger's portable file tests take the operator from a
