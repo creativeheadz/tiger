@@ -19,6 +19,9 @@
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 cd "$TIGER" || exit 1
 
+# The run must leave the tree exactly as it found it; anything it builds
+# happens in copies and temp dirs, never here.
+treestart=`git status --short 2>/dev/null`
 fail=0
 want="$*"
 [ -n "$want" ] || want="lint build docker packages"
@@ -80,6 +83,13 @@ fi
 
 if run_section build; then
   if command -v cc >/dev/null 2>&1 || command -v gcc >/dev/null 2>&1; then
+    # A test runner must not dirty the tree it tests: CI builds on a fresh
+    # checkout per job, and the packages section bind-mounts this tree, so
+    # host-built binaries leaking into it break the container builds (an
+    # Alpine abuild fails outright on a glibc-linked helper). Build a copy.
+    B=`mktemp -d`
+    ( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$B" && tar -xf - )
+    cd "$B" || exit 1
     say "== build: configure and make"
     ./configure && make || fail=1
     say "== build: the helpers install into bin/"
@@ -93,6 +103,8 @@ if run_section build; then
       test -f "$W/dest/usr/local/share/man/man8/$m.8" || { echo "no $m.8"; fail=1; }
     done
     rm -rf "$W"
+    cd "$TIGER" || exit 1
+    rm -rf "$B"
   else
     say "SKIP: no C compiler, the build only runs on CI"
   fi
@@ -182,6 +194,13 @@ if run_section smoke; then
   else
     say "SKIP: no passwordless sudo, the full run only happens on CI"
   fi
+fi
+
+treeend=`git status --short 2>/dev/null`
+if [ "$treeend" != "$treestart" ]; then
+  say "local-ci: FAIL: the run changed the tree (before/after git status):"
+  printf '%s\n' "--- before" "$treestart" "--- after" "$treeend"
+  fail=1
 fi
 
 [ "$fail" = 0 ] && say "local-ci: everything that ran passed" || say "local-ci: FAILURES above"
