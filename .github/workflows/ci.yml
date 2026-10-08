@@ -236,7 +236,16 @@ jobs:
         run: |
           # Retry, and give up on a mirror that stops answering, instead of hanging the job
           echo 'Acquire::Retries "3"; Acquire::http::Timeout "20";' > /etc/apt/apt.conf.d/80ci-retries
-          apt-get update -qq && apt-get install -y -qq --no-install-recommends nodejs git ca-certificates
+          attempt=1
+          until apt-get update -qq && apt-get install -y -qq --no-install-recommends nodejs git ca-certificates; do
+            [ "$attempt" -ge 5 ] && exit 1
+            # archive.ubuntu.com sometimes refuses connections from the runners;
+            # the Azure mirror serves the same archive from a nearer host
+            # (a no-op on the Debian images, which name no Ubuntu mirror)
+            sed -i 's|http://archive.ubuntu.com/ubuntu|http://azure.archive.ubuntu.com/ubuntu|; s|http://security.ubuntu.com/ubuntu|http://azure.archive.ubuntu.com/ubuntu|' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null || true
+            attempt=$((attempt + 1))
+            sleep 15
+          done
       - uses: actions/checkout@v4
       - name: Plant problems and check they are found
         run: sh tests/deb_checks.sh
