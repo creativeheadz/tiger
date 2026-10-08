@@ -35,8 +35,8 @@ say() { printf '%s\n' "$1"; }
 if run_section lint; then
   say "== lint: sh -n on every shell script"
   lintfail=0; n=0
-  for f in $(git ls-files tiger tigris-diff tigris-accept tigexp tigercron config initdefs scripts systems util tests); do
-    case "$f" in tests/fixtures/*|*.c|*.pl|*.txt|*.lst|*.tmpl|*.xref|*README*|*/services|*/inetd|*_list|*signatures*|*advisories*|*baseline*|*embedlist*|*facl*) continue;; esac
+  for f in $(git ls-files tiger tigris-diff tigris-accept tigexp tigercron config initdefs scripts systems util tests packaging); do
+    case "$f" in tests/fixtures/*|*.c|*.pl|*.txt|*.lst|*.tmpl|*.xref|*README*|*/services|*/inetd|*_list|*signatures*|*advisories*|*baseline*|*embedlist*|*facl*|*.spec) continue;; esac
     [ -f "$f" ] || continue
     head -1 "$f" | grep -q 'perl' && continue
     n=$((n+1))
@@ -63,7 +63,7 @@ if run_section lint; then
   if command -v shellcheck >/dev/null 2>&1; then
     say "== lint: ShellCheck (errors)"
     files=
-    for f in tiger tigexp tigercron config initdefs util/realpath util/rootpath util/summary tests/*.sh \
+    for f in tiger tigexp tigercron config initdefs util/realpath util/rootpath util/summary tests/*.sh packaging/*.sh \
         $(git ls-files scripts systems/Linux/2 systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$'); do
       head -1 "$f" | grep -q perl && continue
       files="$files $f"

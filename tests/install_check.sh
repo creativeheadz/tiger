@@ -59,6 +59,7 @@ chmod 755 "$W/root/bin/hi"
 
 $SBIN/tigris -q -E --root "$W/root" >"$W/run1.out" 2>&1; st=$?
 case $st in 0|3|4|5) expect true "the installed tree finishes a run with -E";; *) expect false "the installed tree finishes a run with -E (exit $st)";; esac
+sleep 2 # report names have one-second resolution; the runs must not share one
 LOG=`grep '^TIGERLOGS=' "$W/src/Makefile" | sed 's/.*=//'`
 expect "ls $LOG/*.jsonl >/dev/null 2>&1" "the run wrote its JSON report"
 expect "! grep -qi 'not found' $W/run1.out" "no helper is missing from the run"
