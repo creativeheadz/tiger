@@ -34,8 +34,20 @@
 #
 #-----------------------------------------------------------------------------
 
-[ -n "$INETDCONF" ] && [ -f $INETDCONF ] && {
-$GREP -v '^#' $INETDCONF |
+# The file read: this system's, or the offline root's (--root),
+# resolved inside it. The set still names it by its own path.
+etcfile()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then
+    printf '%s\n' "$1" | AWK=$AWK sh "$BASEDIR/util/rootpath" "$TIGRIS_ROOT" "$TIGRIS_LINKS"
+  else
+    echo "$1"
+  fi
+}
+INETDHERE=`etcfile $INETDCONF`
+
+[ -n "$INETDCONF" ] && [ -f "$INETDHERE" ] && {
+$GREP -v '^#' "$INETDHERE" |
 $SORT > $WORKDIR/etc_inetd.$$
 echo "$INETDCONF" > $WORKDIR/etc_inetd.$$.src
 echo $WORKDIR/etc_inetd.$$

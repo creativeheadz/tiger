@@ -68,6 +68,11 @@
 #   or by directly specifying a configuration file (works in FreeBSD and Linux)
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's files, sockets, spool and login;
+#   the promiscuous and setuid probes read the running
+#   system and stay live.
+#
 TigerInstallDir='.'
 
 #
@@ -123,7 +128,8 @@ safe_temp "$WORKDIR/login.str.$$" "$WORKDIR/pass.list.$$"
 trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
 
 {
-  haveallcmds IFCONFIG && { 
+  # Promiscuous interfaces are live kernel state: no offline equivalent.
+  [ -z "$TIGRIS_ROOT" ] && haveallcmds IFCONFIG && { 
      # Note: This is Linux specific 
      # (maybe should be moved to systems/Linux/2/check_known)
      [ ! -x "$IP" -o "$OS" != "Linux" ] && message INFO kis015i "" "Using $IFCONFIG instead of $IP, promiscuous mode detection incomplete. Installing $IP adds libpcap/libnet-based sniffer detection capabilities."
@@ -158,8 +164,10 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
   # TODO inetd_sets should be appended with any non-option which 
   # has been fed to the current running inetd (use PS to locate it)
   shcase='/bin/sh|/bin/csh|/bin/bash|/bin/tcsh|/bin/ksh'
-  [ -n "$ETCSHELLS" -a -s "$ETCSHELLS" ] && {
-    shells=`$GREP -v '^#' $ETCSHELLS`
+  __shells=
+  [ -n "$ETCSHELLS" ] && __shells=`__here "$ETCSHELLS"`
+  [ -n "$__shells" -a -s "$__shells" ] && {
+    shells=`$GREP -v '^#' "$__shells"`
     shcase=`echo $shells | $TR ' ' '|'`
   }
   backdoor="`$EGREP $shcase $inetd_sets`"
@@ -176,14 +184,15 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
 
   for file in $file_list
   do
-    [ -s "$file" ] && {
-      if [ -d "$file" ]; then
+    herefile=`__here "$file"`
+    [ -s "$herefile" ] && {
+      if [ -d "$herefile" ]; then
 	message ALERT kis001a "" "$file is a directory."
-	$LS -AlR "$file"
+	$LS -AlR "$herefile"
 	echo
       else 
 	message ALERT kis002a "" "$file is not zero-length."
-	$LS -l "$file"
+	$LS -l "$herefile"
 	echo
       fi
     }
@@ -192,13 +201,14 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
   haveallcmds EGREP FIND && {
     for serverdir in /tmp/.X11-unix /tmp/.NeWS-unix
     do
-      [ -d "$serverdir" ] && {
-	nonsocket=`$FIND $serverdir/ ! -type s -a ! -type p -print |
-	$EGREP -v '^'"$serverdir"'/$'`
+      hereserver=`__here "$serverdir"`
+      [ -d "$hereserver" ] && {
+	nonsocket=`$FIND "$hereserver/" ! -type s -a ! -type p -print |
+	$EGREP -v '^'"$hereserver"'/$'`
 
 	[ -n "$nonsocket" ] && {
 	  message ALERT kis003a "" "$serverdir contains files other than window server sockets:"
-	  $LS -alR "$serverdir"
+	  $LS -alR "$hereserver"
   	  echo
 	}
       }
@@ -206,17 +216,26 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
   }
   
   haveallcmds GET_MOUNTS AWK FIND SED WC TR && {
-    $GET_MOUNTS local |
-    $AWK '{
-      if($1 == "/")
-        print "/lost+found";
+    {
+      if [ -n "$TIGRIS_ROOT" ]; then
+        # No mount table off-image: every top-level directory may hold one.
+        echo /lost+found
+        rootls / | $SED 's|$|/lost+found|'
       else
-        print $1 "/lost+found";
-    }' |
+        $GET_MOUNTS local |
+        $AWK '{
+          if($1 == "/")
+            print "/lost+found";
+          else
+            print $1 "/lost+found";
+        }'
+      fi
+    } |
     while read dir
     do
-      [ -d "$dir" -a -r "$dir" ] && {
-	cd "$dir"
+      heredir=`__here "$dir"`
+      [ -d "$heredir" -a -r "$heredir" ] && {
+      # No cd: message() writes JSON to a relative path, which a cd would lose.
         # List files we have to alert on.
         # Be careful to handle strange files (with spaces or newline
         # characters). To do this:
@@ -224,7 +243,7 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
         # 1) remove the first './', replace '~./' with newlines and
         # replace the last '~' with a newline. Remaining newlines are located
         # within the file name and are left as '~'
-	alertfiles="`$FIND . -name . -fprintf /dev/null '' -o \( -name '#[0-9]*' -o -name '[0-9]*_[0-9]*' \) -prune -o -print | $TR '\n' '~' | $SED 's%^./%%; s%~./%\n%g; s%~$%\n%'`"
+	alertfiles="`$FIND "$heredir" -path "$heredir" -fprintf /dev/null '' -o \( -name '#[0-9]*' -o -name '[0-9]*_[0-9]*' \) -prune -o -print | $SED "s%^$heredir/%./%" | $TR '\n' '~' | $SED 's%^./%%; s%~./%\n%g; s%~$%\n%'`"
 	# On HP-UX change to:
 	#alertfiles="`$FIND . \( -name . -o -name .fsadm \) -fprintf /dev/null '' -o -name '#[0-9]*' -prune -o -print | $TR '\n' '~' | $SED 's%^./%%; s%~./%\n%g; s%~$%\n%'`"s%^./%%'`"
 	if [ -n "$alertfiles" ]; then
@@ -234,14 +253,14 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
 	  filecount="`echo "$alertfiles" | $WC -l`"
 	  if [ $filecount -lt 100 ]; then
 	    echo "$alertfiles" | while read file; do
-	  	  $LS -ld "$file"
+	  	  $LS -ld "$heredir/$file"
 	    done
 	  else
 	    echo "($filecount files)"
 	  fi
 	  echo
 	else
-	  filecount="`$LS -a | $WC -l`"
+	  filecount="`$LS -a "$heredir" | $WC -l`"
 	  if [ $filecount -gt 2 ]; then
 	    message WARN kis004w "Files: ${filecount} file(s)" "$dir is not empty:"
 	  fi
@@ -251,7 +270,7 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
   }
 
   haveallcmds STRINGS SGREP && {
-    $STRINGS - /bin/login > $WORKDIR/login.str.$$
+    $STRINGS - "`__here /bin/login`" > $WORKDIR/login.str.$$
     $SGREP 'back' $WORKDIR/login.str.$$ && {
       message ALERT kis005a "" "/bin/login may contain backdoor login"
     }
@@ -261,7 +280,8 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
     delete $WORKDIR/login.str.$$
   }
 
-  test -n "$TESTSUID" -a $TESTEXEC "$TESTSUID" && {
+  # The setuid probe executes a live syscall: no offline equivalent.
+  [ -z "$TIGRIS_ROOT" ] && test -n "$TESTSUID" -a $TESTEXEC "$TESTSUID" && {
     $TESTSUID ||
     message ALERT kis007a "" "The setuid(2) system call is compromised."
   }
@@ -279,7 +299,7 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
      fi
 
 # Added -n for numeric uids, jfs
-    $LS -anl $MAILSPOOL/  |
+    $LS -anl "`__here "$MAILSPOOL"`"/  |
     $TAIL -n +2 |
     $AWK '{print $3, $NF}' |
     while read uid file
