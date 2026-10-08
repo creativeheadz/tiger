@@ -243,7 +243,7 @@ trap 'delete $WORKDIR/login.str.$$ $WORKDIR/pass.list.$$ ; exit 1' 1 2 3 15
         # 1) remove the first './', replace '~./' with newlines and
         # replace the last '~' with a newline. Remaining newlines are located
         # within the file name and are left as '~'
-	alertfiles="`$FIND "$heredir" -path "$heredir" -fprintf /dev/null '' -o \( -name '#[0-9]*' -o -name '[0-9]*_[0-9]*' \) -prune -o -print | $SED "s%^$heredir/%./%" | $TR '\n' '~' | $SED 's%^./%%; s%~./%\n%g; s%~$%\n%'`"
+	alertfiles="`$FIND "$heredir" -mindepth 1 \( -name '#[0-9]*' -o -name '[0-9]*_[0-9]*' \) -prune -o -print | $SED "s%^$heredir/%./%" | $TR '\n' '~' | $SED 's%^./%%; s%~./%\n%g; s%~$%\n%'`"
 	# On HP-UX change to:
 	#alertfiles="`$FIND . \( -name . -o -name .fsadm \) -fprintf /dev/null '' -o -name '#[0-9]*' -prune -o -print | $TR '\n' '~' | $SED 's%^./%%; s%~./%\n%g; s%~$%\n%'`"s%^./%%'`"
 	if [ -n "$alertfiles" ]; then
