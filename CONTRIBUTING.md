@@ -31,9 +31,9 @@ sudo sh tests/smoke.sh                        # full run on this machine
 sh tests/local-ci.sh                          # what CI runs, before pushing
 ```
 
-`sh tests/local-ci.sh` runs the lint, build and distribution jobs CI
-would run (a section whose tools are missing here says SKIP); add
-`smoke` to run the full run too. It mirrors `.github/workflows/ci.yml`
+`sh tests/local-ci.sh` runs the lint, build, distribution and package
+jobs CI would run (a section whose tools are missing here says SKIP);
+add `smoke` to run the full run too. It mirrors `.github/workflows/ci.yml`
 step for step, with no GitHub-only service in it, so an own CI
 pipeline would run the same script.
 

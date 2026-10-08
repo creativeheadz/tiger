@@ -2,9 +2,10 @@ name: Release image
 
 # A release tag (version_X_Y_Z, as Tigris tags its releases) builds the
 # container image and pushes it to the GitHub Container Registry as
-# ghcr.io/creativeheadz/tigris:X.Y.Z and :latest, and creates the GitHub
-# release with the tag's CHANGES section as notes. Only on GitHub: the
-# same workflow runs on the Gitea mirror, which has no such registry.
+# ghcr.io/creativeheadz/tigris:X.Y.Z and :latest, creates the GitHub
+# release with the tag's CHANGES section as notes, and attaches the
+# .deb, .rpm and .apk packages to it. Only on GitHub: the same
+# workflow runs on the Gitea mirror, which has no such registry.
 on:
   push:
     tags: ['version_*']
@@ -57,3 +58,23 @@ jobs:
             printf 'Container image: `ghcr.io/creativeheadz/tigris:%s`\n' "$v"
           } > notes.md
           gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "Tigris $v" --notes-file notes.md
+
+  packages:
+    needs: notes
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the packages
+        run: |
+          mkdir -p "$RUNNER_TEMP/out/deb" "$RUNNER_TEMP/out/rpm" "$RUNNER_TEMP/out/apk"
+          docker run --rm -v "$PWD:/tiger:ro" -v "$RUNNER_TEMP/out/deb:/out" debian:stable sh /tiger/packaging/ci.sh deb /out
+          docker run --rm -v "$PWD:/tiger:ro" -v "$RUNNER_TEMP/out/rpm:/out" fedora:latest sh /tiger/packaging/ci.sh rpm /out
+          docker run --rm -v "$PWD:/tiger:ro" -v "$RUNNER_TEMP/out/apk:/out" alpine:latest sh /tiger/packaging/ci.sh apk /out
+      - name: Attach them to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP"/out/deb/* "$RUNNER_TEMP"/out/rpm/* "$RUNNER_TEMP"/out/apk/* --clobber

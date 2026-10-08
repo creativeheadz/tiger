@@ -239,3 +239,30 @@ jobs:
         # base images do not ship, so no Node, git or apt install stands
         # between the checkout and the test.
         run: docker run --rm -v "$PWD:/tiger:ro" ${{ matrix.image }} sh /tiger/tests/deb_checks.sh
+
+  packages:
+    name: Package (${{ matrix.format }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - format: deb
+            image: debian:stable
+          - format: rpm
+            image: fedora:latest
+          - format: apk
+            image: alpine:latest
+          - format: aur
+            image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build, install and smoke-test
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          docker run --rm -v "$PWD:/tiger:ro" -v "$RUNNER_TEMP/out:/out" ${{ matrix.image }} sh /tiger/packaging/ci.sh ${{ matrix.format }} /out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tigris-${{ matrix.format }}
+          path: ${{ runner.temp }}/out/*

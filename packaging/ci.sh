@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# packaging/ci.sh - build, install and smoke-test one format
+#
+#   sh packaging/ci.sh deb|rpm|apk|aur OUTDIR
+#
+# Runs as root in the format's container (CI mounts the checkout
+# read-only at /tiger and an output dir at OUTDIR): installs the
+# build tools, builds with packaging/mk*, installs the package and
+# runs packaging/smoke-installed.sh. The .deb job also installs
+# Debian's tiger beside it. The aur job builds from a tarball of the
+# tree (never the tag: on a release commit CI may run before the tag
+# exists) and checks the committed .SRCINFO still matches.
+#
+FMT=${1:?usage: ci.sh deb|rpm|apk|aur OUTDIR}
+OUT=${2:?usage: ci.sh deb|rpm|apk|aur OUTDIR}
+TIGER=/tiger
+[ -d "$TIGER/packaging" ] || { echo "ci.sh: mount the checkout at /tiger"; exit 1; }
+mkdir -p "$OUT"
+
+case "$FMT" in
+deb)
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq dpkg-dev gcc make file || exit 1
+  sh "$TIGER/packaging/mkdeb.sh" "$OUT" || exit 1
+  dpkg -i "$OUT"/tigris_*.deb || exit 1
+  sh "$TIGER/packaging/smoke-installed.sh" || exit 1
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq tiger || exit 1
+  dpkg -l tiger tigris | grep -q '^ii  tiger' || { echo "ci.sh: tiger missing"; exit 1; }
+  dpkg -l tiger tigris | grep -q '^ii  tigris' || { echo "ci.sh: tigris missing"; exit 1; }
+  for b in tiger tigris tigris-diff tigris-accept; do
+    command -v $b >/dev/null || { echo "ci.sh: $b not on PATH"; exit 1; }
+  done
+  ;;
+rpm)
+  dnf install -y -q rpm-build gcc make tar gzip diffutils file findutils || exit 1
+  sh "$TIGER/packaging/mkrpm.sh" "$OUT" || exit 1
+  rpm -i "$OUT"/tigris-[0-9]*.rpm || exit 1
+  sh "$TIGER/packaging/smoke-installed.sh" || exit 1
+  ;;
+apk)
+  apk add -q abuild tar gzip sudo || exit 1
+  adduser -D builder 2>/dev/null
+  addgroup builder abuild
+  echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+  chmod 777 "$OUT"
+  su builder -c "sh $TIGER/packaging/mkapk.sh $OUT" || exit 1
+  apk add -q --allow-untrusted "$OUT"/tigris-*.apk || exit 1
+  sh "$TIGER/packaging/smoke-installed.sh" || exit 1
+  ;;
+aur)
+  pacman -Sy --noconfirm -q base-devel sudo || exit 1
+  useradd -m builder
+  echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+  mkdir -p /build && chown builder /build
+  VERSION=`cat "$TIGER/version"`
+  TAG=version_`echo "$VERSION" | tr . _`
+  ( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run \
+    --transform "s,^,tigris-$TAG/,SH" -cf - . ) | gzip > "/build/tigris-$VERSION.tar.gz"
+  cp "$TIGER/packaging/PKGBUILD" /build/ && chown builder /build/PKGBUILD
+  su builder -c "cd /build && sed -i 's|^source=.*|source=(tigris-$VERSION.tar.gz)|; s|^sha256sums=.*|sha256sums=(SKIP)|' PKGBUILD && makepkg -s --noconfirm" || exit 1
+  cp /build/tigris-[0-9]*.pkg.tar.* "$OUT/" || exit 1
+  mkdir -p /srcinfo && cp "$TIGER/packaging/PKGBUILD" /srcinfo/ && chown -R builder /srcinfo
+  su builder -c "cd /srcinfo && makepkg --printsrcinfo" | diff - "$TIGER/packaging/.SRCINFO" || { echo "ci.sh: .SRCINFO does not match PKGBUILD"; exit 1; }
+  pacman -U --noconfirm "$OUT"/tigris-[0-9]*.pkg.tar.* >/dev/null || exit 1
+  sh "$TIGER/packaging/smoke-installed.sh" || exit 1
+  ;;
+*)
+  echo "ci.sh: unknown format $FMT"; exit 1;;
+esac
+
+echo "ci.sh: $FMT passed"

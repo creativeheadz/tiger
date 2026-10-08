@@ -63,7 +63,7 @@ Settled, so they do not have to be argued again:
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
-| Tests                | 37 fixture suites, 15 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 37 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
@@ -671,10 +671,13 @@ stable, so it is built against a fixed contract.
   biggest wins so far were `util/flogit` (an `ls | awk` per file) and
   `deb_checkmd5sums` (a `dpkg -S` per diversion at 130 MB each). The
   next is the profiles above.
-- **Packaging:** `.deb`, `.rpm` and apk built in CI, under the name
-  `tigris` and separate from Debian's `tiger`; an AUR package; a COPR; a
-  container image that scans a host or an image (done). Debian packaging
-  of the fork is for later and would be its own package.
+- **Packaging:** `.deb`, `.rpm` and apk built in CI (done), under the
+  name `tigris` and separate from Debian's `tiger`; an AUR package
+  (files ready, live with the next release: 3.6.0 predates
+  `packaging/`); a COPR (the source rpm builds; submission needs the
+  Fedora account); a container image that scans a host or an image
+  (done). Debian packaging of the fork is for later and would be its
+  own package.
 - **Docs:** man pages (done), `doc/json-format.md` (done), and a GitHub Pages
   site generated from the check metadata once it exists.
 

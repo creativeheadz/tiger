@@ -2,10 +2,11 @@
 #
 # tests/local-ci.sh - what CI runs, here before pushing
 #
-#   sh tests/local-ci.sh [lint] [build] [docker] [smoke]
+#   sh tests/local-ci.sh [lint] [build] [docker] [packages] [smoke]
 #
-# No arguments runs lint, build and docker; smoke (the full run as root,
-# minutes long) only runs when asked for. A section whose tools are missing
+# No arguments runs lint, build, docker and packages; smoke (the full
+# run as root, minutes long) only runs when asked for. A section whose
+# tools are missing
 # here (no docker, no C toolchain, no shellcheck, no sudo) says SKIP and
 # does not fail; everything that can run must pass. Exits 1 when anything
 # failed.
@@ -20,7 +21,7 @@ cd "$TIGER" || exit 1
 
 fail=0
 want="$*"
-[ -n "$want" ] || want="lint build docker"
+[ -n "$want" ] || want="lint build docker packages"
 run_section()
 {
   case " $want " in
@@ -152,6 +153,23 @@ if run_section docker; then
     if sudo -n true 2>/dev/null; then sudo rm -rf "$W"; else rm -rf "$W"; fi
   else
     say "SKIP: docker is not installed, the distribution jobs only run on CI"
+  fi
+fi
+
+# --- packages: every format builds, installs and runs (CI's packages job) ---
+
+if run_section packages; then
+  if command -v docker >/dev/null 2>&1; then
+    W=`mktemp -d`
+    for spec in "deb debian:stable" "rpm fedora:latest" "apk alpine:latest" "aur archlinux:latest"; do
+      set -- $spec
+      say "== packages: $1"
+      mkdir -p "$W/$1"
+      docker run --rm -v "$PWD:/tiger:ro" -v "$W/$1:/out" "$2" sh /tiger/packaging/ci.sh "$1" /out || fail=1
+    done
+    rm -rf "$W"
+  else
+    say "SKIP: docker is not installed, the packages only build on CI"
   fi
 fi
 
