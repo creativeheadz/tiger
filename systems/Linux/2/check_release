@@ -38,6 +38,10 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: offline
+#   the root's release files; lsb_release would describe this host,
+#   so the files it derives from are read inside the root instead.
+#
 TigerInstallDir='.'
 
 #
@@ -84,12 +88,49 @@ echo "# Checking OS release..."
 haveallcmds CUT EGREP AWK TR  || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
+# lsb_release describes this host, so under --root the files it
+# derives from are read inside the root instead.
+sys_distributor () {
+    if [ -z "$TIGRIS_ROOT" ]; then
+        lsb_release -i | $AWK -F : '{print $2}' | $TR -d '[:blank:]'
+        return
+    fi
+    __osrel=`__here /etc/os-release`
+    if [ -r "$__osrel" ]; then
+        __id=`$GREP '^ID=' "$__osrel" | $CUT -d= -f2 | $TR -d '"'`
+        case "$__id" in
+            debian) echo Debian;;
+            ubuntu) echo Ubuntu;;
+            rhel) echo RedHatEnterpriseServer;;
+            *) echo "$__id";;
+        esac
+        return
+    fi
+    __lsbrel=`__here /etc/lsb-release`
+    [ -r "$__lsbrel" ] && $GREP '^DISTRIB_ID=' "$__lsbrel" | $CUT -d= -f2
+}
+
+sys_version () {
+    if [ -z "$TIGRIS_ROOT" ]; then
+        lsb_release -r | $AWK -F : '{print $2}' | $TR -d '[:blank:]'
+        return
+    fi
+    __osrel=`__here /etc/os-release`
+    if [ -r "$__osrel" ]; then
+        $GREP '^VERSION_ID=' "$__osrel" | $CUT -d= -f2 | $TR -d '"'
+        return
+    fi
+    __lsbrel=`__here /etc/lsb-release`
+    [ -r "$__lsbrel" ] && $GREP '^DISTRIB_RELEASE=' "$__lsbrel" | $CUT -d= -f2
+}
+
 check_redhat_release () {
 # This code only works for *old* Red Hat releases, it does not cover Red Hat Enterprise or CentOS
-        [ ! -r /etc/redhat_release ] || return 
+        [ ! -r /etc/redhat_release ] || return
 
-        OS_VERSION=`$CUT -f5 -d' ' /etc/redhat-release`
-        $EGREP "[A-Za-z]" $OS_VERSION 1> /dev/null
+        RHRELEASE=`__here /etc/redhat-release`
+        OS_VERSION=`$CUT -f5 -d' ' "$RHRELEASE"`
+        echo "$OS_VERSION" | $EGREP "[A-Za-z]" 1> /dev/null
 	if [ $? -eq 1 ]
 	then
 		MAJOR=`echo $OS_VERSION | $CUT -d. -f1`
@@ -115,20 +156,21 @@ check_redhat_release () {
 }
 	
 check_debian_release () {
-        [ ! -r /etc/debian/version ] || return 
+        [ ! -r /etc/debian/version ] || return
 
         # Debian sets either a number or a codename in their
         # version file so we have to check for both.
-        OS_VERSION=`$CUT -f1 -d' ' /etc/debian_version`
+        DEBVERSION=`__here /etc/debian_version`
+        OS_VERSION=`$CUT -f1 -d' ' "$DEBVERSION"`
 
 	# These are the codenames for the older debian releases
 	# if we see any of them we know we fail right away
-        $EGREP "jessie|wheezy|squeeze|lenny|etch|sarge|woody|potato|slink|hamm|bo|rex|buzz" /etc/debian_version 2> /dev/null
+        $EGREP "jessie|wheezy|squeeze|lenny|etch|sarge|woody|potato|slink|hamm|bo|rex|buzz" "$DEBVERSION" 2> /dev/null
         if [ $? -eq 0 ]
         then
                 message FAIL osv002f "" "Out of date Debian GNU/Linux version"
         else
-            $CUT -f1 -d' ' /etc/debian_version | $EGREP "[A-Za-z]" 1> /dev/null
+            $CUT -f1 -d' ' "$DEBVERSION" | $EGREP "[A-Za-z]" 1> /dev/null
             if [ $? -eq 1 ]
             then
                 MAJOR=`echo $OS_VERSION | $CUT -d \. -f 1`
@@ -152,7 +194,7 @@ check_rhel_version () {
 #/etc/redhat-release
 #/etc/system-release-cpe
 #lsb-release
-     OS_VERSION=`lsb_release -r | $AWK -F : '{print $2}' | $TR -d '[:blank:]'`
+     OS_VERSION=`sys_version`
      [ -z "$OS_VERSION" ] && return # Do not continue if we cannot retrieve the version
 
      MAJOR=`echo $OS_VERSION | $CUT -d \. -f 1`
@@ -164,20 +206,20 @@ check_rhel_version () {
      if [ "$MAJOR" -lt 4 ] || [ "$MAJOR" -eq  4 ] ; then
          message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
      fi
-     if [ "$MAJOR" -eq 5 ] && [ "$MAJOR" -lt 11 ] ; then
+     if [ "$MAJOR" -eq 5 ] && [ "$MINOR" -lt 11 ] ; then
          message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
      fi
-     if [ "$MAJOR" -eq 6 ] && [ "$MAJOR" -lt 7 ] ; then
+     if [ "$MAJOR" -eq 6 ] && [ "$MINOR" -lt 7 ] ; then
          message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
      fi
-     if [ "$MAJOR" -eq 7 ] && [ "$MAJOR" -lt 3 ] ; then
+     if [ "$MAJOR" -eq 7 ] && [ "$MINOR" -lt 3 ] ; then
          message FAIL osv002f "" "Out of date Red Hat Enterprise Linux version \`$OS_VERSION'"
      fi
 
 }
 
 check_ubuntu_release () {
-     OS_VERSION=`lsb_release -r | $AWK -F : '{print $2}' | $TR -d '[:blank:]'`
+     OS_VERSION=`sys_version`
      [ -z "$OS_VERSION" ] && return # Do not continue if we cannot retrieve the version
 
      MAJOR=`echo $OS_VERSION | $CUT -d \. -f 1`
@@ -188,25 +230,25 @@ check_ubuntu_release () {
      if [ "$MAJOR" -lt 13 ] || [ "$MAJOR" -eq  13 ] ; then
          message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
      fi
-     if [ "$MAJOR" -eq 14 ] && [ "$MAJOR" -lt 11 ] ; then
+     if [ "$MAJOR" -eq 14 ] && [ "$MINOR" -lt 11 ] ; then
          message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
      fi
-     if [ "$MAJOR" -eq 15 ] && [ "$MAJOR" -lt 11 ] ; then
+     if [ "$MAJOR" -eq 15 ] && [ "$MINOR" -lt 11 ] ; then
          message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
      fi
-     if [ "$MAJOR" -eq 17 ] && [ "$MAJOR" -lt 5 ] ; then
+     if [ "$MAJOR" -eq 17 ] && [ "$MINOR" -lt 5 ] ; then
          message FAIL osv002f "" "Out of date Ubuntu Linux version \`$OS_VERSION'"
      fi
 
 
 }
 
-# If lsb_release is available try to use it    
-DISTRIBUTOR=`lsb_release -i  | $AWK -F : '{print $2}' | $TR -d '[:blank:]'`
- 
-if [ -e /etc/redhat-release ]; then
+# If lsb_release is available try to use it
+DISTRIBUTOR=`sys_distributor`
+
+if [ -e "`__here /etc/redhat-release`" ]; then
     check_redhat_release
-elif [ -e /etc/debian_version ] ; then
+elif [ -e "`__here /etc/debian_version`" ] ; then
     if [ -z "$DISTRIBUTOR" ] || [ "$DISTRIBUTOR" = "Debian" ] ; then
         check_debian_release
     fi
