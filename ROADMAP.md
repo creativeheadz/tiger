@@ -674,8 +674,8 @@ stable, so it is built against a fixed contract.
 - **Packaging:** `.deb`, `.rpm` and apk built in CI (done), under the
   name `tigris` and separate from Debian's `tiger`; an AUR package
   (files ready, live with the next release: 3.6.0 predates
-  `packaging/`); a COPR (the source rpm builds; submission needs the
-  Fedora account); a container image that scans a host or an image
+  `packaging/`); a COPR (done: `creativeheadz/tigris`, Fedora 43/44
+  and EPEL 9/10); a container image that scans a host or an image
   (done). Debian packaging of the fork is for later and would be its
   own package.
 - **Docs:** man pages (done), `doc/json-format.md` (done), and a GitHub Pages
