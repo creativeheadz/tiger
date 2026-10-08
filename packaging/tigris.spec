@@ -1,4 +1,7 @@
 %define _tag version_3_6_0
+# No -debuginfo: five small helpers, and EL9's toolchain errors on their
+# empty debugsource list.
+%define debug_package %{nil}
 
 Name:           tigris
 Version:        3.6.0
