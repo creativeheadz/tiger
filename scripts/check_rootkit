@@ -47,6 +47,10 @@
 # - Chkrootkit messages could be parsed more thoroughly
 #-----------------------------------------------------------------------------
 #
+# Tigris: live system
+#   Under --root it is skipped: it tests the running system's own
+#   binaries for lies, which is meaningless off-image.
+#
 # This is the directory Tiger is installed on
 TigerInstallDir='.'
 

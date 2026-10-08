@@ -5,13 +5,14 @@
 # Builds a small root in a directory: PAM stacks with pam_pwquality and
 # pam_faillock, and a pwquality.conf that is an absolute link to another
 # file of that root, setting minlen = 6. Runs tigris --root on it with a
-# profile that leaves five checks on: check_pam, which reads an offline
-# root; check_timesync, which reads the running system; check_signatures,
-# which cannot read an offline root; and check_ssh and check_sudo, which
-# can but need root. check_pam must report the root's minimum length,
-# read through the link inside the root; check_timesync and
-# check_signatures must be skipped, each with its reason, in the report and in
-# the JSON, and check_ssh and check_sudo too when this is not root; the run record names the root, and the run exits 3 (a
+# profile that leaves seven checks on: check_pam, which reads an offline
+# root; check_timesync, check_ntp and check_rootkit, which read the running
+# system; check_signatures, which cannot read an offline root; and check_ssh
+# and check_sudo, which can but need root. check_pam must report the root's
+# minimum length, read through the link inside the root; check_timesync,
+# check_ntp, check_rootkit and check_signatures must be skipped, each with
+# its reason, and check_ssh and check_sudo too when this is not root; the run
+# record names the root, and the run exits 3 (a
 # WARN): a check that does not apply to an offline root is not one that
 # failed to run. Then
 # util/rootpath on its own (links that would leave the root, loops), the
@@ -39,11 +40,11 @@ echo 'minlen = 6' > "$R/etc/security/pwquality-real.conf"
 # absolute: followed on this host it would name a file that is not there
 ln -s /etc/security/pwquality-real.conf "$R/etc/security/pwquality.conf"
 
-# Every Tiger_Check_* off but three, and the Debian ones off
+# Every Tiger_Check_* off but seven, and the Debian ones off
 {
   sed -n 's/^\(Tiger_Check_[A-Z_]*\)=.*/\1=N/p' "$W/tigerrc"
   echo 'Tiger_Deb_CheckMD5Sums=N'; echo 'Tiger_Deb_NoPackFiles=N'; echo 'Tiger_Deb_StatOverride=N'
-  echo 'Tiger_Check_SYSTEM=Y'; echo 'Tiger_Check_PAM=Y'; echo 'Tiger_Check_TIMESYNC=Y'; echo 'Tiger_Check_SUDO=Y'; echo 'Tiger_Check_SSH=Y'; echo 'Tiger_Check_SIGNATURES=Y'
+  echo 'Tiger_Check_SYSTEM=Y'; echo 'Tiger_Check_PAM=Y'; echo 'Tiger_Check_TIMESYNC=Y'; echo 'Tiger_Check_SUDO=Y'; echo 'Tiger_Check_SSH=Y'; echo 'Tiger_Check_SIGNATURES=Y'; echo 'Tiger_Check_NTP=Y'; echo 'Tiger_Check_ROOTKIT=Y'
 } > "$W/profiles/offline"
 chmod 644 "$W/profiles/offline"
 
@@ -57,18 +58,22 @@ grep -q '"id":"pam002w".*"message":"New passwords may be as short as 6 character
 grep -q '"id":"pam00[13]w"' "$json" && bad "pam001w or pam003w: the root's stacks were not the ones read" ||
   ok "the root's PAM stacks were read: quality and lockout found"
 grep -q "^# Skipped check_timesync: it reads the running system, and this audit is of $R\.$" "$report" &&
+  grep -q "^# Skipped check_ntp: it reads the running system, and this audit is of $R\.$" "$report" &&
+  grep -q "^# Skipped check_rootkit: it reads the running system, and this audit is of $R\.$" "$report" &&
   grep -q '^# Skipped check_signatures: it cannot read an offline root yet\.$' "$report" &&
-  ok "a live-system check and one not offline yet are skipped, each saying why" || { bad "report lines"; grep Skipped "$report"; }
+  ok "three live-system checks and one not offline yet are skipped, each saying why" || { bad "report lines"; grep Skipped "$report"; }
 if [ "`id -u`" = 0 ]; then
-  want=2
+  want=4
   grep -q 'Skipped check_s\(sh\|udo\)' "$report" && bad "as root, check_ssh or check_sudo was skipped" || ok "as root, check_ssh and check_sudo (offline, need root) ran"
 else
-  want=4
+  want=6
   grep -q '^# Skipped check_ssh: it needs root' "$report" && grep -q '{"type":"skip","check":"check_ssh","reason":"needs root"}' "$json" &&
     grep -q '{"type":"skip","check":"check_sudo","reason":"needs root"}' "$json" &&
     ok "as a user, check_ssh and check_sudo (offline, need root) are skipped for root" || { bad "check_ssh/check_sudo as a user"; grep Skipped "$report"; }
 fi
 grep -q '{"type":"skip","check":"check_timesync","reason":"live system"}' "$json" &&
+  grep -q '{"type":"skip","check":"check_ntp","reason":"live system"}' "$json" &&
+  grep -q '{"type":"skip","check":"check_rootkit","reason":"live system"}' "$json" &&
   grep -q '{"type":"skip","check":"check_signatures","reason":"not offline yet"}' "$json" &&
   grep -q "\"type\":\"summary\".*\"skipped\":$want}" "$json" &&
   ok "a skip record each in the JSON, \"skipped\":$want in the summary" || { bad "skip records"; grep '"skip' "$json"; tail -1 "$json"; }
