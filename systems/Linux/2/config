@@ -264,7 +264,7 @@ CC=`findcmd cc || findcmd gcc`
 PS=`findcmd ps`
 DATE=`findcmd date`
 DATECMD="$DATE +%y%m%d"
-TIMECMD="$DATE +%H:%M"
+TIMECMD="$DATE +%H:%M:%S"
 
 
 export UNAME HOSTNAME EXPR STRINGS FIND FINDXDEV GETHOSTNAME

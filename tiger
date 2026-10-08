@@ -90,6 +90,10 @@ done
   exit 1
 }
 
+# config pins the locale to C for deterministic tools; remember what the
+# terminal had, for the spinner frames
+Tiger_Orig_Locale="${LC_ALL:-${LANG:-}}"
+
 . $basedir/config
 
 . $BASEDIR/initdefs
@@ -121,6 +125,7 @@ sendtologger()
 
 tigercleanup()
 {
+  spin_stop
   [ -n "$fspid" ] && kill -1 $fspid 2>/dev/null
   [ -f "$Tiger_PasswdFiles" ] && {
     while read __file
@@ -205,9 +210,8 @@ echo "Tiger security scripts *** $version ***"
 
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   # Seconds in the stamp, so two runs started in the same minute get
-  # different report names instead of overwriting each other. The
-  # progress lines on screen keep $TIMECMD (HH:MM) as they are.
-  datestamp="`$DATECMD`-`$TIMECMD`:`$DATE +%S`"
+  # different report names instead of overwriting each other.
+  datestamp="`$DATECMD`-`$TIMECMD`"
 
   logtmp="$LOGDIR/security.report.${HOSTNAME}.tmp.$$"
   logfile="$LOGDIR/security.report.${HOSTNAME}.$datestamp"
@@ -297,8 +301,9 @@ export TigerCheckEmbedded
 
 [ "$Tiger_Check_FILESYSTEM" != 'N' ] && {
   if [ "$Tiger_TESTMODE" = 'Y' ]; then
-    echo "`$TIMECMD`> Performing file systems scans..."
+    progress_start "Performing file systems scans..."
     run_script find_files >> $logtmp
+    progress_end
   else
     echo "`$TIMECMD`> Starting file systems scans in background..."
     skip_check $SCRIPTDIR/find_files >> $logtmp || {
@@ -311,8 +316,9 @@ export TigerCheckEmbedded
 crackpid=
 [ "$Tiger_Run_CRACK" != 'N' ] && {
   if [ "$Tiger_TESTMODE" = 'Y' ]; then
-    echo "`$TIMECMD`> Running Crack (password cracker)..."
+    progress_start "Running Crack (password cracker)..."
     run_script crack_run
+    progress_end
   else
     crackout=$WORKDIR/crack.out.$$
     echo "`$TIMECMD`> Running Crack (password cracker) in background..."
@@ -326,8 +332,9 @@ crackpid=
 trippid=
 [ "$Tiger_Run_TRIPW" != 'N' ] && {
   if [ "$Tiger_TESTMODE" = 'Y' ]; then
-    echo "`$TIMECMD`> Running Tripwire..."
+    progress_start "Running Tripwire..."
     run_script tripwire_run
+    progress_end
   else
     tripout=$WORKDIR/tripwire.out.$$
     echo "`$TIMECMD`> Running Tripwire in background..."
@@ -341,8 +348,9 @@ trippid=
 aidepid=
 [ "$Tiger_Run_AIDE" != 'N' ] && {
   if [ "$Tiger_TESTMODE" = 'Y' ]; then
-    echo "`$TIMECMD`> Running Aide..."
+    progress_start "Running Aide..."
     run_script aide_run
+    progress_end
   else
     export aideout=$WORKDIR/aide.out.$$
     echo "`$TIMECMD`> Running Aide in background..."
@@ -355,112 +363,132 @@ aidepid=
 
 
 [ "$Tiger_Check_PASSWD" != 'N' ] && {
-  echo "`$TIMECMD`> Checking password files..."
+  progress_start "Checking password files..."
   run_script check_passwd >> $logtmp
+  progress_end
 }
 
 # The password files' format: off by default, since pwck says the same;
 # on an offline root pwck is not run (it would read this host's files),
 # so it comes on with the passwd check
 [ "$Tiger_Check_PASSWD_FORMAT" != 'N' ] || { [ -n "$TIGRIS_ROOT" ] && [ "$Tiger_Check_PASSWD" != 'N' ]; } && {
-  echo "`$TIMECMD`> Checking password format..."
+  progress_start "Checking password format..."
   run_script check_passwdformat >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_GROUP" != 'N' ] && {
-  echo "`$TIMECMD`> Checking group files..."
+  progress_start "Checking group files..."
   run_script check_group >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_ACCOUNTS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking user accounts..."
+  progress_start "Checking user accounts..."
   run_script check_accounts >> $logtmp
+  progress_end
 }
 
 # Note: TARA calls this script with Tiger_Check_ROOT so we keep it
 # there for compatibility purposes
 [ \( "$Tiger_Check_ROOT" != 'N' -a -n "$Tiger_Check_ROOT" \) -o "$Tiger_Check_ROOT_ACCESS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking ttytab, securetty, and login configuration files..."
+  progress_start "Checking ttytab, securetty, and login configuration files..."
   run_script check_root >> $logtmp
+  progress_end
 }
 
 
 [ "$Tiger_Check_PATH" != 'N' ] && {
-  echo "`$TIMECMD`> Checking PATH settings..."
+  progress_start "Checking PATH settings..."
   run_script check_path >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_ALIASES" != 'N' ] && {
-  echo "`$TIMECMD`> Checking mail aliases..."
+  progress_start "Checking mail aliases..."
   run_script check_aliases >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_CRON" != 'N' ] && {
-  echo "`$TIMECMD`> Checking cron entries..."
+  progress_start "Checking cron entries..."
   run_script check_crontabs >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_SERVICES" != 'N' ] && {
-  echo "`$TIMECMD`> Checking 'services' configuration..."
+  progress_start "Checking 'services' configuration..."
   run_script check_services >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_EXPORTS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking NFS export entries..."
+  progress_start "Checking NFS export entries..."
   run_script check_exports >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_PERMS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking permissions and ownership of system files..."
+  progress_start "Checking permissions and ownership of system files..."
   run_script check_perms >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_SIGNATURES" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for altered or out of date binaries..."
+  progress_start "Checking for altered or out of date binaries..."
   run_script check_signatures >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_KNOWN" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for indications of break-in..."
+  progress_start "Checking for indications of break-in..."
   run_script check_known >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_ROOTKIT" != 'N' ] && {
-  echo "`$TIMECMD`> Performing rootkit checks..."
+  progress_start "Performing rootkit checks..."
   run_script check_rootkit >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_SYSTEM" != 'N' ] && {
-  echo "`$TIMECMD`> Performing system specific checks..."
+  progress_start "Performing system specific checks..."
   run_script check_system >> $logtmp
+  progress_end
 }
 
 
 [ "$Tiger_Check_ROOTDIR" != 'N' ] && {
-  echo "`$TIMECMD`> Performing root directory checks..."
+  progress_start "Performing root directory checks..."
   run_script check_rootdir >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_ETCISSUE" != 'N' ] && {
-  echo "`$TIMECMD`> Performing /etc/issue login banner checks..."
+  progress_start "Performing /etc/issue login banner checks..."
   run_script check_issue >> $logtmp
+  progress_end
 }
 
 
 [ "$Tiger_Check_BACKUPS" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for secure backup devices..."
+  progress_start "Checking for secure backup devices..."
   run_script check_devices >> $logtmp
+  progress_end
 }
 
 
 [ "$Tiger_Check_LOGFILES" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for the presence of log files..."
+  progress_start "Checking for the presence of log files..."
   run_script check_logfiles >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_USERUMASK" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for the setting of user's umask..."
+  progress_start "Checking for the setting of user's umask..."
   run_script check_umask >> $logtmp
+  progress_end
 }
 
 #
@@ -468,39 +496,46 @@ aidepid=
 # any system since it is pretty general
 #
 [ "$Tiger_Check_LISTENING" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for listening processes..."
+  progress_start "Checking for listening processes..."
   run_script check_listeningprocs >> $logtmp
+  progress_end
 }
 
 # A general watchdog for system processes
 [ "$Tiger_Check_RUNPROC" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for running processes..."
+  progress_start "Checking for running processes..."
   run_script check_runprocs >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_DELETED" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for processes using deleted files..."
+  progress_start "Checking for processes using deleted files..."
   run_script check_finddeleted >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_APACHE" != 'N' ] && {
-  echo "`$TIMECMD`> Checking Apache's configuration..."
+  progress_start "Checking Apache's configuration..."
   run_script check_apache >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_SSH" != 'N' ] && {
-  echo "`$TIMECMD`> Checking SSHD's configuration..."
+  progress_start "Checking SSHD's configuration..."
   run_script check_ssh >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_SENDMAIL" != 'N' ] && {
-  echo "`$TIMECMD`> Checking Sendmail's configuration..."
+  progress_start "Checking Sendmail's configuration..."
   run_script check_sendmail >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_EXRC" != 'N' ] && {
-  echo "`$TIMECMD`> Checking for exrc files..."
+  progress_start "Checking for exrc files..."
   run_script check_exrc >> $logtmp
+  progress_end
 }
 
 # This test should be changed from Perl to shell script, also there
@@ -511,8 +546,9 @@ aidepid=
 #}
 
 [ "$Tiger_Check_NTP" != 'N' ] && {
-  echo "`$TIMECMD`> Checking NTP configuration..."
+  progress_start "Checking NTP configuration..."
   run_script check_ntp >> $logtmp
+  progress_end
 }
 
 #
@@ -520,13 +556,15 @@ aidepid=
 # embedded checks while the file system scans are running.
 #
 [ "$Tiger_Check_EMBEDDED" != 'N' -a "x$Tiger_Embed_Check_SUID" != 'xY' ] && {
-  echo "`$TIMECMD`> Performing check of embedded pathnames..."
+  progress_start "Performing check of embedded pathnames..."
   run_script check_embedded >> $logtmp
+  progress_end
 }
 
 [ "$Tiger_Check_FILESYSTEM" != 'N' -a "$Tiger_TESTMODE" != 'Y' ] && {
-  echo "`$TIMECMD`> Waiting for filesystems scans to complete..."
+  progress_start "Waiting for filesystems scans to complete..."
   wait $fspid
+  progress_end
   fspid=
   echo "`$TIMECMD`> Filesystems scans completed..."
 
@@ -538,8 +576,9 @@ aidepid=
 # have completed.
 #
 [ "$Tiger_Check_EMBEDDED" != 'N' -a "x$Tiger_Embed_Check_SUID" = 'xY' ] && {
-  echo "`$TIMECMD`> Performing check of embedded pathnames..."
+  progress_start "Performing check of embedded pathnames..."
   run_script check_embedded >> $logtmp
+  progress_end
 }
 
 [ -n "$crackpid" ] && {
@@ -559,15 +598,17 @@ aidepid=
 } 2>/dev/null
 
 [ -n "$trippid" ] && {
-    echo "`$TIMECMD`> Waiting for Tripwire to finish..."
+    progress_start "Waiting for Tripwire to finish..."
     wait $trippid
+    progress_end
     $CAT $tripout >> $logtmp
     delete $tripout
 } 2>/dev/null
 
 [ -n "$aidepid" ] && {
-    echo "`$TIMECMD`> Waiting for Aide to finish..."
+    progress_start "Waiting for Aide to finish..."
     wait $aidepid
+    progress_end
     $CAT $aideout >> $logtmp
     delete $aideout
 } 2>/dev/null

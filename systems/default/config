@@ -160,7 +160,7 @@ DATECMD="$DATE +%y%m%d"
 # To get HH:MM
 # If no +% stuff, then use
 #TIMECMD="$DATE | $AWK '{print substr($4,1,5);}'"
-TIMECMD="$DATE +%H:%M"
+TIMECMD="$DATE +%H:%M:%S"
 #
 # Try to figure out whether diff -D needs a space or not...
 # (or whether -D is supported at all)

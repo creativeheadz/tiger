@@ -108,6 +108,8 @@ jobs:
         run: sh tests/firewall_check.sh
       - name: Installed tree runs its helpers
         run: sh tests/install_check.sh
+      - name: Progress lines and spinner
+        run: sh tests/progress_check.sh
       - name: ShellCheck (errors)
         run: |
           shellcheck --version | head -2

@@ -640,6 +640,7 @@ changelog()
 #
 cleanup()
 {
+  spin_stop
   [ "$_TIGER_RUN" != 'Y' -a -n "$TigerCleanup" ] && {
     delete $TigerCleanup
   }
@@ -842,6 +843,57 @@ skip_check()
   return 0
 }
 
+#
+# progress_start TEXT ... progress_end: the check progress line, alive
+# while the check runs. On a terminal (and not -q) the line spins in
+# place until progress_end redraws it finished; anywhere else it prints
+# once, as before. progress_end is safe to call sparely, and spin_stop
+# kills a running spinner without printing (the cleanup traps call it).
+#
+progress_start()
+{
+  spin_stop
+  __progress_text=$1
+  __progress_spin=
+  if [ "$QUIET" = 'Y' ] || [ ! -t 1 ]; then
+    echo "`$TIMECMD`> $__progress_text"
+    return
+  fi
+  __progress_spin=Y
+  case "${Tiger_Orig_Locale:-${LC_ALL:-${LANG:-}}}" in
+    *UTF-8*|*UTF8*|*utf8*) __progress_frames='⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏';;
+    *) __progress_frames='- \ | /';;
+  esac
+  ( __progress_tick "$__progress_text" $__progress_frames ) &
+  __progress_pid=$!
+}
+__progress_tick()
+{
+  __tick_text=$1; shift
+  while :; do
+    for __tick_frame in "$@"; do
+      printf '\r%s %s> %s' "$__tick_frame" "`$TIMECMD`" "$__tick_text"
+      sleep 0.2
+    done
+  done
+}
+progress_end()
+{
+  spin_stop
+  if [ "$__progress_spin" = Y ]; then
+    if [ -n "$TERM" ] && [ "$TERM" != dumb ]; then
+      printf '\r\033[K%s> %s\n' "`$TIMECMD`" "$__progress_text"
+    else
+      printf '\r%s> %s  \n' "`$TIMECMD`" "$__progress_text"
+    fi
+  fi
+  __progress_spin=
+}
+spin_stop()
+{
+  [ -n "$__progress_pid" ] && kill "$__progress_pid" 2>/dev/null
+  __progress_pid=
+}
 #
 # Run_script() function
 # This function will run a script first looking for it in the most
