@@ -35,6 +35,13 @@
 #
 #-----------------------------------------------------------------------------
 #
+# Tigris: needs root
+#   without a readable shadow the hash-length test is meaningless.
+#
+# Tigris: offline
+#   the root's passwd, shells and lastlog; the host's lastlog
+#   cannot query the image, so its database is read directly.
+#
 TigerInstallDir='.'
 
 #
@@ -68,7 +75,9 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-	haveallcmds SED AWK GREP LASTLOG TEST GEN_PASSWD_SETS || exit 1
+	haveallcmds SED AWK GREP TEST GEN_PASSWD_SETS OD LS || exit 1
+	[ -z "$TIGRIS_ROOT" ] && { haveallcmds LASTLOG || exit 1; }
+	[ -n "$TIGRIS_ROOT" ] && { haveallcmds DATE || exit 1; }
 	haveallfiles BASEDIR WORKDIR ETCSHELLS || exit 1
 
 	echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -78,23 +87,113 @@ done
 
 echo
 echo "# Checking Logins not used on the system ..."
-haveallcmds SED AWK GREP LASTLOG TEST GEN_PASSWD_SETS || exit 1
+haveallcmds SED AWK GREP TEST GEN_PASSWD_SETS OD LS || exit 1
+[ -z "$TIGRIS_ROOT" ] && { haveallcmds LASTLOG || exit 1; }
+[ -n "$TIGRIS_ROOT" ] && { haveallcmds DATE || exit 1; }
 haveallfiles BASEDIR WORKDIR ETCSHELLS || exit 1
 
+ETCSHELLSHERE=`__here "$ETCSHELLS"`
+
+# ll_time of one lastlog record: 16 hex chars in file order, short
+# past the end. od seeks, so sparse holes read as zeros.
+lastlog_time()
 {
-	> $WORKDIR/pass.list.$$
-	if [ -n "$Tiger_PasswdFiles" -a -f "$Tiger_PasswdFiles" ]; then
-  		$CAT $Tiger_PasswdFiles |
-		while read passfile 
-		do
-			[ -f "$passfile" ] && echo "$passfile" >>$WORKDIR/pass.list.$$
-		done
-	fi
-	if [ ! -s "$WORKDIR/pass.list.$$" ] 
-	then
-		$GEN_PASSWD_SETS $WORKDIR/pass.list.$$
-	fi
+	__u=${1#${1%%[!0]*}}
+	[ -z "$__u" ] && __u=0
+	$OD -A n -t x1 -N 8 -j $(($__u * $2)) "$LASTLOGHERE" 2>/dev/null |
+	$AWK '{for(i=1;i<=NF;i++)printf "%s",$i}'
 }
+
+# A time worth believing: after 2000, not in the future, in either
+# byte order. Compared in hex and AWK floats, so a 32-bit shell never
+# sees a 64-bit number.
+lastlog_sane()
+{
+	echo "$1" | $AWK -v lo=946684800 -v hi="$NOWPLUS" '
+	function hexdec(h,  v,i,c) {
+		v = 0
+		h = tolower(h)
+		for (i = 1; i <= length(h); i++) {
+			c = index("0123456789abcdef", substr(h, i, 1)) - 1
+			if (c < 0) return -1
+			v = v * 16 + c
+		}
+		return v
+	}
+	length($0) != 16 { exit 1 }
+	{
+		lo8 = substr($0, 1, 8); hi8 = substr($0, 9, 8)
+		if (hi8 == "00000000") {
+			v = hexdec(substr(lo8,7,2) substr(lo8,5,2) substr(lo8,3,2) substr(lo8,1,2))
+			if (v > lo && v < hi) exit 0
+		}
+		if (lo8 == "00000000") {
+			v = hexdec(hi8)
+			if (v > lo && v < hi) exit 0
+		}
+		exit 1
+	}'
+}
+
+# A lastlog record is the word size plus 288 filename bytes: 292 with
+# a 32-bit time, 296 with a 64-bit one, and the file is a whole number
+# of records. When both sizes divide it (rare), the one with more
+# believable times wins, ties going to the modern size.
+lastlog_recsize()
+{
+	NOWPLUS=$(($(`$DATE +%s`) + 86400))
+	__uids=`$CAT $WORKDIR/pass.list.$$ | while read __set; do $AWK -F: '{print $3}' "$__set"; done`
+	__c292=0; __c296=0
+	for __uid in $__uids; do
+		case "$__uid" in ''|*[!0-9]*) continue;; esac
+		lastlog_sane "`lastlog_time "$__uid" 292`" && __c292=$(($__c292 + 1))
+		lastlog_sane "`lastlog_time "$__uid" 296`" && __c296=$(($__c296 + 1))
+	done
+	if [ "$__c292" -gt "$__c296" ]; then echo 292; else echo 296; fi
+}
+
+# True when the uid never logged in: no record, a short one, or zeros.
+lastlog_never()
+{
+	__t=`lastlog_time "$1" "$LASTLOGRSIZE"`
+	[ "${#__t}" -lt 16 ] && return 0
+	[ "$__t" = "0000000000000000" ]
+}
+
+# The passwd users without a login record. With no database, or one
+# neither size fits, every user is new.
+never_logged_in_users()
+{
+	LASTLOGHERE=`__here /var/log/lastlog`
+	__allusers()
+	{
+		$CAT $WORKDIR/pass.list.$$ | while read __set; do
+			$AWK -F: '{print $1}' "$__set"
+		done | $AWK '!seen[$0]++'
+	}
+	[ -f "$LASTLOGHERE" ] && [ -s "$LASTLOGHERE" ] || { __allusers; return; }
+	__size=`$LS -l "$LASTLOGHERE" | $AWK '{print $5}'`
+	__d292=$(($__size % 292)); __d296=$(($__size % 296))
+	if [ "$__d292" -eq 0 ] && [ "$__d296" -ne 0 ]; then
+		LASTLOGRSIZE=292
+	elif [ "$__d296" -eq 0 ] && [ "$__d292" -ne 0 ]; then
+		LASTLOGRSIZE=296
+	elif [ "$__d292" -eq 0 ] && [ "$__d296" -eq 0 ]; then
+		LASTLOGRSIZE=`lastlog_recsize`
+	else
+		__allusers; return
+	fi
+	$CAT $WORKDIR/pass.list.$$ | while read __set; do
+		$AWK -F: '{print $1, $3}' "$__set"
+	done | $AWK '!seen[$0]++' | while read __user __uid; do
+		case "$__uid" in ''|*[!0-9]*) continue;; esac
+		lastlog_never "$__uid" && echo "$__user"
+	done
+}
+
+# This check measures hash lengths, which shared sets zap away, so it
+# always builds its own (-p keeps the hashes) instead of reusing them.
+$GEN_PASSWD_SETS -p $WORKDIR/pass.list.$$
 # Just make this check just in case
 if [ ! -r $WORKDIR/pass.list.$$ ]
 then
@@ -103,7 +202,12 @@ then
 fi
 
 
-for user in `$LASTLOG | $AWK '/Never logged in/ {print$1}'`; do
+if [ -n "$TIGRIS_ROOT" ]; then
+	userlist=`never_logged_in_users`
+else
+	userlist=`$LASTLOG | $AWK '/Never logged in/ {print$1}'`
+fi
+for user in $userlist; do
   result=0
   $CAT $WORKDIR/pass.list.$$  |
   while read passwd_set ; do
@@ -113,8 +217,8 @@ for user in `$LASTLOG | $AWK '/Never logged in/ {print$1}'`; do
 	user=`echo $user | $SED -e 's|\\\|\\\\\\\|g'`
   	SHELL=`$GREP "^$user:" $passwd_set | $AWK -F: '{print$7}'`
 	$TEST -z "$SHELL" && SHELL="/bin/sh"
-	$GREP -q "^$SHELL" $ETCSHELLS && export result=1
-	$TEST "$result" = 1 && result=`$AWK -F:  "/^$user:/ "'{ if (length($2) > 12) printf("2\n"); if ($2 == "") printf("3\n"); }' $passwd_set` 
+	$GREP -q "^$SHELL" "$ETCSHELLSHERE" && export result=1
+	$TEST "$result" = 1 && result=`$AWK -F:  "/^$user:/ "'{ if (length($2) > 12) printf("2\n"); if ($2 == "" || $2 == " ") printf("3\n"); }' $passwd_set` 
 	# Note: if length is less than 2 then the account is locked (system
 	# account)
 
@@ -129,11 +233,9 @@ done
 
 
 if [ -f $WORKDIR/pass.list.$$ ] ; then
-   if [ -z "$Tiger_PasswdFiles" ] ; then
-         for passwd_set in `$CAT $WORKDIR/pass.list.$$`; do
-                 delete $passwd_set $passwd_set.src
-         done
-   fi
+   for passwd_set in `$CAT $WORKDIR/pass.list.$$`; do
+           delete $passwd_set $passwd_set.src
+   done
    delete $WORKDIR/pass.list.$$
 fi
 
