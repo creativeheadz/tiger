@@ -1,0 +1,35 @@
+# Maintainer: Andrei Trimbitas <a.trimbitas@oldforge.tech>
+pkgname=tigris
+pkgver=3.6.0
+pkgrel=0
+pkgdesc="Security auditor for Linux, descended from TIGER"
+url="https://github.com/creativeheadz/tigris"
+arch="x86_64 aarch64"
+license="GPL-2.0-or-later"
+makedepends="gcc make musl-dev"
+subpackages="$pkgname-doc"
+source="tigris-$pkgver.tar.gz"
+builddir="$srcdir"
+options="!check"
+
+build() {
+	cd "$builddir"
+	./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
+		--with-tigerhome=/usr/lib/tigris \
+		--with-tigerconfig=/etc/tigris \
+		--with-tigerwork=/var/lib/tigris \
+		--with-tigerlog=/var/log/tigris \
+		--with-tigerbin=/usr/sbin
+	make
+}
+
+package() {
+	cd "$builddir"
+	make install DESTDIR="$pkgdir"
+	sh packaging/stage.sh "$pkgdir" /usr/lib/tigris /usr/sbin
+	gzip -9 "$pkgdir"/usr/share/man/man8/*.8
+}
+
+sha512sums="
+SKIP
+"
