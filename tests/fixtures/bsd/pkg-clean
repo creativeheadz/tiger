@@ -1,0 +1,3 @@
+#!/bin/sh
+# pkg updating with nothing to say
+exit 0

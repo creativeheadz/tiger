@@ -1,0 +1,7 @@
+#!/bin/sh
+# csrutil status with a custom configuration, debugging off
+echo "System Integrity Protection status: enabled (Custom Configuration)."
+echo ""
+echo "Filesystem Protections: enabled"
+echo "Debugging Restrictions: disabled"
+echo "DTrace Restrictions: enabled"

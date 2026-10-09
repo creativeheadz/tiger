@@ -1,0 +1,8 @@
+Id: swd001w
+Severity: WARN
+Category: packages
+Check: check_software
+
+An application or a brew Cellar entry is writable past root.
+Anyone who can write it plants code someone else runs. Take
+it out of the writable state.

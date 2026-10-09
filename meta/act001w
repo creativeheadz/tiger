@@ -1,0 +1,7 @@
+Id: act001w
+Severity: WARN
+Category: logging
+Check: check_accounting
+
+Process accounting is not on, or its file is missing: who ran
+what is nobody's record. Turn it on.

@@ -1,0 +1,3 @@
+#!/bin/sh
+# ipfw with rules past the default
+printf '00100 allow ip from any to any via lo0\n00200 deny ip from any to any\n65535 allow ip from any to any\n'

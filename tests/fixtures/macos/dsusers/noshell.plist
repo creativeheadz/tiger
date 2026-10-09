@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<array>
+		<string>noshell</string>
+	</array>
+	<key>uid</key>
+	<array>
+		<string>503</string>
+	</array>
+	<key>gid</key>
+	<array>
+		<string>20</string>
+	</array>
+	<key>shell</key>
+	<array>
+		<string>/usr/bin/evilsh</string>
+	</array>
+	<key>home</key>
+	<array>
+		<string>/Users/noshell</string>
+	</array>
+	<key>authentication_authority</key>
+	<array>
+		<string>;ShadowHash;</string>
+	</array>
+</dict>
+</plist>

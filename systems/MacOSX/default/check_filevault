@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_filevault: FileVault is the Mac's stolen-machine barrier: with
+#             it off, the disk reads in any other machine. `fdesetup
+#             status' says whether it is on. Off is reported; on means
+#             there is nothing to say. The status is live state, so an
+#             offline root has nothing to read and the check stays
+#             silent there.
+#
+# 10/09/2026 - Initial version. Tiger_Fdesetup_Cmd points at another
+#             `fdesetup status', for the tests.
+#
+# References:
+#   Apple Platform Security: FileVault
+#   fdesetup(8)
+#
+# Tigris: live system
+#   Under --root it is skipped: FileVault status is the running Mac's,
+#   never a root's.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# Under --root there is nothing to read: FileVault status is live state
+[ -n "$TIGRIS_ROOT" ] && exit 0
+
+echo
+echo "# Checking FileVault..."
+
+fdesetup=${Tiger_Fdesetup_Cmd:-fdesetup}
+status=`$fdesetup status 2>/dev/null`
+[ -n "$status" ] || exit 0
+
+case "$status" in
+  *Off.*) message WARN fde001w "Turn FileVault on (System Settings, Privacy and Security), unless this machine never leaves a locked room." "FileVault is off: the disk reads in any other machine, passwords and keys included." ;;
+esac
+
+exit 0

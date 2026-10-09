@@ -1,0 +1,6 @@
+#!/bin/sh
+# uname on macOS Sonoma
+case "$1" in
+  -s) echo "Darwin" ;;
+  -a) echo "Darwin h 23.1.0 Darwin Kernel Version 23.1.0: Mon Oct 9 21:27:27 PDT 2023; root:xnu-10002.41.9~6/RELEASE_ARM64_T8112 arm64" ;;
+esac

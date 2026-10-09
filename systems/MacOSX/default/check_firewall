@@ -1,0 +1,110 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_firewall: is incoming traffic filtered, on this Mac. pf is
+#             the packet filter (`pfctl -s info' says whether it is
+#             enabled); the application firewall (`socketfilterfw
+#             --getglobalstate') is the other one. Either off leaves
+#             its families unfiltered, which is what fire001w and
+#             fire002w mean on Linux too, so the same ids are
+#             reported. Both on means there is nothing to say.
+#             Stealth mode is not judged: dropping pings is hygiene,
+#             not a compromise path. Both tools read the running
+#             system, so an offline root has nothing to read and the
+#             check stays silent there.
+#
+# 10/09/2026 - Initial version. Tiger_Pfctl_Cmd points at another
+#             `pfctl -s info', Tiger_Appfw_Cmd at another
+#             `socketfilterfw --getglobalstate', for the tests.
+#
+# References:
+#   pfctl(8), pf.conf(5)
+#   socketfilterfw(8)
+#
+# Tigris: live system
+#   Under --root it is skipped: both states are the running Mac's,
+#   never a root's.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# Under --root there is nothing to read: both states are live
+[ -n "$TIGRIS_ROOT" ] && exit 0
+
+echo
+echo "# Checking the packet filter and the application firewall..."
+
+pfctl=${Tiger_Pfctl_Cmd:-pfctl}
+pf=`$pfctl -s info 2>/dev/null | $AWK '/^[Ss]tatus:/ { print tolower($2); exit }'`
+[ "$pf" = enabled ] || {
+  message WARN fire001w "Turn pf on ('pfctl -e', and enable it at boot), or filter elsewhere." "pf is not enabled: incoming IPv4 traffic nothing accepts still gets in."
+  message WARN fire002w "Turn pf on ('pfctl -e', and enable it at boot), or filter elsewhere." "pf is not enabled: incoming IPv6 traffic nothing accepts still gets in."
+}
+
+appfw=${Tiger_Appfw_Cmd:-/usr/libexec/ApplicationFirewall/socketfilterfw}
+fw=`$appfw --getglobalstate 2>/dev/null | $AWK '{ if (tolower($0) ~ /disabled/) { print "off"; exit } if (tolower($0) ~ /enabled/) { print "on"; exit } }'`
+[ "$fw" = on ] || {
+  message WARN fire001w "Turn the application firewall on (System Settings, Network, Firewall), or filter elsewhere." "The application firewall is off: incoming IPv4 traffic nothing accepts still gets in."
+  message WARN fire002w "Turn the application firewall on (System Settings, Network, Firewall), or filter elsewhere." "The application firewall is off: incoming IPv6 traffic nothing accepts still gets in."
+}
+
+exit 0

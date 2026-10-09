@@ -73,9 +73,11 @@ AWK=`findcmd awk`
 #------------------------------------------------------------------------
 # This should get:
 #
-#    Sun, Cray, AIX, HP-UX, IRIX, Linux and MacOSX
+#    Sun, Cray, AIX, HP-UX, IRIX, Linux, MacOSX and the BSDs
 #
 UNAME=`findcmd uname`
+# Tiger_Uname_Cmd points uname at a stub, for the tests.
+[ -n "$Tiger_Uname_Cmd" ] && UNAME="$Tiger_Uname_Cmd"
 
 # As suggested by Nicolas François, it is much fast / better to use uname -rms in Linux
 # as this is less error-pone
@@ -121,6 +123,15 @@ fi
 	   }
 	   else if($1 == "Jaguar"){
 	        printf("MacOSX %s %s\n",$3, $11);
+	   }
+	   else if($1 == "FreeBSD"){
+	        printf("FreeBSD %s %s\n",$3, $NF);
+	   }
+	   else if($1 == "OpenBSD"){
+	        printf("OpenBSD %s %s\n",$3, $NF);
+	   }
+	   else if($1 == "NetBSD"){
+	        printf("NetBSD %s %s\n",$3, $NF);
 	   }
 	   else if($1 == "OSF1"){
 	        printf("Tru64 %s %s\n",substr($3,2), $5);

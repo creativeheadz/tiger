@@ -1,0 +1,140 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_launchd: what macOS runs by itself. A daemon or agent plist
+#             writable past root lets anyone rewrite what runs at
+#             boot or login, and a program it names that is writable
+#             past root lets anyone swap the code it runs (lch001w).
+#             Stock Apple directories are root:wheel and quiet; group
+#             admin is exempt the same way as installed software
+#             (its members can already sudo). User home agents are
+#             not read: they run as their owner, who owns them.
+#             Disabled daemons and dangling programs are breakage,
+#             not a compromise path, and stay silent.
+#
+# 10/09/2026 - Initial version.
+#
+# References:
+#   launchd.plist(5), launchctl(1)
+#
+# Tigris: offline
+#   the root's LaunchDaemons and LaunchAgents.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS || exit 1
+
+# loose MODE GROUP: a writability that plants persistence: by
+# anyone, or by a group outside root, wheel and admin
+loose()
+{
+  case "$1" in
+    ????????w?) return 0;;
+  esac
+  case "$1" in
+    ?????w????) case "$2" in root|wheel|admin) return 1;; *) return 0;; esac;;
+  esac
+  return 1
+}
+
+# program_of PLIST: the absolute program the job runs: Program, or
+# the first ProgramArguments word when it names an absolute path
+program_of()
+{
+  $AWK '
+  /<key>Program<\/key>/ { getline; if ($0 ~ /<string>\/[^<]*<\/string>/) { s = $0; sub(/^.*<string>/, "", s); sub(/<\/string>.*$/, "", s); print s; exit } }
+  /<key>ProgramArguments<\/key>/ { args = 1; next }
+  args == 1 && /<string>/ {
+    s = $0; sub(/^.*<string>/, "", s); sub(/<\/string>.*$/, "", s)
+    if (s ~ /^\//) print s
+    exit
+  }
+  args == 1 && /<\/array>/ { exit }' "$1" 2>/dev/null
+}
+
+echo
+echo "# Checking boot daemons and agents..."
+
+for launchdir in /System/Library/LaunchDaemons /Library/LaunchDaemons \
+                 /System/Library/LaunchAgents /Library/LaunchAgents
+do
+  dir=`rootfile $launchdir`
+  [ -d "$dir" ] || continue
+  for plist in "$dir"/*.plist
+  do
+    [ -f "$plist" ] || continue
+    set X `$LS -l "$plist" 2>/dev/null | $AWK '{ print $1, $4 }'`
+    if loose "$2" "$3"; then
+      message WARN lch001w "Take \`$plist' out of the writable state (root:wheel, 644)." "The launchd job \`$plist' is writable past root: anyone who can rewrite it chooses what runs at boot or login."
+      continue
+    fi
+    prog=`program_of "$plist"`
+    if [ -n "$prog" ]; then
+      p=`rootfile $prog`
+      if [ -f "$p" ]; then
+        set X `$LS -l "$p" 2>/dev/null | $AWK '{ print $1, $4 }'`
+        loose "$2" "$3" && message WARN lch001w "Take \`$prog' out of the writable state." "The program \`$prog', run by the launchd job \`$plist', is writable past root: anyone who can swap it runs as the job does."
+      fi
+    fi
+  done
+done
+
+exit 0

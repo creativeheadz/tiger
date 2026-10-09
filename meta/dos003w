@@ -1,0 +1,8 @@
+Id: dos003w
+Severity: WARN
+Category: accounts
+Check: check_doas
+
+doas's rules are writable past root. Whoever can write them
+can give themselves root. Take the file out of the writable
+state.

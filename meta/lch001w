@@ -1,0 +1,9 @@
+Id: lch001w
+Severity: WARN
+Category: boot
+Check: check_launchd
+
+A launchd job, or the program it runs, is writable past root.
+Anyone who can rewrite the job chooses what runs at boot or
+login; anyone who can swap the program runs as the job does.
+Take it out of the writable state.

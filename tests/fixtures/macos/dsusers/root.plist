@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<array>
+		<string>root</string>
+	</array>
+	<key>uid</key>
+	<array>
+		<string>0</string>
+	</array>
+	<key>gid</key>
+	<array>
+		<string>0</string>
+	</array>
+	<key>shell</key>
+	<array>
+		<string>/bin/sh</string>
+	</array>
+	<key>home</key>
+	<array>
+		<string>/var/root</string>
+	</array>
+	<key>authentication_authority</key>
+	<array>
+		<string>;ShadowHash;</string>
+	</array>
+</dict>
+</plist>

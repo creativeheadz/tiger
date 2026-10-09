@@ -47,7 +47,7 @@ bad() { echo "FAIL $1"; fail=1; }
 cd "$TIGER" || exit 1
 ls meta | sort > "$W/explained.txt"
 [ -s "$W/explained.txt" ] || { bad "no meta files"; exit 1; }
-CODE="tiger tigris tigercron tigris-accept tigris-diff config initdefs util scripts systems/Linux/2"
+CODE="tiger tigris tigercron tigris-accept tigris-diff config initdefs util scripts systems/Linux/2 systems/MacOSX/default systems/FreeBSD/default"
 # shellcheck disable=SC2086
 grep -r "" $CODE 2>/dev/null \
   | grep -v "^[^:]*:[ 	]*#" \

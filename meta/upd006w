@@ -1,0 +1,8 @@
+Id: upd006w
+Severity: WARN
+Category: packages
+Check: check_pkg
+
+Package update notices touch installed packages. Some entries
+are security, and the list does not say which: read them and
+upgrade what they name.

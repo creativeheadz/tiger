@@ -1,0 +1,8 @@
+Id: dos002i
+Severity: INFO
+Category: accounts
+Check: check_doas
+
+doas lets someone past the password, scoped to commands. Take
+it as read when scoring password findings; this one only notes
+it.

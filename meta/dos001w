@@ -1,0 +1,8 @@
+Id: dos001w
+Severity: WARN
+Category: accounts
+Check: check_doas
+
+doas lets someone run any command as root without a password.
+Whoever gets that session gets root. Take nopass off, or name
+the exact commands.

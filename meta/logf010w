@@ -1,0 +1,8 @@
+Id: logf010w
+Severity: WARN
+Category: logging
+Check: check_logfiles
+Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
+
+newsyslog will create the next rotation of the log
+world-writable. Tighten the mode in newsyslog.conf now.

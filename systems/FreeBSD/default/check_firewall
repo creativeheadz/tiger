@@ -1,0 +1,123 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_firewall: is incoming traffic filtered, on this FreeBSD
+#             machine. pf (`pfctl -s info') is the first answer: off
+#             means nothing filters, on with an empty ruleset
+#             (`pfctl -s rules' says nothing) means the same, and
+#             both are what fire001w and fire002w mean elsewhere.
+#             ipfw (`ipfw show') is the second: its stock last rule
+#             allows everything, so a ruleset of nothing but that,
+#             with pf off, leaves both families open. With pf on,
+#             ipfw's openness is pf's business, and stays silent:
+#             each state gets exactly one voice. The tools read the
+#             running ruleset, never loading modules, so an offline
+#             root has nothing to read and the check stays silent
+#             there. Strict pf.conf-vs-loaded consistency is not
+#             judged: macros and tables expand, so text comparison
+#             would lie; the empty ruleset is the enforced floor.
+#
+# 10/09/2026 - Initial version. Tiger_Pfctl_Cmd points at another
+#             pfctl, Tiger_Ipfw_Cmd at another ipfw, for the tests.
+#
+# References:
+#   pfctl(8), pf.conf(5)
+#   ipfw(8)
+#
+# Tigris: live system
+#   Under --root it is skipped: the ruleset is the running
+#   machine's, never a root's.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# Under --root there is nothing to read: the ruleset is live state
+[ -n "$TIGRIS_ROOT" ] && exit 0
+
+echo
+echo "# Checking the packet filter..."
+
+pfctl=${Tiger_Pfctl_Cmd:-pfctl}
+pf=`$pfctl -s info 2>/dev/null | $AWK '/^[Ss]tatus:/ { print tolower($2); exit }'`
+rules=`$pfctl -s rules 2>/dev/null | $AWK 'NF { n++ } END { print n + 0 }'`
+
+ipfw=${Tiger_Ipfw_Cmd:-ipfw}
+other=`$ipfw show 2>/dev/null | $AWK '$1 !~ /^65535$/ && NF { n++ } END { print n + 0 }'`
+
+# Filtered means either filter filters: pf on with rules, or ipfw
+# with rules past its stock allow-all. Anything else gets one
+# voice naming what is missing.
+if [ "$pf" = enabled ] && [ "$rules" -gt 0 ]; then
+  exit 0
+fi
+if [ "$other" -gt 0 ]; then
+  exit 0
+fi
+
+why=
+[ "$pf" != enabled ] && why="pf is not enabled"
+[ "$pf" = enabled ] && why="pf is enabled with an empty ruleset"
+[ "$other" -eq 0 ] && why="$why${why:+, }ipfw runs its stock allow-all"
+message WARN fire001w "Filter incoming traffic (pf_enable=\"YES\" and a ruleset for pf, or rules past ipfw's allow-all)." "Nothing filters: $why, so incoming IPv4 traffic nothing accepts still gets in."
+message WARN fire002w "Filter incoming traffic (pf_enable=\"YES\" and a ruleset for pf, or rules past ipfw's allow-all)." "Nothing filters: $why, so incoming IPv6 traffic nothing accepts still gets in."
+
+exit 0

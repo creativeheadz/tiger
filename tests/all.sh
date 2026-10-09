@@ -8,6 +8,9 @@
 # to test" and does not fail. CI runs this under mawk, gawk and busybox
 # awk, in Debian, Arch and Alpine containers; deb_checks.sh and
 # pkg_checks.sh change the system they run on and have jobs of their own.
+# Check authors take note: busybox awk rejects a literal brace outside
+# a bracket expression (/{/ does not compile, and the whole program
+# dies silent), so every awk regex spells one [{] or [}].
 #
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 export TIGER

@@ -558,6 +558,40 @@ aidepid=
 }
 
 #
+# macOS-only checks: run_script finds nothing for them anywhere else,
+# so they are gated on the OS as well as their toggle.
+#
+[ "$Tiger_Check_SIP" != 'N' ] && [ "$OS" = MacOSX ] && {
+  progress_start "Checking System Integrity Protection..."
+  run_script check_sip >> $logtmp
+  progress_end
+}
+
+[ "$Tiger_Check_FILEVAULT" != 'N' ] && [ "$OS" = MacOSX ] && {
+  progress_start "Checking FileVault..."
+  run_script check_filevault >> $logtmp
+  progress_end
+}
+
+[ "$Tiger_Check_DOAS" != 'N' ] && [ "$OS" = MacOSX ] && {
+  progress_start "Checking the doas configuration..."
+  run_script check_doas >> $logtmp
+  progress_end
+}
+
+[ "$Tiger_Check_SOFTWARE" != 'N' ] && [ "$OS" = MacOSX ] && {
+  progress_start "Checking installed software..."
+  run_script check_software >> $logtmp
+  progress_end
+}
+
+[ "$Tiger_Check_LAUNCHD" != 'N' ] && [ "$OS" = MacOSX ] && {
+  progress_start "Checking boot daemons and agents..."
+  run_script check_launchd >> $logtmp
+  progress_end
+}
+
+#
 # When not doing checks of all setuid executables, we can do
 # embedded checks while the file system scans are running.
 #

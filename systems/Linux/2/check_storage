@@ -131,17 +131,19 @@ firewire_blocked()
 lvm_info()
 {
   $AWK '
-  !havg && /^[ \t]*[A-Za-z0-9_][A-Za-z0-9_.-]*[ \t]*{[ \t]*$/ {
-    vg = $0; sub(/[ \t]*{[ \t]*$/, "", vg); sub(/^[ \t]*/, "", vg); havg = 1; next }
+  # [{] inside brackets: a brace is literal there on every awk,
+  # while /{/ does not compile on busybox awk
+  !havg && /^[ \t]*[A-Za-z0-9_][A-Za-z0-9_.-]*[ \t]*[{][ \t]*$/ {
+    vg = $0; sub(/[ \t]*[{][ \t]*$/, "", vg); sub(/^[ \t]*/, "", vg); havg = 1; next }
   !havg && /volume_group[ \t]*"/ {
     vg = $0; sub(/^.*"/, "", vg); sub(/".*/, "", vg); havg = 1; next }
-  /logical_volumes[ \t]*{/ { inlv = 1; depth = 1; next }
+  /logical_volumes[ \t]*[{]/ { inlv = 1; depth = 1; next }
   inlv {
-    if (depth == 1 && $0 ~ /^[ \t]*"?[^" \t{]+"?[ \t]*{/) {
-      n = $0; sub(/^[ \t]*/, "", n); sub(/[ \t]*{.*$/, "", n); gsub(/"/, "", n)
+    if (depth == 1 && $0 ~ /^[ \t]*"?[^" \t{]+"?[ \t]*[{]/) {
+      n = $0; sub(/^[ \t]*/, "", n); sub(/[ \t]*[{].*$/, "", n); gsub(/"/, "", n)
       lvs = (lvs == "" ? n : lvs ", " n)
     }
-    depth += gsub(/{/, "{") - gsub(/}/, "}")
+    depth += gsub(/[{]/, "&") - gsub(/[}]/, "&")
     if (depth <= 0) inlv = 0
   }
   END { if (vg != "") print vg "|" lvs }' "$1" 2>/dev/null

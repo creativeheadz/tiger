@@ -1,0 +1,8 @@
+Id: inet001w
+Severity: WARN
+Category: network
+Check: check_inetd
+
+inetd serves an old cleartext or trust-based service: telnet,
+rsh, rlogin, rexec, finger, tftp or uucp. They hand the machine
+to anyone listening. Turn the service off, or inetd with it.

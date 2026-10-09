@@ -1,0 +1,3 @@
+#!/bin/sh
+# ipfw with the stock allow-all alone
+echo "65535 allow ip from any to any"

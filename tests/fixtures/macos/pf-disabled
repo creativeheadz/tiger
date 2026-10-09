@@ -1,0 +1,3 @@
+#!/bin/sh
+# pfctl -s info with pf off
+echo "Status: Disabled"

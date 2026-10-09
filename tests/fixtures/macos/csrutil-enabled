@@ -1,0 +1,3 @@
+#!/bin/sh
+# csrutil status when SIP is on
+echo "System Integrity Protection status: enabled."

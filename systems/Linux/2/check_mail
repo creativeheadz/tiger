@@ -251,7 +251,9 @@ do
         else if (lk == "ssl" && lv != "") dovessl = lv
         else if (lk == "login_greeting" && v ~ /[0-9]+\.[0-9]+/) greeting = 1
       }
-      depth += gsub(/{/, "{", line) - gsub(/}/, "}", line)
+      # [{] inside brackets: a brace is literal there on every awk,
+      # while /{/ does not compile on busybox awk
+      depth += gsub(/[{]/, "&", line) - gsub(/[}]/, "&", line)
       if (depth < 0) depth = 0
     }
     END {

@@ -1,0 +1,170 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_doas: doas's rules say who becomes root without a password.
+#             `permit nopass' as root, with no command named, hands
+#             root to whoever holds that session (dos001w); scoped to
+#             commands it is worth knowing but not alarming (dos002i).
+#             And the rules file itself must not be writable past root:
+#             whoever can write it can give themselves root (dos003w).
+#             No doas.conf means doas is not in use here, and there is
+#             nothing to say. (doas on Linux rides a later phase; the
+#             grammar is the same, only the paths would widen.)
+#
+# 10/09/2026 - Initial version. /etc/doas.conf, last rule wins the
+#             way doas reads them: first match decides, so every
+#             matching rule is reported, not just the last.
+#
+# References:
+#   doas.conf(5)
+#
+# Tigris: offline
+#   the root's doas.conf.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS || exit 1
+
+# doas_nopass FILE: "who" lines for `permit nopass' rules, each as
+# "who<TAB>as-root?" with the command count: "who\tyes\t0" means the
+# rule names no command (root outright), "who\tyes\t2" names two
+# command words. doas matches the first rule, so every matching rule
+# is listed, in file order. A repeated rule reports once.
+doas_nopass()
+{
+  $AWK '
+  /^[ \t]*#/ { next }
+  { line = $0; sub(/#.*/, "", line)
+    if (line !~ /[^ \t]/) next
+    n = split(line, w, /[ \t]+/)
+    # drop a leading empty field from leading whitespace
+    if (w[1] == "") { for (i = 2; i <= n; i++) w[i-1] = w[i]; n-- }
+    if (n < 3 || w[1] != "permit") next
+    nopass = 0; depth = 0
+    for (i = 2; i <= n; i++) {
+      # [{] inside brackets: a brace is literal there on every awk,
+      # while /{/ does not compile on busybox awk
+      if (w[i] ~ /[{]/) depth++
+      if (w[i] ~ /[}]/) depth--
+      if (depth == 0 && tolower(w[i]) == "nopass") nopass = 1
+    }
+    if (!nopass) next
+    # the identity: first depth-0 word past permit that is not an
+    # option (options take no arguments, except setenv/logfmt {...})
+    who = ""; i = 2; depth = 0
+    while (i <= n) {
+      t = w[i]
+      if (t ~ /[{]/) { depth++; i++; continue }
+      if (t ~ /[}]/) { depth--; i++; continue }
+      if (depth > 0) { i++; continue }
+      l = tolower(t)
+      if (l == "nopass" || l == "persist" || l == "keepenv" || l == "nolog" || l == "setenv" || l == "logfmt") { i++; continue }
+      who = t; i++; break
+    }
+    if (who == "") next
+    # root gaining root is no privilege: only others are reported
+    if (who == "root") next
+    # target and command: past an as target, or past the identity
+    asroot = 1; cmds = 0
+    j = i
+    if (tolower(w[i]) == "as" && i + 1 <= n) { asroot = (tolower(w[i+1]) == "root"); j = i + 2 }
+    else if (tolower(w[i]) == "as") next
+    if (j <= n) cmds = n - j + 1
+    tag = who "\t" (asroot ? "yes" : "no") "\t" cmds
+    if (!(tag in seen)) { seen[tag] = 1; print tag }
+  }' "$1" 2>/dev/null
+}
+
+# loose_conf HOSTPATH: whether the file is writable past root: by
+# anyone, or by a group that is not root's
+loose_conf()
+{
+  set X `$LS -lL "$1" 2>/dev/null | $AWK '{ print $1, $4 }'`
+  __mode=$2 __group=$3
+  # other-write is the ninth character, group-write the sixth
+  case "$__mode" in
+    ????????w?) return 0;;
+  esac
+  case "$__mode" in
+    ?????w????) [ "$__group" != root ] && return 0;;
+  esac
+  return 1
+}
+
+conf=`rootfile /etc/doas.conf`
+
+# No doas.conf: doas is not in use here
+[ -f "$conf" ] || exit 0
+
+echo
+echo "# Checking the doas configuration..."
+
+doas_nopass "$conf" | while IFS='	' read -r who asroot cmds
+do
+  if [ "$asroot" = yes ] && [ "$cmds" -eq 0 ]; then
+    message WARN dos001w "Take nopass off, or name the exact commands, in /etc/doas.conf." "\`$who' may run any command as root with doas, without a password: whoever gets that session gets root."
+  else
+    message INFO dos002i "" "doas lets \`$who' past the password: take it as read when scoring password findings."
+  fi
+done
+loose_conf "$conf" && message WARN dos003w "Take /etc/doas.conf out of the writable state ('chown root:root /etc/doas.conf'; chmod 444 /etc/doas.conf)." "doas's rules are writable past root: whoever can write them can give themselves root."
+
+exit 0

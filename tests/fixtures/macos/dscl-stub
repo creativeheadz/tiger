@@ -1,0 +1,49 @@
+#!/bin/sh
+# dscl for the suites: list names, read records in `Key: value' form.
+# Data table: user|uid|gid|home|shell|auth / group|gid
+user_row() {
+  case "$1" in
+    root) echo "root|0|0|/var/root|/bin/sh|;ShadowHash;" ;;
+    admin) echo "admin|501|20|/Users/admin|/bin/bash|;ShadowHash;" ;;
+    evil) echo "evil|0|20|/Users/evil|/bin/bash|;ShadowHash;" ;;
+    locked) echo "locked|502|20|/Users/locked|/bin/bash|;DisabledUser;" ;;
+    noshell) echo "noshell|503|20|/Users/noshell|/usr/bin/evilsh|;ShadowHash;" ;;
+    daemon1) echo "daemon1|1|1|/var/empty|/usr/bin/false|;DisabledUser;" ;;
+  esac
+}
+group_row() {
+  case "$1" in
+    wheel) echo "wheel|0" ;;
+    staff) echo "staff|20" ;;
+  esac
+}
+if [ "$2" = -list ] && [ "$3" = /Users ]; then
+  printf '%s\n' root admin evil locked noshell daemon1
+elif [ "$2" = -list ] && [ "$3" = /Groups ]; then
+  printf '%s\n' wheel staff
+elif [ "$2" = -read ] && [ "$3" != "" ]; then
+  case "$3" in
+    /Users/*)
+      u=${3#/Users/}; row=`user_row "$u"`; [ -n "$row" ] || exit 0
+      name=${row%%|*}; rest=${row#*|}; uid=${rest%%|*}; rest=${rest#*|}
+      gid=${rest%%|*}; rest=${rest#*|}; home=${rest%%|*}; rest=${rest#*|}
+      shell=${rest%%|*}; auth=${rest#*|}
+      shift 3
+      for a in "$@"; do
+        case "$a" in
+          UniqueID) echo "UniqueID: $uid" ;;
+          PrimaryGroupID) echo "PrimaryGroupID: $gid" ;;
+          NFSHomeDirectory) echo "NFSHomeDirectory: $home" ;;
+          UserShell) echo "UserShell: $shell" ;;
+          AuthenticationAuthority) echo "AuthenticationAuthority: $auth" ;;
+        esac
+      done ;;
+    /Groups/*)
+      g=${3#/Groups/}; row=`group_row "$g"`; [ -n "$row" ] || exit 0
+      shift 3
+      for a in "$@"; do
+        case "$a" in PrimaryGroupID) echo "PrimaryGroupID: ${row#*|}" ;; esac
+      done ;;
+  esac
+fi
+exit 0

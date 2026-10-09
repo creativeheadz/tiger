@@ -1,0 +1,6 @@
+#!/bin/sh
+# uname on FreeBSD 14.1
+case "$1" in
+  -s) echo "FreeBSD" ;;
+  -a) echo "FreeBSD h 14.1-RELEASE FreeBSD 14.1-RELEASE #0 releng/14.1-n267679-10e31f0946c8: Fri Apr 19 00:27:13 UTC 2024 amd64" ;;
+esac

@@ -1,0 +1,162 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_logfiles: what newsyslog watches, and whether the trail
+#             stands. The configuration itself writable past its
+#             owner lets anyone redirect the evidence (logf005f);
+#             a managed log missing is a gap in the trail
+#             (logf001f); a managed log writable past its owner
+#             proves nothing (logf005f); a mode column that creates
+#             the next rotation world-writable says so now
+#             (logf010w). The same missing/permission ids the
+#             portable check reports. Remote logging is not judged:
+#             local-only logs are a posture, not a compromise path.
+#
+# 10/09/2026 - Initial version.
+#
+# References:
+#   newsyslog.conf(5), newsyslog(8)
+#
+# Tigris: offline
+#   the root's newsyslog configuration and logs.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS || exit 1
+
+echo
+echo "# Checking log files..."
+
+# managed_from FILE: `logpath mode' lines for newsyslog entries:
+# includes followed one level, comments and blanks skipped
+managed_from()
+{
+  $AWK '
+  /^[ \t]*#/ { next }
+  /^[ \t]*$/ { next }
+  $1 == "<include>" { print "include " $2; next }
+  {
+    owner = ""; mode = $2
+    if ($2 ~ /[:.]/) { owner = $2; mode = $3 }
+    gsub(/[^0-9]/, "", mode)
+    print "log " $1 " " mode
+  }' "$1" 2>/dev/null
+}
+
+seen=
+expand() {  # expand ROOT conffile: managed entries, includes once each
+  case " $seen " in
+    *" $1 "*) return 0;;
+  esac
+  seen="$seen $1"
+  managed_from "$1" | while read -r kind path mode
+  do
+    if [ "$kind" = include ]; then
+      inc=`rootfile $path`
+      [ -f "$inc" ] && expand "$inc"
+    else
+      printf '%s %s\n' "$path" "$mode"
+    fi
+  done
+}
+
+conf=`rootfile /etc/newsyslog.conf`
+[ -f "$conf" ] || exit 0
+
+set X `$LS -lL "$conf" 2>/dev/null | $AWK '{ print $1 }'`
+case "$2" in
+  ????????w?) message FAIL logf005f "" "Log configuration \`$conf' is writable past its owner: whoever can rewrite it redirects the evidence." ;;
+esac
+
+expand "$conf" | sort -u | {
+  while read -r logpath mode
+  do
+    f=`rootfile $logpath`
+    case "$f" in
+      *\**) for g in $f
+            do
+              [ -e "$g" ] || [ -L "$g" ] || continue
+              printf '%s\t%s\t%s\n' "$logpath" "$g" "$mode"
+            done ;;
+      *) printf '%s\t%s\t%s\n' "$logpath" "$f" "$mode" ;;
+    esac
+  done
+} | while IFS='	' read -r logpath f mode
+do
+  if [ ! -e "$f" ] && [ ! -L "$f" ]; then
+    message FAIL logf001f "" "Managed log \`$logpath' does not exist: the trail has a gap where it should write."
+    continue
+  fi
+  # Devices are sinks, not evidence: a log pointed at null is a
+  # configuration, not an attack
+  if [ -c "$f" ] || [ -b "$f" ]; then
+    continue
+  fi
+  set X `$LS -ldL "$f" 2>/dev/null | $AWK '{ print $1 }'`
+  case "$2" in
+    ????????w?) message FAIL logf005f "" "Managed log \`$logpath' is writable past its owner: whoever can rewrite it edits what happened." ;;
+  esac
+  case "$mode" in
+    *[2367]) message WARN logf010w "Tighten the mode for \`$logpath' in newsyslog.conf: the next rotation creates it world-writable." ;;
+  esac
+done
+
+exit 0

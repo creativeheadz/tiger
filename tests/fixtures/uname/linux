@@ -1,0 +1,6 @@
+#!/bin/sh
+# uname on Linux
+case "$1" in
+  -s) echo "Linux" ;;
+  -rms) echo "Linux 6.8.0 x86_64" ;;
+esac

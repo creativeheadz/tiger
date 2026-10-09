@@ -5,6 +5,7 @@
 | Version | Supported |
 | ------- | --------- |
 | `master` | Yes |
+| 3.8.0 | Yes |
 | 3.7.0 | Yes, for security fixes |
 | 3.6.0 and older, including all TIGER releases | No |
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<array>
+		<string>locked</string>
+	</array>
+	<key>uid</key>
+	<array>
+		<string>502</string>
+	</array>
+	<key>gid</key>
+	<array>
+		<string>20</string>
+	</array>
+	<key>shell</key>
+	<array>
+		<string>/bin/bash</string>
+	</array>
+	<key>home</key>
+	<array>
+		<string>/Users/locked</string>
+	</array>
+	<key>authentication_authority</key>
+	<array>
+		<string>;DisabledUser;</string>
+	</array>
+</dict>
+</plist>

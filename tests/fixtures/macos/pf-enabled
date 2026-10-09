@@ -1,0 +1,3 @@
+#!/bin/sh
+# pfctl -s info with pf on
+echo "Status: Enabled for 0 days 00:00:01"

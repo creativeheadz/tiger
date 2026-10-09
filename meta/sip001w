@@ -1,0 +1,8 @@
+Id: sip001w
+Severity: WARN
+Category: kernel
+Check: check_sip
+
+System Integrity Protection is off, in whole or in the named
+parts. Root can rewrite the system, and no software barrier
+stands in malware's way. Turn it back on.

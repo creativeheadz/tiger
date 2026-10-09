@@ -1,0 +1,3 @@
+#!/bin/sh
+# socketfilterfw --getglobalstate on
+echo "Firewall is enabled. (State = 1)"

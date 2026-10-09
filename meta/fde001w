@@ -1,0 +1,8 @@
+Id: fde001w
+Severity: WARN
+Category: filesystem
+Check: check_filevault
+
+FileVault is off: the disk reads in any other machine,
+passwords and keys included. Turn it on, unless this machine
+never leaves a locked room.

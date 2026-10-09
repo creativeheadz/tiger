@@ -1,0 +1,143 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_group: the Mac's groups, and whether any of them is wrong.
+#             The groups live in DirectoryService: live they are read
+#             with dscl, offline from the root's dslocal plists. The
+#             judgments are the portable check's, cut to what the Mac
+#             means: a name or a gid twice (grp001w, grp002w). Gid 0
+#             is wheel, the admin group by design, so it is not
+#             reported; there is no grpck on macOS, so integrity of
+#             the files is not judged either.
+#
+# 10/09/2026 - Initial version. Tiger_Dscl_Cmd points at another
+#             dscl, for the tests.
+#
+# References:
+#   dscl(1)
+#
+# Tigris: offline
+#   the root's dslocal group plists.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT || exit 1
+
+# groups_of: one `name:gid' line per group, from the root's dslocal
+# plists, or live from dscl
+groups_of()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then
+    dir=`rootfile /var/db/dslocal/nodes/Default/groups`
+    [ -d "$dir" ] || return 0
+    for f in "$dir"/*.plist
+    do
+      [ -f "$f" ] || continue
+      $AWK '
+      /<key>name<\/key>/ { key = "name"; next }
+      /<key>gid<\/key>/ { key = "gid"; next }
+      /<key>/ { key = ""; next }
+      key != "" && /<string>/ {
+        s = $0; sub(/^.*<string>/, "", s); sub(/<\/string>.*$/, "", s)
+        if (!(key in v)) v[key] = s
+        next
+      }
+      END { if ("name" in v) printf "%s:%s\n", v["name"], v["gid"] }' "$f" 2>/dev/null
+    done
+  else
+    dscl=${Tiger_Dscl_Cmd:-dscl}
+    $dscl . -list /Groups 2>/dev/null | $AWK '{ print $1 }' | while read -r g
+    do
+      [ -n "$g" ] || continue
+      gid=`$dscl . -read /Groups/"$g" PrimaryGroupID 2>/dev/null | $AWK '/^PrimaryGroupID:/ { print $2; exit }'`
+      printf '%s:%s\n' "$g" "$gid"
+    done
+  fi
+}
+
+echo
+echo "# Checking groups..."
+
+groups=`groups_of`
+[ -n "$groups" ] || exit 0
+
+printf '%s' "$groups" | $AWK -F: '
+{
+  name[NR] = $1; gid[NR] = $2; n = NR
+  if ($1 != "") names[$1]++
+  if ($2 != "") gids[$2]++
+}
+END {
+  for (i = 1; i <= n; i++) {
+    if (names[name[i]] > 1)
+      print "grp001w", name[i]
+    if (gid[i] != "" && gids[gid[i]] > 1)
+      print "grp002w", gid[i]
+  }
+}' | sort -u | while read -r id who
+do
+  case "$id" in
+    grp001w) message WARN grp001w "" "Groupname \`$who' exists multiple times in DirectoryService." ;;
+    grp002w) message WARN grp002w "" "GID $who exists multiple times in DirectoryService." ;;
+  esac
+done
+
+exit 0

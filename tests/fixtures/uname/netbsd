@@ -1,0 +1,6 @@
+#!/bin/sh
+# uname on NetBSD 10.0
+case "$1" in
+  -s) echo "NetBSD" ;;
+  -a) echo "NetBSD h 10.0 NetBSD 10.0 (GENERIC64) #0: Thu Aug 10 07:21:56 UTC 2023 amd64" ;;
+esac

@@ -63,6 +63,11 @@ Tiger_Check_COMPILERS=Y	# Fast - compilers and malware scanners
 Tiger_Check_MAIL=Y		# Fast - Exim, Postfix and Dovecot config
 Tiger_Check_CRYPTO=Y	# Fast - RNG config, key perms, entropy
 Tiger_Check_INTEGRITY=Y	# Fast - integrity watcher config
+Tiger_Check_SIP=Y		# Fast - System Integrity Protection (macOS only)
+Tiger_Check_FILEVAULT=Y	# Fast - FileVault encryption (macOS only)
+Tiger_Check_DOAS=Y		# Fast - doas rules and nopass (macOS only)
+Tiger_Check_SOFTWARE=Y	# Fast - apps, brew Cellar, updates (macOS only)
+Tiger_Check_LAUNCHD=Y	# Fast - LaunchDaemons and Agents (macOS only)
 
 # OS specific checks
 # You can comment them if they are not appropriate to your system but
@@ -87,6 +92,9 @@ Tiger_Check_AUDIT=Y             # Fast - auditd with rules, logs kept across reb
 Tiger_Check_TIMESYNC=Y          # Fast - one time daemon, and the clock synchronised
 Tiger_Check_UPDATES=Y           # Fast - security updates waiting, automatic, reboot (offline)
 Tiger_Check_SUDO=Y              # Fast - sudo rules without a password or with wildcards
+Tiger_Check_PKG=Y               # Fast - package update notices (FreeBSD only)
+Tiger_Check_ACCOUNTING=Y        # Fast - process accounting (FreeBSD only)
+Tiger_Check_INETD=Y             # Fast - super-server services (FreeBSD only)
 Tiger_Check_PAM=Y               # Fast - password quality and lockout in PAM
 Tiger_Check_UNITS=Y             # Fast - what enabled systemd services and timers run
 Tiger_Check_STORAGE=Y           # Fast - /tmp and /dev/shm options, encryption, core dumps
@@ -383,8 +391,28 @@ Tiger_Sysctl_Root=''
 # they skipped (con011c, acc025w, path010w). Needs a 'timeout' command
 # (coreutils or busybox); without one there is no limit, as before.
 # Tiger_Mount_Probe_Cmd replaces df; the tests point it at a script.
+# Tiger_Csrutil_Cmd replaces `csrutil status' and Tiger_Fdesetup_Cmd
+# replaces `fdesetup status' (both macOS only); the tests point them
+# at fixture scripts. Tiger_Brew_Cmd replaces `brew --prefix',
+# Tiger_Pfctl_Cmd `pfctl -s info' and Tiger_Appfw_Cmd
+# `socketfilterfw --getglobalstate' (both macOS only) the same way.
+# Tiger_Dscl_Cmd replaces dscl for the macOS account checks.
 #
 Tiger_Mount_Timeout=5
+Tiger_Csrutil_Cmd=''
+Tiger_Fdesetup_Cmd=''
+Tiger_Brew_Cmd=''
+Tiger_Pfctl_Cmd=''
+Tiger_Appfw_Cmd=''
+Tiger_Dscl_Cmd=''
+# Tiger_Ipfw_Cmd points ipfw at a stub, Tiger_Ifconfig_Cmd ifconfig -a
+# (both FreeBSD only), for the suites.
+Tiger_Ipfw_Cmd=''
+Tiger_Ifconfig_Cmd=''
+# Tiger_Pkg_Cmd points pkg at a stub, for the suites.
+Tiger_Pkg_Cmd=''
+# Tiger_Uname_Cmd points uname at a stub, for the hostinfo suite.
+Tiger_Uname_Cmd=''
 Tiger_Mount_Probe_Cmd=''
 #
 # Write the findings as JSON Lines as well, one object per finding, in a

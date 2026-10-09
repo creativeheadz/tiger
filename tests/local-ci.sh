@@ -68,7 +68,7 @@ if run_section lint; then
     say "== lint: ShellCheck (errors)"
     files=
     for f in tiger tigexp tigercron config initdefs util/realpath util/rootpath util/summary tests/*.sh packaging/*.sh \
-        $(git ls-files scripts systems/Linux/2 systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$'); do
+        $(git ls-files scripts systems/Linux/2 systems/MacOSX/default systems/FreeBSD/default systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$'); do
       head -1 "$f" | grep -q perl && continue
       files="$files $f"
     done

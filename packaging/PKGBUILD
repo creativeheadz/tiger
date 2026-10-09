@@ -1,8 +1,8 @@
 # Maintainer: Andrei Trimbitas <a.trimbitas@oldforge.tech>
 pkgname=tigris
-pkgver=3.7.0
+pkgver=3.8.0
 pkgrel=1
-pkgdesc='Security auditor for Linux, descended from TIGER'
+pkgdesc='Security auditor for Linux, macOS and the BSDs, descended from TIGER'
 arch=('x86_64' 'aarch64')
 url='https://github.com/creativeheadz/tigris'
 license=('GPL-2.0-or-later')

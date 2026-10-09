@@ -106,6 +106,72 @@ jobs:
           sudo sh tests/offline_scan_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
+      - name: check_sip against csrutil fixtures, as a user and as root
+        run: |
+          sh tests/sip_check.sh
+          sudo sh tests/sip_check.sh
+      - name: check_filevault against fdesetup fixtures, as a user and as root
+        run: |
+          sh tests/filevault_check.sh
+          sudo sh tests/filevault_check.sh
+      - name: check_doas against doas.conf fixtures, as a user and as root
+        run: |
+          sh tests/doas_check.sh
+          sudo sh tests/doas_check.sh
+      - name: check_software against app and Cellar fixtures, as a user and as root
+        run: |
+          sh tests/software_check.sh
+          sudo sh tests/software_check.sh
+      - name: check_launchd against daemon fixtures, as a user and as root
+        run: |
+          sh tests/launchd_check.sh
+          sudo sh tests/launchd_check.sh
+      - name: MacOSX dispatch and shared sudo, as a user and as root
+        run: |
+          sh tests/macos_dispatch_check.sh
+          sudo sh tests/macos_dispatch_check.sh
+      - name: MacOSX check_firewall against pf and appfw fixtures, as a user and as root
+        run: |
+          sh tests/firewall_macos_check.sh
+          sudo sh tests/firewall_macos_check.sh
+      - name: MacOSX check_passwd and check_group on dslocal fixtures, as a user and as root
+        run: |
+          sh tests/passwd_macos_check.sh
+          sudo sh tests/passwd_macos_check.sh
+          sh tests/group_macos_check.sh
+          sudo sh tests/group_macos_check.sh
+      - name: MacOSX check_audit on audit_control fixtures, as a user and as root
+        run: |
+          sh tests/audit_macos_check.sh
+          sudo sh tests/audit_macos_check.sh
+      - name: MacOSX check_logfiles and check_crontabs on fixtures, as a user and as root
+        run: |
+          sh tests/logfiles_macos_check.sh
+          sudo sh tests/logfiles_macos_check.sh
+          sh tests/crontabs_macos_check.sh
+          sudo sh tests/crontabs_macos_check.sh
+      - name: gethostinfo against uname stubs, as a user and as root
+        run: |
+          sh tests/hostinfo_check.sh
+          sudo sh tests/hostinfo_check.sh
+      - name: FreeBSD check_firewall and check_promisc against stubs, as a user and as root
+        run: |
+          sh tests/firewall_bsd_check.sh
+          sudo sh tests/firewall_bsd_check.sh
+          sh tests/promisc_bsd_check.sh
+          sudo sh tests/promisc_bsd_check.sh
+      - name: FreeBSD check_logfiles on newsyslog fixtures, as a user and as root
+        run: |
+          sh tests/logfiles_bsd_check.sh
+          sudo sh tests/logfiles_bsd_check.sh
+      - name: FreeBSD pkg, accounting and inetd on fixtures, as a user and as root
+        run: |
+          sh tests/pkg_bsd_check.sh
+          sudo sh tests/pkg_bsd_check.sh
+          sh tests/accounting_bsd_check.sh
+          sudo sh tests/accounting_bsd_check.sh
+          sh tests/inetd_bsd_check.sh
+          sudo sh tests/inetd_bsd_check.sh
       - name: Installed tree runs its helpers
         run: sh tests/install_check.sh
       - name: Progress lines and spinner
@@ -115,7 +181,7 @@ jobs:
           shellcheck --version | head -2
           files=
           for f in tiger tigexp tigercron config initdefs util/realpath util/rootpath util/summary tests/*.sh packaging/*.sh \
-              $(git ls-files scripts systems/Linux/2 systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$'); do
+              $(git ls-files scripts systems/Linux/2 systems/MacOSX/default systems/FreeBSD/default systems/default | grep -v '\.pl$\|README\|\.lst$\|\.tmpl$\|_list$\|signatures\|advisories\|baseline\|embedlist\|facl\|/services$\|/inetd$\|\.sh$'); do
             head -1 "$f" | grep -q perl && continue
             files="$files $f"
           done

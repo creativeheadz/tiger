@@ -1,12 +1,12 @@
-%define _tag version_3_7_0
+%define _tag version_3_8_0
 # No -debuginfo: five small helpers, and EL9's toolchain errors on their
 # empty debugsource list.
 %define debug_package %{nil}
 
 Name:           tigris
-Version:        3.7.0
+Version:        3.8.0
 Release:        1%{?dist}
-Summary:        Security auditor for Linux, descended from TIGER
+Summary:        Security auditor for Linux, macOS and the BSDs, descended from TIGER
 License:        GPL-2.0-or-later
 URL:            https://github.com/creativeheadz/tigris
 Source0:        https://github.com/creativeheadz/tigris/archive/refs/tags/%{_tag}.tar.gz
@@ -50,6 +50,9 @@ sh packaging/stage.sh %{buildroot} %{_libdir}/tigris %{_sbindir}
 %{_mandir}/man8/tigris-accept.8*
 
 %changelog
+* Fri Oct 09 2026 Andrei Trimbitas <a.trimbitas@oldforge.tech> - 3.8.0-1
+- Tigris 3.8.0: macOS and FreeBSD checks, busybox-awk hardening.
+
 * Fri Oct 09 2026 Andrei Trimbitas <a.trimbitas@oldforge.tech> - 3.7.0-1
 - Tigris 3.7.0: the offline audit complete, packages, a spinner.
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<array>
+		<string>staff</string>
+	</array>
+	<key>gid</key>
+	<array>
+		<string>20</string>
+	</array>
+</dict>
+</plist>

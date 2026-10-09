@@ -1,0 +1,182 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_passwd: who the Mac knows, and whether any of them is wrong.
+#             The users live in DirectoryService, not in /etc/passwd:
+#             live they are read with dscl, offline from the root's
+#             dslocal plists. The judgments are the portable check's:
+#             another uid 0 besides root (pass017w), a name or a uid
+#             twice (pass001w, pass002w), a disabled account with a
+#             working shell (pass014w), an empty or unknown shell
+#             (pass015w). Apple's locked shell /usr/bin/false counts
+#             as valid, like /bin/false. Password hashes are not
+#             judged: ShadowHash is not crypt, and there is no honest
+#             acceptable-hash list for it.
+#
+# 10/09/2026 - Initial version. Tiger_Dscl_Cmd points at another
+#             dscl, for the tests.
+#
+# References:
+#   dscl(1)
+#
+# Tigris: offline
+#   the root's dslocal user plists.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP || exit 1
+
+# users_of: one `name:uid:gid:shell:home:disabled' line per user,
+# from the root's dslocal plists, or live from dscl
+users_of()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then
+    dir=`rootfile /var/db/dslocal/nodes/Default/users`
+    [ -d "$dir" ] || return 0
+    for f in "$dir"/*.plist
+    do
+      [ -f "$f" ] || continue
+      $AWK '
+      /<key>name<\/key>/ { key = "name"; next }
+      /<key>uid<\/key>/ { key = "uid"; next }
+      /<key>gid<\/key>/ { key = "gid"; next }
+      /<key>shell<\/key>/ { key = "shell"; next }
+      /<key>home<\/key>/ { key = "home"; next }
+      /<key>authentication_authority<\/key>/ { key = "auth"; next }
+      /<key>/ { key = ""; next }
+      key != "" && /<string>/ {
+        s = $0; sub(/^.*<string>/, "", s); sub(/<\/string>.*$/, "", s)
+        if (key == "auth") { if (s ~ /DisabledUser/) dis = "yes" }
+        else if (!(key in v)) v[key] = s
+        next
+      }
+      END {
+        if ("name" in v) printf "%s:%s:%s:%s:%s:%s\n", v["name"], v["uid"], v["gid"], v["shell"], v["home"], (dis == "yes" ? "yes" : "no")
+      }' "$f" 2>/dev/null
+    done
+  else
+    dscl=${Tiger_Dscl_Cmd:-dscl}
+    $dscl . -list /Users 2>/dev/null | $AWK '{ print $1 }' | while read -r u
+    do
+      [ -n "$u" ] || continue
+      $dscl . -read /Users/"$u" UniqueID PrimaryGroupID NFSHomeDirectory UserShell AuthenticationAuthority 2>/dev/null | $AWK -v u="$u" '
+      /^UniqueID:/ { uid = $2 }
+      /^PrimaryGroupID:/ { gid = $2 }
+      /^NFSHomeDirectory:/ { home = $2 }
+      /^UserShell:/ { shell = $2 }
+      /DisabledUser/ { dis = "yes" }
+      END { printf "%s:%s:%s:%s:%s:%s\n", u, uid, gid, shell, home, (dis == "yes" ? "yes" : "no") }'
+    done
+  fi
+}
+
+echo
+echo "# Checking users..."
+
+# Tiger_Shells_File names the valid-shells file, for the tests: the
+# live leg reads users from the dscl stub but must not read this
+# host's /etc/shells, whose entries differ per system.
+shells=${Tiger_Shells_File:-`rootfile /etc/shells`}
+users=`users_of`
+[ -n "$users" ] || exit 0
+
+printf '%s' "$users" | $AWK -F: '
+{
+  name[NR] = $1; uid[NR] = $2; n = NR
+  if ($1 != "") names[$1]++
+  if ($2 != "") uids[$2]++
+}
+END {
+  for (i = 1; i <= n; i++) {
+    if (uid[i] == 0 && name[i] != "root")
+      print "pass017w", name[i]
+    if (names[name[i]] > 1)
+      print "pass001w", name[i]
+    if (uid[i] != "" && uids[uid[i]] > 1)
+      print "pass002w", uid[i]
+  }
+}' | sort -u | while read -r id who
+do
+  case "$id" in
+    pass017w) message WARN pass017w "" "Login ID $who has uid == 0." ;;
+    pass001w) message WARN pass001w "" "Username \`$who' exists multiple times in DirectoryService." ;;
+    pass002w) message WARN pass002w "" "UID $who exists multiple times in DirectoryService." ;;
+  esac
+done
+
+printf '%s' "$users" | while IFS=: read -r name uid gid shell home dis
+do
+  [ -n "$name" ] || continue
+  case "$shell" in
+    /usr/bin/false|/bin/false|/dev/null|/sbin/nologin|/usr/sbin/nologin) ;;
+    '')
+      message WARN pass015w "" "Login ID $name has an empty shell." ;;
+    *)
+      if [ ! -f "$shells" ]; then :;
+      elif $GREP -qx -- "$shell" "$shells" 2>/dev/null; then
+        [ "$dis" = yes ] && message WARN pass014w "" "Login ($name) is disabled, but has a valid shell."
+      else
+        message WARN pass015w "" "Login ID $name does not have a valid shell ($shell)."
+      fi;;
+  esac
+done
+
+exit 0

@@ -1,0 +1,6 @@
+#!/bin/sh
+# pfctl on a machine without pf
+case "$1 $2" in
+  "-s info") echo "Status: Disabled" ;;
+  "-s rules") exit 1 ;;
+esac

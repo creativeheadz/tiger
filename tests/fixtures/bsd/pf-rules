@@ -1,0 +1,6 @@
+#!/bin/sh
+# pfctl enabled with a ruleset
+case "$1 $2" in
+  "-s info") echo "Status: Enabled for 0 days 00:00:01" ;;
+  "-s rules") printf 'block drop all\npass out quick keep state\n' ;;
+esac

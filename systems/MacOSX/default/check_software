@@ -1,0 +1,157 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_software: the Mac software that runs for every user. An app
+#             or a brew Cellar entry writable past root lets anyone
+#             plant code that someone else runs (swd001w); macOS's own
+#             automatic updates turned off leaves security updates
+#             waiting for someone (swd002w). Stock macOS keeps
+#             /Applications group-writable by admin, whose members can
+#             already sudo, so that is no new path and stays silent;
+#             only other groups, or anyone at all, are reported. The
+#             owner does not matter: owner-only write gives nobody
+#             anything they do not already run as.
+#
+#             pkgutil --verify is deliberately not used: it flags
+#             files Apple itself legitimately changes after install,
+#             so it cries wolf on stock machines. Writability is the
+#             plant path, and it is exact.
+#
+# 10/09/2026 - Initial version. Tiger_Brew_Cmd points at another
+#             `brew --prefix', for the tests.
+#
+# References:
+#   softwareupdate(8), brew(1)
+#   Apple Platform Security: App security, system updates
+#
+# Tigris: offline
+#   the root's Applications, Cellar and update preferences. The brew
+#   prefix list only knows the two stock locations; a relocation the
+#   live brew would name stays a live-system matter.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS FIND GREP || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS FIND GREP || exit 1
+
+# judge_line MODE GROUP PATH: whether the path is planted-writable:
+# by anyone, or by a group outside root, wheel and admin (admins can
+# already sudo, so their group writability opens no new path).
+# Symlinks are not judged: find does not follow them.
+judge_line()
+{
+  case "$1" in
+    l*) return 1;;
+  esac
+  case "$1" in
+    ????????w?) return 0;;
+  esac
+  case "$1" in
+    ?????w????) case "$2" in root|wheel|admin) return 1;; *) return 0;; esac;;
+  esac
+  return 1
+}
+
+echo
+echo "# Checking installed software..."
+
+# The app directories, four deep: the bundle, Contents, what runs, and
+# the binaries themselves (deeper frameworks stay the filesystem scan's)
+for appdir in /Applications /System/Applications /System/Library/CoreServices
+do
+  dir=`rootfile $appdir`
+  [ -d "$dir" ] || continue
+  $FIND "$dir" -maxdepth 4 -print 2>/dev/null | while read -r p
+  do
+    set X `$LS -ld "$p" 2>/dev/null | $AWK '{ print $1, $4 }'`
+    judge_line "$2" "$3" "$p" && message WARN swd001w "Take \`$p' out of the writable state (root:wheel, 755 for directories)." "\`$p' is writable past root: anyone who can write it plants code someone else runs."
+  done
+done
+
+# The brew Cellar, wherever brew says it is: the prefix live, the two
+# stock locations on an offline root
+cellar=
+brew=${Tiger_Brew_Cmd:-brew}
+if [ -n "$TIGRIS_ROOT" ]; then
+  for prefix in /opt/homebrew /usr/local
+  do
+    d=`rootfile $prefix/Cellar`
+    [ -d "$d" ] && { cellar=$d; break; }
+  done
+else
+  prefix=`$brew --prefix 2>/dev/null`
+  [ -d "$prefix/Cellar" ] && cellar=$prefix/Cellar
+fi
+if [ -n "$cellar" ]; then
+  $FIND "$cellar" -maxdepth 4 -print 2>/dev/null | while read -r p
+  do
+    set X `$LS -ld "$p" 2>/dev/null | $AWK '{ print $1, $4 }'`
+    judge_line "$2" "$3" "$p" && message WARN swd001w "Take \`$p' out of the writable state." "\`$p' is writable past root: anyone who can write the Cellar plants code every brew user runs."
+  done
+fi
+
+# Automatic updates: the local preference, on or off
+sup=`rootfile /Library/Preferences/com.apple.SoftwareUpdate.plist`
+if [ -f "$sup" ]; then
+  auto=`$AWK '/<key>AutomaticCheckEnabled<\/key>/ { getline; if ($0 ~ /<true\/>/ || $0 ~ /<integer>1<\/integer>/) print "on"; else print "off"; exit }' "$sup"`
+  [ "$auto" = off ] && message WARN swd002w "Turn automatic update checks back on (System Settings, General, Software Update), or take updates some other regular way." "macOS is not checking for updates by itself: security updates wait until someone looks."
+fi
+
+exit 0

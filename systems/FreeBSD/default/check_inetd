@@ -1,0 +1,112 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_inetd: what the super-server still serves. inetd runs what
+#             inetd.conf enables, at boot when rc.conf says so; the
+#             old cleartext and trust-based services among them hand
+#             the machine to anyone listening or trusted wrongly
+#             (inet001w): telnet, rsh, rlogin, rexec, finger, tftp,
+#             uucp. Entries count only when inetd is enabled: a
+#             dormant line runs nothing. Both files are read from
+#             the root, so this works offline.
+#
+# 10/09/2026 - Initial version.
+#
+# References:
+#   inetd(8), inetd.conf(5), rc.conf(5)
+#
+# Tigris: offline
+#   the root's inetd.conf and rc.conf.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+echo
+echo "# Checking the super-server..."
+
+rc=`rootfile /etc/rc.conf`
+enabled=
+if [ -f "$rc" ]; then
+  enabled=`$AWK -F= '/^inetd_enable=/ { v = $2; gsub(/[" \t]/, "", v); print tolower(v); exit }' "$rc" 2>/dev/null`
+fi
+case "$enabled" in
+  yes|true|on) ;;
+  *) exit 0 ;;
+esac
+
+inetd=`rootfile /etc/inetd.conf`
+[ -f "$inetd" ] || exit 0
+
+$AWK '
+/^[ \t]*#/ { next }
+/^[ \t]*$/ { next }
+{
+  service = $1
+  if (service == "telnet" || service == "shell" || service == "login" || \
+      service == "exec" || service == "finger" || service == "tftp" || \
+      service == "uucp") print service
+}' "$inetd" 2>/dev/null | sort -u | while read -r service
+do
+  message WARN inet001w "Comment the \`$service' line out of /etc/inetd.conf (or turn inetd off), and restart inetd." "inetd serves \`$service': cleartext or trust-based logins hand the machine to anyone listening."
+done
+
+exit 0

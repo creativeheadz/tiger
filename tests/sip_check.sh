@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# tests/sip_check.sh - check_sip against csrutil fixtures
+#
+# Disabled SIP reports sip001w; a custom configuration with a
+# protection off reports it by name; fully enabled is silent; and
+# under --root the check stays silent (SIP status is the running
+# Mac's, never a root's). Runs as a user and as root; the live
+# legs read the same for both.
+#
+TIGER=${TIGER:-`cd "\`dirname \"$0\"\`/.." && pwd`}
+W=`mktemp -d`
+trap 'rm -rf "$W"' 0
+( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
+mkdir -p "$W/run" "$W/log"
+fail=0
+ok()  { echo "ok   $1"; }
+bad() { echo "FAIL $1"; fail=1; }
+run() {  # run FIXTURE OUTFILE [ROOT]: check_sip with the csrutil stub
+  echo "Tiger_Csrutil_Cmd='$W/tests/fixtures/macos/$1'" >> "$W/tigerrc"
+  if [ -n "$3" ]; then
+    ( cd "$W" && TIGERHOMEDIR=$W TIGRIS_ROOT="$3" sh ./systems/MacOSX/default/check_sip ) 2>&1
+  else
+    ( cd "$W" && TIGERHOMEDIR=$W sh ./systems/MacOSX/default/check_sip ) 2>&1
+  fi |
+  awk '/^--/ { if (l != "") print l; l = $0; next } /^ / { sub(/^ +/, " "); l = l $0; next } { if (l != "") print l; l = "" } END { if (l != "") print l }' |
+  tr -s ' ' | grep '^--' | grep -v '^--CONFIG--' > "$2" || true
+  sed -i '$d' "$W/tigerrc"
+}
+has() { grep -F -q -- "$1" "$2"; }
+empty() { [ ! -s "$1" ]; }
+
+run csrutil-disabled "$W/out"
+has '--WARN-- [sip001w]' "$W/out" &&
+  ok "disabled SIP: sip001w" || { bad "disabled"; cat "$W/out"; }
+
+run csrutil-custom "$W/out"
+has '--WARN-- [sip001w]' "$W/out" &&
+has 'Debugging Restrictions' "$W/out" &&
+  ok "custom config, debugging off: named" || { bad "custom"; cat "$W/out"; }
+
+run csrutil-enabled "$W/out"
+empty "$W/out" &&
+  ok "enabled: silent" || { bad "enabled noisy"; cat "$W/out"; }
+
+R=$W/root; mkdir -p "$R/etc"
+run csrutil-disabled "$W/out" "$R"
+empty "$W/out" &&
+  ok "offline root: silent" || { bad "root noisy"; cat "$W/out"; }
+
+[ $fail -eq 0 ] && echo "PASS"
+exit $fail

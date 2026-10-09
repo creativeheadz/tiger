@@ -1,0 +1,3 @@
+#!/bin/sh
+# pkg updating with notices touching installed packages
+printf 'vuxml entry one\nvuxml entry two\n'

@@ -1,0 +1,113 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_sip: System Integrity Protection is the Mac's rootkit barrier:
+#             with it off, root rewrites the system. `csrutil status'
+#             says whether it is on, and a custom configuration names
+#             which protections are off. Anything disabled is reported.
+#             Enabled throughout means there is nothing to say. The
+#             status lives in NVRAM, not in a file, so an offline root
+#             has nothing to read and the check stays silent there.
+#
+# 10/09/2026 - Initial version. Tiger_Csrutil_Cmd points at another
+#             `csrutil status', for the tests.
+#
+# References:
+#   Apple Platform Security: System Integrity Protection
+#   csrutil(1)
+#
+# Tigris: live system
+#   Under --root it is skipped: SIP status is the running Mac's, never
+#   a root's.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# Under --root there is nothing to read: SIP status is NVRAM state
+[ -n "$TIGRIS_ROOT" ] && exit 0
+
+echo
+echo "# Checking System Integrity Protection..."
+
+csrutil=${Tiger_Csrutil_Cmd:-csrutil}
+status=`$csrutil status 2>/dev/null`
+[ -n "$status" ] || exit 0
+
+overall=`printf '%s' "$status" | $AWK '
+  /System Integrity Protection status:/ {
+    if (tolower($0) ~ /disabled/) print "off"
+    else print "on"
+    exit
+  }'`
+off=`printf '%s' "$status" | $AWK '
+  $0 !~ /System Integrity Protection status:/ && tolower($0) ~ /:[ \t]*disabled\.?$/ {
+    c = $0; sub(/:.*$/, "", c); gsub(/^[ \t]+|[ \t]+$/, "", c)
+    if (c != "") print c }'`
+
+if [ "$overall" = off ]; then
+  message WARN sip001w "Turn System Integrity Protection back on (boot to Recovery, 'csrutil enable', reboot)." "System Integrity Protection is disabled: root can rewrite the system, and no software barrier stands in malware's way."
+elif [ -n "$off" ]; then
+  names=`printf '%s' "$off" | $AWK '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }'`
+  message WARN sip001w "Turn the disabled protections back on ('csrutil enable', or 'csrutil clear' for the stock configuration)." "System Integrity Protection is custom with $names off: whatever is off does not protect."
+fi
+
+exit 0

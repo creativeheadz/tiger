@@ -1,6 +1,22 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
+Changes (v 3.8.0)
+--------------------
+
+macOS and FreeBSD join the audit. New system trees hold the macOS
+checks (SIP, FileVault, doas, installed software, launchd, and the
+macOS sides of sudo, users, groups, firewall, auditing, logfiles and
+crontabs) and the FreeBSD checks (pf and ipfw firewall, promiscuous
+interfaces, newsyslog logfiles, package auditing, accounting,
+inetd), each behind the same fixture doctrine as the Linux checks:
+offline roots under TIGRIS_ROOT, live tools behind Tiger_ command
+overrides, nothing read from the auditing machine unnoticed. The
+whole suite runs green under mawk, gawk and busybox awk; writing it
+caught three parsers whose literal-brace patterns busybox awk does
+not compile (doas, mail, storage LVM), which had silently reported
+nothing there.
+
 Changes (v 3.7.0)
 --------------------
 

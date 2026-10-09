@@ -653,28 +653,38 @@ written from the upstream documentation of the thing being checked,
 each with a metadata file per finding id and a fixture suite, offline
 capable where honesty allows.
 
-**Phase A: Linux parity** (first, after the rename).
-- [ ] New checks: Kerberos, LDAP, PHP, SNMP, Squid, CUPS printing,
+**Phase A: Linux parity** (done 2026-10-09, released in 3.7.0's
+tree; KDC server-side, DB2, Qmail/OpenSMTPD and FileVault-on-Linux
+recorded as out of scope).
+- [x] New checks: Kerberos, LDAP, PHP, SNMP, Squid, CUPS printing,
   IDS/IPS presence, compilers and their permissions.
-- [ ] Second phases: databases (MongoDB auth, Oracle, DB2), mail
-  (Exim, Postfix, Dovecot depth), MAC frameworks (TOMOYO,
-  grsecurity), crypto (entropy and RNG), file integrity (per-tool
-  presence and config), filesystems (LVM detail, ACL support).
-- [ ] Verify-marked items: GRUB password, firewall logging,
+- [x] Second phases: databases (MongoDB auth, Oracle; DB2 not
+  coverable offline), mail (Exim, Postfix, Dovecot depth), MAC
+  frameworks (TOMOYO, grsecurity/PaX), crypto (entropy and RNG),
+  file integrity (per-tool presence and config), filesystems (LVM
+  detail, ACL support, locate db).
+- [x] Verify-marked items: GRUB password, firewall logging,
   promiscuous interfaces, hosts duplicates, `at` jobs, console TTYs,
   rpcinfo and NFS daemon status, unpurged packages, YUM GPG signing,
-  Docker file-permission depth, prelink handling. Audit the existing
-  checks first; many may already cover them.
-- [ ] Trivial folds: FireWire disable into check_storage, guest
+  Docker file-permission depth, prelink handling (decided, no check).
+- [x] Trivial folds: FireWire disable into check_storage, guest
   detection as informational.
 
-**Phase B: macOS.** CI runner and fixture strategy, then SIP status,
-FileVault, doas, macOS package and App inventory, and the macOS side
-of every portable group.
+**Phase B: macOS.** Done 2026-10-09, released in 3.8.0 (strategy in
+`doc/macos-strategy.md`; check_sip, check_filevault, check_doas,
+check_software, check_launchd, sudo symlink, passwd/group/firewall/
+audit/logfiles/crontabs shadows, dispatch aggregator; differentiator
+kept: Tiger-native fixture doctrine, no macOS runner needed for
+unit confidence).
+- [x] CI runner and fixture strategy, then SIP status, FileVault,
+  doas, macOS package and App inventory, and the macOS side of
+  every portable group.
 
-**Phase C: BSDs.** CI runner and fixtures, then pf, ipfw, newsyslog,
-metalog-adjacent logging, and the BSD sides of accounting, boot
-services and package auditing.
+**Phase C: BSDs.** Done 2026-10-09, released in 3.8.0 (strategy in
+`doc/bsd-strategy.md`; FreeBSD first: gethostinfo recognition, one
+voice for the pf and ipfw firewalls, newsyslog logfiles, package
+auditing, accounting, inetd, dispatch aggregator; differentiator
+kept: the same fixture doctrine as Linux, clean-room throughout).
 
 **Phase D: Solaris and AIX.** Only with a maintainer and a CI runner
 each, per the attic rule; until then their groups stay explicitly

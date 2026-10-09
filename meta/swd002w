@@ -1,0 +1,8 @@
+Id: swd002w
+Severity: WARN
+Category: packages
+Check: check_software
+
+macOS is not checking for updates by itself: security updates
+wait until someone looks. Turn automatic update checks back
+on, or take updates some other regular way.

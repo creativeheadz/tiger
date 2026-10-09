@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_promisc: is an interface listening to traffic not meant for
+#             it. `ifconfig -a' names PROMISC in the flags; the same
+#             id the Linux check reports, for the same meaning, with
+#             the BSD fix. ifconfig reads the running machine, so an
+#             offline root has nothing to read and the check stays
+#             silent there.
+#
+# 10/09/2026 - Initial version. Tiger_Ifconfig_Cmd points at another
+#             `ifconfig -a', for the tests.
+#
+# References:
+#   ifconfig(8)
+#
+# Tigris: live system
+#   Under --root it is skipped: the interfaces are the running
+#   machine's, never a root's.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# Under --root there is nothing to read: the interfaces are live
+[ -n "$TIGRIS_ROOT" ] && exit 0
+
+echo
+echo "# Checking for interfaces in promiscuous mode..."
+
+ifconfig=${Tiger_Ifconfig_Cmd:-ifconfig}
+$ifconfig -a 2>/dev/null | $AWK '
+/^[a-zA-Z0-9_.]+:/ { iface = $1; sub(/:$/, "", iface) }
+iface != "" && /flags=.*<[^>]*PROMISC[^>]*>/ { print iface; iface = "" }' |
+sort -u | while IFS= read -r iface
+do
+  message WARN prom001w "Take it out of promiscuous mode ('ifconfig $iface -promisc') unless a bridge, a VM host, or a packet capture needs it; find what put it there." "Interface \`$iface' is in promiscuous mode: it hands all its traffic to whoever listens, credentials and sessions among it."
+done
+
+exit 0

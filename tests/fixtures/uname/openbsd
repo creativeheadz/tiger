@@ -1,0 +1,6 @@
+#!/bin/sh
+# uname on OpenBSD 7.4
+case "$1" in
+  -s) echo "OpenBSD" ;;
+  -a) echo "OpenBSD h 7.4 GENERIC.MP#12 amd64" ;;
+esac

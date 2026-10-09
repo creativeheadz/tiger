@@ -1,0 +1,8 @@
+Id: logf009w
+Severity: WARN
+Category: logging
+Check: check_logfiles
+Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
+
+The audit trail is readable by anyone: any local account can
+read who did what. Take it out of the readable state.
