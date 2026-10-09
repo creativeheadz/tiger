@@ -9,7 +9,8 @@
 # zypper --xmlout list-patches on Leap 16 (one patch's category made
 # security), rpm -q --last kernel-core in its usual shape. Files come
 # from a tree under Tiger_Sysctl_Root; Tiger_Updates_Manager picks the
-# manager.
+# manager. A yumgpg tree carries repo files with gpgcheck off and on,
+# and a dnf.conf with [main] on then off (upd005w).
 #
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 W=`mktemp -d`
@@ -153,6 +154,20 @@ go fed dnf "`dnf dnfnocache rpmnone`"
 [ "`count upd002w`" = 0 ] && ok "dnf5's automatic.conf with apply_updates = yes: automatic" || { bad "apply yes"; cat "$W/out"; }
 has "[upd004i] Security updates waiting cannot be counted: dnf could not answer from its cache (Error: Cache-only enabled but no cache for 'fedora')." && [ "`count upd001w`" = 0 ] &&
   ok "dnf without a cache: upd004i; rpm without kernel-core: no reboot guessed" || { bad "dnf no cache"; cat "$W/out"; }
+# gpgcheck: a repo file turning signing off, a signed one, a [main]
+# default on, then off
+tree yumgpg 6.16.8-200.fc44.x86_64
+mkdir -p "$W/yumgpg/etc/yum.repos.d" "$W/yumgpg/etc/dnf"
+printf '[fedora]\nname=Fedora\nbaseurl=https://example.invalid/\ngpgcheck=0\n' > "$W/yumgpg/etc/yum.repos.d/fedora.repo"
+printf '[updates]\nname=Updates\nbaseurl=https://example.invalid/\ngpgcheck=1\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora\n' > "$W/yumgpg/etc/yum.repos.d/updates.repo"
+printf '[main]\ngpgcheck=1\n' > "$W/yumgpg/etc/dnf/dnf.conf"
+go yumgpg dnf "`dnf dnf5 rpmnew`"
+has "Repository 'fedora' installs unsigned packages (gpgcheck off in /etc/yum.repos.d/fedora.repo)." && [ "`count upd005w`" = 1 ] &&
+  ok "a repo with gpgcheck=0: upd005w, and only it" || { bad "gpgcheck off"; cat "$W/out"; }
+printf '[main]\ngpgcheck=0\n' > "$W/yumgpg/etc/dnf/dnf.conf"
+go yumgpg dnf "`dnf dnf5 rpmnew`"
+has 'The [main] default in /etc/dnf/dnf.conf turns package signing off' && [ "`count upd005w`" = 2 ] &&
+  ok "[main] gpgcheck=0: the default finding plus the repo one" || { bad "gpgcheck main"; cat "$W/out"; }
 tree suse 6.4.0-150600.23.25-default
 go suse zypper "Tiger_Zypper_Security_Cmd='sh $W/zypper'"
 has '--FAIL-- [upd003f] 1 security updates are waiting to be installed (zypper). openSUSE-Leap-16.0-500.' && [ "`count upd002w`" = 0 ] &&

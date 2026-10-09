@@ -1,0 +1,9 @@
+Id: mac007w
+Severity: WARN
+Category: kernel
+Check: check_mac
+Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
+
+TOMOYO is loaded, but no domain is in enforcing mode: learning
+and permissive only log. Move the policy's domains to enforcing
+once the learning is done, or nothing is confined.

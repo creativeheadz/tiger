@@ -96,7 +96,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds FIND GREP SED || exit 1
+  haveallcmds AWK FIND GREP SED || exit 1
   if [ "$Tiger_DPKG_Optimize" = "N" ]
   then
   	haveallcmds DPKG || exit 1
@@ -112,7 +112,7 @@ done
 echo
 echo "# Checking installed files against packages..."
 
-haveallcmds FIND GREP SED || exit 1
+haveallcmds AWK FIND GREP SED || exit 1
 if [ "$Tiger_DPKG_Optimize" = "N" ]
 then
 	haveallcmds DPKG || exit 1
@@ -191,6 +191,19 @@ else
           message WARN lin001w "" "File \`$file' does not belong to any package."
         done
         delete $WORKDIR/dpkg-packages.list $WORKDIR/dpkg-diversions.list
+fi
+
+# Packages removed but not purged leave their configuration files
+# behind: stale root-owned config a reinstall would trust again
+status=`rootfile /var/lib/dpkg/status`
+unexp=
+if [ -f "$status" ]; then
+  unexp=`$AWK '/^Package: / { p = $2 } /^Status: deinstall ok config-files$/ { print p }' "$status"`
+fi
+if [ -n "$unexp" ]; then
+  n=`echo "$unexp" | $GREP -c .`
+  trail=`echo $unexp | $SED 's/ /, /g'`
+  message WARN lin042w "Purge them if the configuration is not wanted ('dpkg -P' purges all of them)." "$n packages are removed but not purged: $trail. Their configuration files remain and apply again on reinstall."
 fi
 
 exit 0

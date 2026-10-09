@@ -1,0 +1,19 @@
+Id: fire007w
+Severity: WARN
+Category: firewall
+Check: check_firewall
+Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
+
+Nothing on the input path logs what the packet filter does with
+incoming traffic: no rule with a log statement covers it, in nftables
+or legacy iptables. Denied probes then leave no evidence, and traffic
+that a broad accept rule lets through is never noticed.
+
+To fix it, log before the verdict in each input chain:
+
+    ct state established,related accept
+    tcp dport 22 accept
+    log prefix "filter: "
+    drop
+
+or with ufw, 'ufw logging on', which logs what its chains drop.

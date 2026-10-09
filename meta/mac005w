@@ -1,0 +1,9 @@
+Id: mac005w
+Severity: WARN
+Category: kernel
+Check: check_mac
+Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
+
+PaX is in softmode: the exploit mitigation is compiled in and
+switched off, so nothing is hardened by default. Turn softmode
+off, unless chosen binaries carry their own PaX flags.

@@ -8,7 +8,8 @@
 # enabled on Ubuntu 24.04, firewalld started on Fedora, and nftables
 # configurations loaded with nft 1.1.3 on Debian stable. Each run feeds one
 # of them through Tiger_NFT_Cmd and checks what is concluded for IPv4 and
-# IPv6.
+# IPv6. Logging is covered both ways: verdicts with log rules stay
+# silent, input without any is fire007w.
 #
 # The docker-* fixtures are the rules Docker writes for published ports:
 # Hera (Docker 29.8.2, iptables-nft), and docker:dind containers (29.8.2
@@ -82,6 +83,15 @@ expect log-reject.nft \
   'IPv4 traffic is denied by default (nftables ip filter input: ends with an unconditional drop).' \
   'IPv6 traffic is denied by default (nftables ip6 filter input: ends with an unconditional reject).' \
   "log and counter before the verdict, a set in the table, reject with an ICMPv6 type"
+
+# Logging: logged verdicts are silent, unlogged input is fire007w
+go "cat $FX/log-reject.nft"
+[ "`count fire007w`" = 0 ] && ok "logged drop and reject: no fire007w" || { bad "log-reject logs"; cat "$W/out"; }
+go "cat $FX/ufw.nft"
+[ "`count fire007w`" = 0 ] && ok "ufw logs its blocks from its own chains: no fire007w" || { bad "ufw logs"; cat "$W/out"; }
+go "cat $FX/none.nft"
+[ "`count fire007w`" = 2 ] && ok "nothing loaded: fire007w for IPv4 and IPv6" || { bad "unlogged input"; cat "$W/out"; }
+
 expect v4-only.nft \
   'IPv4 traffic is denied by default (nftables ip filter input: policy drop).' \
   '--WARN-- [fire002w] Incoming IPv6 traffic is not denied by default: no input chain drops what it does not accept. No chain on the input hook filters IPv6' \
@@ -161,6 +171,8 @@ go "" "Tiger_IPT_Cmd='`ipt input-accept.ipt $FX/docker-nat.ipt $FX/docker-user-r
 has '[fire001w] Incoming IPv4 traffic is not denied by default: no input chain drops what it does not accept. Input chains: iptables INPUT: policy ACCEPT.' &&
   [ "`count 'fire00[56]'`" = 0 ] && ! grep -q nat "$W/ipt.log" &&
   ok "iptables without nft: INPUT read, Docker's nat table not listed while Docker is not running" || { bad "iptables, no docker"; cat "$W/out" "$W/ipt.log"; }
+go "" "Tiger_IPT_Cmd='`ipt input-accept.ipt - -`'" "Tiger_IP6T_Cmd='`ipt input-accept.ipt - -`'"
+[ "`count fire007w`" = 2 ] && ok "iptables without a LOG rule: fire007w for both families" || { bad "iptables logging"; cat "$W/out"; }
 mkdir -p "$W/sys/run"; : > "$W/sys/run/docker.sock"
 go "" "Tiger_IPT_Cmd='`ipt input-accept.ipt $FX/docker-nat.ipt $FX/docker-user-rules.ipt`'" \
       "Tiger_IP6T_Cmd='`ipt input-accept.ipt $FX/docker-nat6.ipt $FX/docker-user-empty.ipt`'"

@@ -1,0 +1,141 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_php: PHP believes its php.ini. allow_url_include turns every
+#             file function into remote code inclusion; expose_php and
+#             display_errors tell visitors the exact version and the
+#             paths behind the errors. open_basedir and disable_functions
+#             are left alone: what an application needs is its own
+#             business, and guessing it cries wolf. No php.ini anywhere
+#             means PHP is not in use here, and there is nothing to say.
+#
+# 10/09/2026 - Initial version. Every php.ini under /etc (all SAPIs,
+#             whatever the versioned layout) is read for the three
+#             settings above.
+#
+# References:
+#   php.ini directives (allow_url_include, expose_php, display_errors)
+#
+# Tigris: offline
+#   the root's php.ini files, wherever the layout puts them.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK FIND || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK FIND || exit 1
+
+# php_facts FILE: the settings worth reporting, one per line: inc
+# for allow_url_include, expose for expose_php, derr for
+# display_errors. A setting left at its default counts as set:
+# allow_url_include defaults off, the other two default on.
+php_facts()
+{
+  $AWK '
+  /^[ \t]*;/ { next }
+  {
+    line = tolower($0)
+    sub(/[ \t]*;.*$/, "", line)
+    if (line ~ /^[ \t]*allow_url_include[ \t]*=/) {
+      if (line ~ /=[ \t]*(1|on|yes|true)/ && !seen["inc"]++) print "inc"
+    } else if (line ~ /^[ \t]*expose_php[ \t]*=/) {
+      if (line ~ /=[ \t]*(1|on|yes|true)/ && !seen["expose"]++) print "expose"
+    } else if (line ~ /^[ \t]*display_errors[ \t]*=/) {
+      # stderr goes to the container log, not to visitors; stdout does
+      if (line ~ /=[ \t]*(1|on|yes|true|stdout)/ && !seen["derr"]++) print "derr"
+    }
+  }' "$1" 2>/dev/null
+}
+
+# every php.ini under the audited /etc: the host path, and the
+# audited-system path it resolves back to for the report
+eth=`rootfile /etc`
+ihs=`$FIND "$eth" -name php.ini -type f 2>/dev/null`
+inisfound=
+for ih in $ihs
+do
+  [ -r "$ih" ] || continue
+  inisfound=1
+  break
+done
+
+# No php.ini: PHP is not in use here
+[ -z "$inisfound" ] && exit 0
+
+echo
+echo "# Checking the PHP configuration..."
+
+for ih in $ihs
+do
+  case "$ih" in
+    "$TIGRIS_ROOT"*) i=${ih#$TIGRIS_ROOT};;
+    *) i=$ih;;
+  esac
+  [ -r "$ih" ] || continue
+  for fact in `php_facts "$ih"`
+  do
+    case "$fact" in
+      inc) message WARN php001w "Turn allow_url_include off in \`$i'." "\`$i' lets PHP include remote files as code: any file function an attacker reaches runs their server's answer.";;
+      expose) message INFO php002i "" "\`$i' leaves expose_php on: every answer carries the exact PHP version, the first thing an attacker asks.";;
+      derr) message INFO php003i "" "\`$i' leaves display_errors on: visitors see the errors with the paths behind them. Log them instead (log_errors) and show users a page of your own.";;
+    esac
+  done
+done
+
+exit 0

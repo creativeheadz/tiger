@@ -428,6 +428,12 @@ aidepid=
   progress_end
 }
 
+[ "$Tiger_Check_NFSD" != 'N' ] && {
+  progress_start "Checking NFS daemons against exports..."
+  run_script check_nfsd >> $logtmp
+  progress_end
+}
+
 [ "$Tiger_Check_PERMS" != 'N' ] && {
   progress_start "Checking permissions and ownership of system files..."
   run_script check_perms >> $logtmp

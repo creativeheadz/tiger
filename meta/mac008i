@@ -1,0 +1,7 @@
+Id: mac008i
+Severity: INFO
+Category: kernel
+Check: check_mac
+Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
+
+TOMOYO is enforcing: its domains confine what they cover.

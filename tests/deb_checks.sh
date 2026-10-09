@@ -3,10 +3,11 @@
 # tests/deb_checks.sh - the Debian package checks against planted problems
 #
 # Run as root in a throwaway Debian or Ubuntu container. It modifies one
-# packaged binary, deletes another, adds a stray file to /usr/sbin and an
+# packaged binary, deletes another, adds a stray file to /usr/sbin, an
 # override (dpkg-statoverride, without --update) that a binary does not
-# match, then runs deb_checkmd5sums, deb_nopackfiles and deb_statoverride
-# from a root-owned copy of this tree and checks that exactly those four
+# match, and a removed-but-not-purged package in the dpkg status, then
+# runs deb_checkmd5sums, deb_nopackfiles and deb_statoverride
+# from a root-owned copy of this tree and checks that exactly those five
 # are reported. Then it copies the container's root, changes and all, into
 # a directory and runs the three on that as an offline root (TIGRIS_ROOT,
 # as tigris --root sets it): the report must be the same.
@@ -31,6 +32,7 @@ echo tampered >> /usr/bin/xargs
 rm -f /usr/bin/sdiff
 echo x > /usr/sbin/zz-tiger-stray
 dpkg-statoverride --add root root 0700 /usr/bin/cmp
+printf '\nPackage: zz-tiger-unpurged\nStatus: deinstall ok config-files\nArchitecture: amd64\nVersion: 1.0\n' >> /var/lib/dpkg/status
 
 cd "$W"
 run()
@@ -59,6 +61,7 @@ expect "lin005f.*/usr/bin/xargs"       "modified binary reported (lin005f)"
 expect "lin006f.*/usr/bin/sdiff"       "deleted binary reported (lin006f)"
 expect "lin001w.*/usr/sbin/zz-tiger-stray" "stray file reported (lin001w)"
 expect "lin039w.*/usr/bin/cmp.*sets root:root 700; the file is root:root 755" "file not matching its override reported (lin039w)"
+expect "lin042w.*zz-tiger-unpurged" "removed but not purged package reported (lin042w)"
 if [ "`grep -c lin039w "$W/report"`" = 1 ]; then
   echo "ok   no other override mismatches"
 else

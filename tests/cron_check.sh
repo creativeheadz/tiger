@@ -9,7 +9,8 @@
 # anyone can write, with "--" among its arguments (which used to drop the
 # job), a job by a relative path in a user's crontab (cron001w), a spool
 # crontab for no account (cron010w), and one whose name is a command: it
-# must not be run. A cron.d file whose name cron ignores (it has a dot)
+# must not be run. An at.allow naming a user (cron011w) and an at.deny
+# naming one (cron012i) must both be reported. A cron.d file whose name cron ignores (it has a dot)
 # must be ignored, and /etc/crontab's "test -x ... ||" must not count as a
 # relative path. Runs as a user and as root (then the system's files are
 # given to root and the rest to an ordinary uid).
@@ -19,6 +20,8 @@ W=`mktemp -d`
 trap 'rm -rf "$W"' 0
 ( cd "$TIGER" && tar --exclude=.git --exclude=./log --exclude=./run -cf - . ) | ( cd "$W" && tar -xf - )
 mkdir -p "$W/run" "$W/log"
+# INFO findings (at.deny among them) are silent by default
+echo "Tiger_Show_INFO_Msgs=Y" >> "$W/tigerrc"
 fail=0
 ok()  { echo "ok   $1"; }
 bad() { echo "FAIL $1"; fail=1; }
@@ -42,6 +45,8 @@ echo '0 4 * * * root /usr/bin/true' > "$R/etc/cron.d/owned"
 echo '0 5 * * * root relative-and-ignored' > "$R/etc/cron.d/old.dpkg-old"
 printf '#!/bin/sh\n' > "$R/opt/backup/run.sh"
 printf '#!/bin/sh\n' > "$R/etc/cron.daily/logrotate"
+printf 'milo\n' > "$R/etc/at.allow"
+printf 'ghost\n' > "$R/etc/at.deny"
 echo '@daily backup.sh' > "$R/var/spool/cron/crontabs/milo"
 echo '@daily /usr/bin/true' > "$R/var/spool/cron/crontabs/ghost"
 # (the check runs in $W, so a name that is run leaves $W/ran)
@@ -75,6 +80,8 @@ has "[cron010w] \`/var/spool/cron/crontabs/ghost' is a crontab for ghost, which 
 has 'relative-and-ignored' && bad "a cron.d file cron ignores (a dot in its name) was read" || ok "a cron.d file whose name cron ignores is left out"
 has '(test)' && bad "a shell builtin counted as a relative path" || ok "/etc/crontab's 'test -x ... ||' is not a relative path"
 has "[cron009w] \`/var/spool/cron/crontabs/milo'" && bad "milo's own crontab reported as not his" || ok "a user's crontab may be the user's"
+has "[cron011w] User milo is allowed at usage." && ok "at.allow names a user: cron011w" || bad "cron011w"
+has "[cron012i] User ghost is denied at usage." && ok "at.deny names a user: cron012i" || bad "cron012i"
 grep -q "$R" "$W/out" && bad "a finding names where the root is on this host" || ok "findings name the root's own paths"
 
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- out"; cat "$W/out"; }

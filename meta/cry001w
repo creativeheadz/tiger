@@ -1,0 +1,9 @@
+Id: cry001w
+Severity: WARN
+Category: services
+Check: check_crypto
+References: rngd(8)
+
+The random-number daemon feeds from a software device: it goes
+through the motions and adds no entropy. Point it at the
+hardware RNG, or stop it where there is none.

@@ -16,7 +16,8 @@
 #     Please see the file `COPYING' for the complete copyright notice.
 #
 # check_storage: the mount options of the world-writable file systems,
-#                 disk encryption, swap under it, core dumps, USB storage.
+#                 disk encryption, swap under it, core dumps, USB storage,
+#                 the LVM layout, ACLs past the mode, the locate database.
 #
 # 10/07/2026 atrimbitas - Initial version. Mounts come from /proc/mounts,
 #                 swap from /proc/swaps. A device is encrypted when it, or
@@ -41,12 +42,18 @@
 #                 swap encryption from its /etc/crypttab (stor009i when it
 #                 names no device: an INFO, since ZFS and others encrypt
 #                 without it); core dumps from the core_pattern its sysctl.d
-#                 sets, the kernel's "core" when nothing does; USB storage
-#                 from its modprobe.d. What only the hardware says (a
-#                 battery) is not asked.
+#                 sets, the kernel's "core" when nothing does; USB and
+#                 FireWire storage from its modprobe.d (each behind its
+#                 own policy setting). The LVM layout from its metadata
+#                 backups (stor011i), named ACL entries past the mode on
+#                 root's files (stor012w, getfacl, Tiger_Getfacl to point
+#                 elsewhere), and the locate database, whose filenames
+#                 name everything (stor013w). What only the hardware says
+#                 (a battery) is not asked.
 #
 # Tigris: offline
-#   what the root sets up at boot: fstab, crypttab, sysctl.d, modprobe.d.
+#   what the root sets up at boot: fstab, crypttab, sysctl.d,
+#   modprobe.d, lvm backups, ACLs, the locate database.
 #
 #-----------------------------------------------------------------------------
 #
@@ -107,6 +114,103 @@ usb_blocked()
   # (/dev/null first: with no files, cat would read standard input)
   $CAT /dev/null $({ rootls /etc/modprobe.d; rootls /usr/lib/modprobe.d; rootls /lib/modprobe.d; } | $GREP '\.conf$' | rootpaths) 2>/dev/null |
     $AWK '!/^[ \t]*#/ && (($1 == "blacklist" || $1 == "install") && ($2 == "usb-storage" || $2 == "usb_storage")) { y = 1 } END { exit !y }'
+}
+
+# firewire_blocked: the same for the FireWire stack, whose DMA gives a
+# device on the bus direct memory access
+firewire_blocked()
+{
+  # shellcheck disable=SC2046
+  $CAT /dev/null $({ rootls /etc/modprobe.d; rootls /usr/lib/modprobe.d; rootls /lib/modprobe.d; } | $GREP '\.conf$' | rootpaths) 2>/dev/null |
+    $AWK '!/^[ \t]*#/ && (($1 == "blacklist" || $1 == "install") && ($2 == "firewire-core" || $2 == "firewire_core" || $2 == "firewire-ohci" || $2 == "firewire_ohci" || $2 == "ohci1394" || $2 == "ieee1394" || $2 == "sbp2" || $2 == "eth1394")) { y = 1 } END { exit !y }'
+}
+
+# lvm_info FILE: "vg|lvs" for an LVM metadata backup: the volume
+# group's name (its top block, or a volume_group line) and its
+# logical volumes, or "vg|" when none parse
+lvm_info()
+{
+  $AWK '
+  !havg && /^[ \t]*[A-Za-z0-9_][A-Za-z0-9_.-]*[ \t]*{[ \t]*$/ {
+    vg = $0; sub(/[ \t]*{[ \t]*$/, "", vg); sub(/^[ \t]*/, "", vg); havg = 1; next }
+  !havg && /volume_group[ \t]*"/ {
+    vg = $0; sub(/^.*"/, "", vg); sub(/".*/, "", vg); havg = 1; next }
+  /logical_volumes[ \t]*{/ { inlv = 1; depth = 1; next }
+  inlv {
+    if (depth == 1 && $0 ~ /^[ \t]*"?[^" \t{]+"?[ \t]*{/) {
+      n = $0; sub(/^[ \t]*/, "", n); sub(/[ \t]*{.*$/, "", n); gsub(/"/, "", n)
+      lvs = (lvs == "" ? n : lvs ", " n)
+    }
+    depth += gsub(/{/, "{") - gsub(/}/, "}")
+    if (depth <= 0) inlv = 0
+  }
+  END { if (vg != "") print vg "|" lvs }' "$1" 2>/dev/null
+}
+
+# acl_extra HOSTPATH: the named user/group entries getfacl reports
+# beyond the file's mode, minus root's own, comma-separated
+acl_extra()
+{
+  $__getfacl "$1" 2>/dev/null | $AWK '
+  /^#/ { next }
+  /^user:root:/ { next }
+  /^group:root:/ { next }
+  /^(user|group):[^:]+:/ { printf "%s%s", (n++ ? ", " : ""), $0 }
+  END { if (n) printf "\n" }'
+}
+
+# storage_second: the LVM layout, the ACLs past the mode, and the
+# locate database. Everything here reads through the root, so one
+# implementation serves the offline branch and the live one.
+storage_second()
+{
+  # LVM layout, from its metadata backups
+  for vgb in `rootls /etc/lvm/backup 2>/dev/null`
+  do
+    vgh=`rootfile $vgb`
+    [ -f "$vgh" ] || continue
+    info=`lvm_info "$vgh"`
+    [ -n "$info" ] || continue
+    lvs=${info#*|}
+    if [ -n "$lvs" ]; then
+      message INFO stor011i "" "LVM volume group ${info%%|*} holds logical volumes $lvs."
+    else
+      message INFO stor011i "" "LVM volume group ${info%%|*} is configured."
+    fi
+  done
+  # Named access beyond the mode, on files that should be root's alone
+  # (Tiger_Getfacl points at another getfacl, for the tests)
+  __getfacl=${Tiger_Getfacl:-getfacl}
+  havefacl=
+  case "$__getfacl" in
+    */*) [ -x "$__getfacl" ] && havefacl=Y ;;
+    *) command -v "$__getfacl" >/dev/null 2>&1 && havefacl=Y ;;
+  esac
+  if [ -n "$havefacl" ]; then
+    aclpaths="/etc/shadow /etc/gshadow /etc/sudoers"
+    for s in `rootls /etc/sudoers.d 2>/dev/null`
+    do
+      case "${s##*/}" in .*|*~) ;; *) aclfiles="$aclpaths $s" ;; esac
+    done
+    for k in `rootls /etc/ssh 2>/dev/null`
+    do
+      case "${k##*/}" in *_key) aclfiles="$aclpaths $k" ;; esac
+    done
+    for a in $aclpaths
+    do
+      ah=`rootfile $a`
+      [ -f "$ah" ] || continue
+      extra=`acl_extra "$ah"`
+      [ -n "$extra" ] && message WARN stor012w "Take the extra entries off \`$a' ('setfacl -x' each away, or 'setfacl -b' to clear them all)." "\`$a' grants $extra beyond its mode: whoever is named reaches past it."
+    done
+  fi
+  # The locate database names every file on the box
+  for ldb in /var/lib/mlocate/mlocate.db /var/lib/locatedb /var/lib/slocate/slocate.db /var/cache/locate/locatedb
+  do
+    [ -f "`rootfile $ldb`" ] || continue
+    why=`exposed "$ldb" mlocate`
+    [ -n "$why" ] && message WARN stor013w "Leave the locate database to root and its group ('chown root:mlocate \`$ldb'; chmod 640 \`$ldb')." "The locate database \`$ldb' is $why: its filenames name every file on the box, and every account with a home."
+  done
 }
 
 # core_limited: whether limits.conf, or a file of limits.d, sets a hard
@@ -200,6 +304,10 @@ if [ -n "$TIGRIS_ROOT" ]; then
   if [ "$Tiger_Storage_NoUSB" = Y ]; then
     usb_blocked || message WARN stor008w "Add 'install usb-storage /bin/false' and 'blacklist usb-storage' to a file in /etc/modprobe.d (and uas likewise), then rebuild the initramfs." "USB storage can be used, and the policy (Tiger_Storage_NoUSB) is to have none."
   fi
+  if [ "$Tiger_Storage_NoFireWire" = Y ]; then
+    firewire_blocked || message WARN stor010w "Add 'install firewire-core /bin/false' and 'blacklist firewire-core' to a file in /etc/modprobe.d (and firewire-ohci likewise), then rebuild the initramfs." "FireWire can be used, and the policy (Tiger_Storage_NoFireWire) is to have none: a device on the bus reads and writes memory directly."
+  fi
+  storage_second
   exit 0
 fi
 
@@ -321,5 +429,9 @@ esac
 if [ "$Tiger_Storage_NoUSB" = Y ]; then
   usb_blocked || message WARN stor008w "Add 'install usb-storage /bin/false' and 'blacklist usb-storage' to a file in /etc/modprobe.d (and uas likewise), then rebuild the initramfs." "USB storage can be used, and the policy (Tiger_Storage_NoUSB) is to have none."
 fi
+if [ "$Tiger_Storage_NoFireWire" = Y ]; then
+  firewire_blocked || message WARN stor010w "Add 'install firewire-core /bin/false' and 'blacklist firewire-core' to a file in /etc/modprobe.d (and firewire-ohci likewise), then rebuild the initramfs." "FireWire can be used, and the policy (Tiger_Storage_NoFireWire) is to have none: a device on the bus reads and writes memory directly."
+fi
+storage_second
 
 exit 0

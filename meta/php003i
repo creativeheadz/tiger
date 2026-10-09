@@ -1,0 +1,8 @@
+Id: php003i
+Severity: INFO
+Category: services
+Check: check_php
+References: php.ini directives
+
+PHP shows its errors to visitors, with the paths behind them. Log
+them instead (log_errors) and show users a page of your own.

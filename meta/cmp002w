@@ -1,0 +1,9 @@
+Id: cmp002w
+Severity: WARN
+Category: packages
+Check: check_compilers
+References: gcc(1)
+
+A compiler is writable past root: whoever can write it replaces
+it, and the next build runs their code. Leave it owned and
+writable by root alone.

@@ -69,5 +69,32 @@ mkdir -p "$W/empty"
 go empty
 [ "`count .`" = 0 ] && ok "no /sys/kernel: nothing said" || { bad "empty"; cat "$W/out"; }
 
+sys te "capability,tomoyo"
+mkdir -p "$W/te/sys/kernel/security/tomoyo"
+printf '%s\n' '0-COMMENT=allow all' '0-CONFIG={ mode=enforcing }' '1-CONFIG={ mode=permissive }' > "$W/te/sys/kernel/security/tomoyo/profile"
+go te
+has '--INFO-- [mac008i] TOMOYO is enforcing 1 domain.' && ! grep -q 'mac001w\|mac007w' "$W/out" &&
+  ok "TOMOYO with a domain enforcing: mac008i, and no bare-metal warning" || { bad "tomoyo"; cat "$W/out"; }
+sys tpassive "capability,tomoyo"
+mkdir -p "$W/tpassive/sys/kernel/security/tomoyo"
+printf '%s\n' '0-CONFIG={ mode=learning }' > "$W/tpassive/sys/kernel/security/tomoyo/profile"
+go tpassive
+has '--WARN-- [mac007w] TOMOYO confines nothing' && ! grep -q 'mac001w\|mac008i' "$W/out" &&
+  ok "TOMOYO enforcing nothing: mac007w, standing on its own" || { bad "tomoyo passive"; cat "$W/out"; }
+sys tnoread "capability,tomoyo"
+mkdir -p "$W/tnoread/sys/kernel/security/tomoyo"
+go tnoread
+has '--ERROR-- [mac004e] TOMOYO is active, but its profile cannot be read' && ok "TOMOYO unreadable: mac004e" || { bad "tomoyo unreadable"; cat "$W/out"; }
+sys pax "capability,yama,landlock"
+mkdir -p "$W/pax/proc/sys/kernel/pax"
+echo 1 > "$W/pax/proc/sys/kernel/pax/softmode"
+go pax
+has '--WARN-- [mac005w] PaX is in softmode' && has '[mac001w]' &&
+  ok "PaX in softmode with no MAC: mac005w beside mac001w" || { bad "softmode"; cat "$W/out"; }
+echo 0 > "$W/pax/proc/sys/kernel/pax/softmode"
+go pax
+has '--INFO-- [mac006i] PaX is enforcing.' && ! grep -q 'mac005w' "$W/out" &&
+  ok "PaX enforcing: mac006i" || { bad "pax on"; cat "$W/out"; }
+
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

@@ -1,0 +1,7 @@
+Id: cry003i
+Severity: INFO
+Category: services
+Check: check_crypto
+
+The kernel's entropy pool level, live and without judgment: it
+moves every second.

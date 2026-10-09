@@ -53,7 +53,10 @@
 #            bash -c "echo ~NAME", since the names now come from cron.d's
 #            contents too. An offline root (--root) is read inside it,
 #            owners named by its passwd.
-# 
+# check_crontabs  - 10/09/2026 - at.allow and at.deny read the same way
+#            (cron011w, cron012i); neither file means only root may use
+#            at, so that is silence, not a warning.
+#
 # Tigris: offline
 #   the root's crontabs, cron.d and spool, through gen_cron.
 #
@@ -277,6 +280,31 @@ fi
 if [ ! -f "$allow" -a ! -f "$deny" ]
 then
      message WARN cron005w "" "Use of cron is not restricted"
+fi
+
+# The same for `at': whoever is allowed it can have the daemon run
+# commands as them. Unlike cron, no at.allow and no at.deny means only
+# root may use it, so that silence is restriction, not a warning.
+[ -z "$ATALLOW" ] && ATALLOW=/etc/at.allow
+[ -z "$ATDENY" ] && ATDENY=/etc/at.deny
+atallow=`__here $ATALLOW` atdeny=`__here $ATDENY`
+if [ -f "$atallow" ]
+then
+   $CAT "$atallow" |
+   $GREP -v "^#" |
+   while read user
+   do
+        message WARN cron011w "" "User $user is allowed at usage."
+   done
+fi
+if [ -f "$atdeny" ]
+then
+   $CAT "$atdeny" |
+   $GREP -v "^#" |
+   while read user
+   do
+        message INFO cron012i "" "User $user is denied at usage."
+   done
 fi
 
 exit 0

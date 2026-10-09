@@ -1,0 +1,11 @@
+Id: dns007w
+Severity: WARN
+Category: network
+Check: check_dns
+Fix: Remove the duplicated lines from /etc/hosts, keeping the intended one.
+References: hosts(5)
+
+A line in /etc/hosts appears twice. The resolver takes the first, so
+a later copy never applies; planted ahead of the real one, it misleads
+everything resolving the name, root's daemons among them. Duplicates
+usually creep in when tooling appends what is already there.

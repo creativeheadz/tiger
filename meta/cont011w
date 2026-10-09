@@ -1,0 +1,12 @@
+Id: cont011w
+Severity: WARN
+Category: containers
+Check: check_containers
+References: https://docs.docker.com/engine/security/#docker-daemon-attack-surface
+Controls: CIS 4.1, 5.4; NIST AC-6, CM-7; ISO 8.2, 8.9; CE Secure configuration, User access control
+
+Daemon configuration (/etc/docker, daemon.json) is writable by
+everyone: anyone on the system can change what the daemon reads at
+startup, from its listening ports to its authorization plugins, and
+the daemon runs as root. Writable-by-all daemon configuration hands
+root to everyone.

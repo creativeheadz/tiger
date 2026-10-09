@@ -1,0 +1,9 @@
+Id: ldap002w
+Severity: WARN
+Category: accounts
+Check: check_ldap
+References: slapd.conf(5)
+
+The directory takes binds with no TLS configured. The passwords
+cross the network in clear, to whoever listens. Give it a
+certificate and demand encryption, or take it off the network.

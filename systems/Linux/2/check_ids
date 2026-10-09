@@ -1,0 +1,146 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_ids: what watches the box, and whether it watches anything.
+#             Fail2ban with no jail enabled bans no one; Snort or
+#             Suricata loading no rules detects nothing. Both are the
+#             worst arrangement: an admin who believes the box is
+#             watched, and a watcher that is blind. OSSEC and Wazuh
+#             load their rules by default, so their config being there
+#             is reported and left at that. No watcher configured is
+#             not a finding: this check reports reality, it does not
+#             sell products.
+#
+# 10/09/2026 - Initial version. Fail2ban jails, Snort and Suricata
+#             rule includes, OSSEC/Wazuh presence.
+#
+# References:
+#   jail.conf(5)
+#   snort(8)
+#   suricata.yaml(5)
+#
+# Tigris: offline
+#   the root's watcher configs.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP || exit 1
+
+# stripped FILE: FILE with comments cut (# and -- styles), blanks dropped
+stripped()
+{
+  $AWK '{ sub(/#.*$/, ""); sub(/--.*$/, ""); if ($0 ~ /[^ \t]/) print }' "$1" 2>/dev/null
+}
+
+# existing_sys: the existing files among the arguments, one per line
+existing_sys()
+{
+  for __f
+  do
+    [ -f "`rootfile $__f`" ] && echo "$__f"
+  done
+}
+
+f2bfiles='/etc/fail2ban/jail.local /etc/fail2ban/jail.conf'
+# shellcheck disable=SC2046
+f2bfiles="$f2bfiles `{ rootls /etc/fail2ban/jail.d; } 2>/dev/null | $GREP '\.conf$'`"
+# shellcheck disable=SC2086
+f2b=`existing_sys $f2bfiles`
+snort=`existing_sys /etc/snort/snort.conf /etc/snort/snort.lua`
+suri=`existing_sys /etc/suricata/suricata.yaml`
+ossec=`existing_sys /var/ossec/etc/ossec.conf`
+
+# No watcher configured: not a finding
+[ -z "$f2b$snort$suri$ossec" ] && exit 0
+
+echo
+echo "# Checking the intrusion detection configuration..."
+
+if [ -n "$f2b" ]; then
+  enabled=
+  for c in $f2b
+  do
+    stripped "`rootfile $c`" | $GREP -i '^[ \t]*enabled[ \t]*=[ \t]*true' >/dev/null 2>&1 && { enabled=1; break; }
+  done
+  [ -z "$enabled" ] && message WARN ids001w "Enable the jails this host needs ('enabled = true' in jail.local), or take fail2ban out." "Fail2ban is configured but no jail is enabled: it watches the logs and bans no one."
+  message INFO ids003i "" "Fail2ban is the intrusion prevention in place."
+fi
+if [ -n "$snort" ]; then
+  rules=
+  for c in $snort
+  do
+    stripped "`rootfile $c`" | $GREP -i include | $GREP '\.rules' >/dev/null 2>&1 && { rules=1; break; }
+  done
+  [ -z "$rules" ] && message WARN ids002w "Point Snort at its rules (uncomment the rule includes in snort.conf), or take it out: loading nothing, it detects nothing." "Snort is configured but loads no rules."
+  message INFO ids003i "" "Snort is the intrusion detection in place."
+fi
+if [ -n "$suri" ]; then
+  rules=
+  for c in $suri
+  do
+    stripped "`rootfile $c`" | $GREP '\.rules' >/dev/null 2>&1 && { rules=1; break; }
+  done
+  [ -z "$rules" ] && message WARN ids002w "Give Suricata its rules (the rule-files list in suricata.yaml), or take it out: loading nothing, it detects nothing." "Suricata is configured but loads no rules."
+  message INFO ids003i "" "Suricata is the intrusion detection in place."
+fi
+[ -n "$ossec" ] && message INFO ids003i "" "OSSEC or Wazuh is the intrusion detection in place (its rules ship by default, so there is nothing further to judge)."
+
+exit 0

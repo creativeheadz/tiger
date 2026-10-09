@@ -1,0 +1,8 @@
+Id: snmp003i
+Severity: INFO
+Category: services
+Check: check_snmp
+References: snmpd.conf(5)
+
+SNMP uses a default community string. It is the first thing tried;
+rename it to something unguessable.

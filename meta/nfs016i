@@ -1,0 +1,10 @@
+Id: nfs016i
+Severity: INFO
+Category: network
+Check: check_nfsd
+Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
+
+Exports are configured in /etc/exports but no NFS daemon answers.
+That is dead configuration while the server stays down, and live
+shares the moment it starts: judge the entries as if they were
+exported, because they will be.

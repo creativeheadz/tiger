@@ -1,0 +1,167 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_integrity: which file-integrity watcher is configured, and
+#             whether its database was ever built. AIDE or AFICK with
+#             a configuration but no database compares against nothing:
+#             the worst arrangement, an admin who believes the files
+#             are watched and a watcher that is blind. Samhain and
+#             osquery are reported where configured; their checks need
+#             keys and schedules no config file can prove. OSSEC and
+#             Wazuh stay in check_ids, which already names them. The
+#             runners (aide_run and friends) execute the watchers; this
+#             check only reads their configuration. No watcher
+#             configured is not a finding.
+#
+# 10/09/2026 - Initial version. database=file: in aide.conf,
+#             database := in afick.conf (the database name takes
+#             extensions, so any file starting with it counts).
+#
+# References:
+#   aide.conf(5)
+#   http://afick.sourceforge.net/afick.conf.5.html
+#
+# Tigris: offline
+#   the root's watcher configs and databases.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP || exit 1
+
+# existing_sys: the existing files among the arguments, one per line
+existing_sys()
+{
+  for __f
+  do
+    [ -f "`rootfile $__f`" ] && echo "$__f"
+  done
+}
+
+# aide_db FILE: the last database=file: target in an aide.conf
+aide_db()
+{
+  $AWK '
+    /^[ \t]*(@@define|@@include)/ { next }
+    { line = $0; sub(/#.*/, "", line)
+      if (line ~ /^[ \t]*database[ \t]*=/) {
+        v = line; sub(/^[^=]*=/, "", v)
+        gsub(/^[ \t]+|[ \t]+$/, "", v); sub(/^file:/, "", v)
+        if (v != "") db = v } }
+    END { if (db != "") print db }' "$1" 2>/dev/null
+}
+
+# afick_db FILE: the database := target in an afick.conf
+afick_db()
+{
+  $AWK '
+    /^[ \t]*#/ { next }
+    { line = $0; sub(/#.*/, "", line)
+      if (line ~ /^[ \t]*database[ \t]*:=/) {
+        v = line; sub(/^[^:]*:=[ \t]*/, "", v)
+        gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (v != "") print v } }' "$1" 2>/dev/null
+}
+
+aide=`existing_sys /etc/aide/aide.conf /etc/aide.conf`
+# shellcheck disable=SC2046
+afick=`existing_sys /etc/afick.conf \`{ rootls /etc/afick; } 2>/dev/null | $GREP '\.conf$'\``
+samhain=`existing_sys /etc/samhainrc /etc/samhain/samhainrc`
+osquery=`existing_sys /etc/osquery/osquery.conf`
+
+# No watcher configured: not a finding
+[ -z "$aide$afick$samhain$osquery" ] && exit 0
+
+echo
+echo "# Checking the file-integrity configuration..."
+
+for c in $aide
+do
+  ch=`rootfile $c`
+  db=`aide_db "$ch"`
+  # macros (@@{...}) resolve at runtime; what cannot be resolved
+  # offline is not judged
+  case "$db" in *@\@*) db= ;; esac
+  if [ -n "$db" ]; then
+    [ -e "`rootfile $db`" ] || message WARN int001w "Initialize the database ('aide --init', then put it where database= points in $c)." "AIDE is configured ($c) but its database was never built: it compares against nothing."
+  fi
+  message INFO int003i "" "AIDE is the file-integrity watcher in place."
+done
+for c in $afick
+do
+  ch=`rootfile $c`
+  db=`afick_db "$ch"`
+  if [ -n "$db" ]; then
+    # the database name takes extensions (hash.dbm and friends)
+    dir=${db%/*} base=${db##*/}
+    [ "$dir" = "$db" ] && dir=.
+    found=
+    for f in `rootls "$dir" 2>/dev/null`
+    do
+      case "${f##*/}" in $base*) found=1; break ;; esac
+    done
+    [ -z "$found" ] && message WARN int002w "Initialize the database ('afick --init') where database := points in $c." "AFICK is configured ($c) but its database was never built: it compares against nothing."
+  fi
+  message INFO int003i "" "AFICK is the file-integrity watcher in place."
+done
+[ -n "$samhain" ] && message INFO int003i "" "Samhain is the file-integrity watcher in place."
+[ -n "$osquery" ] && message INFO int003i "" "osquery is the file-integrity watcher in place."
+
+exit 0

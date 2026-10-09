@@ -1,0 +1,169 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_crypto: the random-number daemon fed from /dev/urandom stirs
+#             nothing into the pool: rngd going through the motions.
+#             Private keys anyone can read are not private: whoever
+#             copies them decrypts and impersonates. And the pool level
+#             itself is reported, live, without judgment: it moves every
+#             second, and it is the one crypto fact every box has.
+#             Certificate expiry stays in check_certs. No RNG
+#             configuration, no private keys, and no live view of the
+#             pool means there is nothing to judge, and nothing is said.
+#
+# 10/09/2026 - Initial version. HRNGDEVICE in the rng-tools and rngd
+#             defaults files; key files found by content (PRIVATE KEY)
+#             under the ssl, pki and ssh directories, judged with
+#             exposed() against the ssl-cert group, which legitimately
+#             reads keys on Debian; entropy_avail and poolsize are live
+#             state, read through Tiger_Sysctl_Root for the tests.
+#
+# References:
+#   rngd(8)
+#
+# Tigris: offline
+#   the root's RNG configs and key files. The pool level is the
+#   exception: /proc describes the auditing host, never a root, so
+#   under --root it is skipped (a live-system section).
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT FIND GREP || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT FIND GREP || exit 1
+
+# existing_sys: the existing files among the arguments, one per line
+existing_sys()
+{
+  for __f
+  do
+    [ -f "`rootfile $__f`" ] && echo "$__f"
+  done
+}
+
+# hrng_of FILE: the configured hardware RNG, or nothing
+hrng_of()
+{
+  $AWK '
+    /^[ \t]*#/ { next }
+    { line = $0; sub(/#.*/, "", line)
+      if (line ~ /^[ \t]*HRNGDEVICE[ \t]*=/) {
+        v = line; sub(/^[^=]*=/, "", v)
+        gsub(/^[ \t"'"'"']+|[ \t"'"'"']+$/, "", v)
+        if (v != "") print v } }' "$1" 2>/dev/null
+}
+
+rngconfs=`existing_sys /etc/default/rng-tools /etc/sysconfig/rngd`
+
+# keyfiles: audited-system paths of files holding a private key, under
+# the ssl, pki and ssh directories
+keyfiles=
+for kd in /etc/ssl/private /etc/ssl/certs /etc/pki/tls/private /etc/pki/tls/certs /etc/ssh
+do
+  kh=`rootfile $kd`
+  [ -d "$kh" ] || continue
+  # shellcheck disable=SC2046
+  for kf in `$FIND "$kh" -type f 2>/dev/null`
+  do
+    $GREP -q 'PRIVATE KEY' "$kf" 2>/dev/null || continue
+    case "$kf" in
+      "${TIGRIS_ROOT:-$Tiger_Sysctl_Root}"*) keyfiles="$keyfiles ${kf#"${TIGRIS_ROOT:-$Tiger_Sysctl_Root}"}" ;;
+      *) keyfiles="$keyfiles $kf" ;;
+    esac
+  done
+done
+
+# No RNG configuration and no private keys, and no live view of the
+# pool: nothing to judge
+liveview=Y
+[ -n "$TIGRIS_ROOT" ] && [ -z "$Tiger_Sysctl_Root" ] && liveview=
+[ -z "$rngconfs$keyfiles$liveview" ] && exit 0
+
+echo
+echo "# Checking the random-number and key configuration..."
+
+for c in $rngconfs
+do
+  ch=`rootfile $c`
+  for h in `hrng_of "$ch"`
+  do
+    case "$h" in
+      /dev/urandom|/dev/random) message WARN cry001w "Point HRNGDEVICE at the hardware RNG ($c), or stop the daemon where there is none: as it stands it stirs nothing into the pool." "The random-number daemon feeds from \`$h' ($c): it goes through the motions and adds no entropy." ;;
+    esac
+  done
+done
+for k in $keyfiles
+do
+  why=`exposed "$k" ssl-cert`
+  [ -n "$why" ] && message WARN cry002w "Take \`$k' out of the world's sight ('chown root:root \`$k'; chmod 600 \`$k')." "The private key in \`$k' is $why: whoever copies it decrypts and impersonates."
+done
+
+# Tigris: live system
+#   The pool level describes the auditing host (or the fixture /proc
+#   the tests point at), never a root under audit.
+if [ -n "$liveview" ]; then
+  procdir=${Tiger_Sysctl_Root:-}
+  avail=`$CAT "$procdir/proc/sys/kernel/random/entropy_avail" 2>/dev/null`
+  poolsize=`$CAT "$procdir/proc/sys/kernel/random/poolsize" 2>/dev/null`
+  case "$avail" in *[!0-9]*) avail= ;; esac
+  case "$poolsize" in *[!0-9]*) poolsize= ;; esac
+  [ -n "$avail$poolsize" ] && message INFO cry003i "" "The kernel's entropy pool holds ${avail:-?} of ${poolsize:-?} bits."
+fi
+
+exit 0

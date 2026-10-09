@@ -8,4 +8,6 @@ read, so whether any is enforced is unknown. The list is in
 /sys/kernel/security/apparmor/profiles: only root can read it, and only
 where securityfs is mounted on /sys/kernel/security (systemd mounts it;
 a container usually does not have it). Run Tigris as root, or check
-with 'aa-status'.
+with 'aa-status'. The same goes for TOMOYO and its
+/sys/kernel/security/tomoyo/profile: active but unreadable means its
+domains cannot be judged either.

@@ -1,0 +1,9 @@
+Id: ids003i
+Severity: INFO
+Category: intrusion
+Check: check_ids
+References: jail.conf(5), snort(8), suricata.yaml(5)
+
+Names the intrusion detection or prevention in place: Fail2ban,
+Snort, Suricata, or OSSEC/Wazuh. An admin who knows what watches
+the box reads the rest of the report with the right eyes.

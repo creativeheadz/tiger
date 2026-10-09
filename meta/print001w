@@ -1,0 +1,10 @@
+Id: print001w
+Severity: WARN
+Category: services
+Check: check_printers
+References: cupsd.conf(5)
+
+CUPS browses the network for printers. It believes every
+advertisement it hears, and print jobs go where the rogue printer
+says. Turn Browsing off unless this host must find network
+printers by itself.

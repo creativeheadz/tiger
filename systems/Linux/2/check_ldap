@@ -1,0 +1,184 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_ldap: whoever can read the LDAP client's bind password binds
+#             as the service, and whoever can read the directory
+#             manager's password owns the directory. Both live in
+#             config files that are too often left world-readable.
+#             And a directory that takes binds with no TLS configured
+#             takes the passwords in clear, to whoever listens. No
+#             LDAP config files at all means LDAP is not in use here,
+#             and there is nothing to say.
+#
+# 10/09/2026 - Initial version. Server side (slapd.conf, slapd.d) on
+#             the Debian and Red Hat paths, client side (ldap.conf,
+#             pam_ldap.conf, nslcd.conf) likewise; world readability
+#             with ls, the way the old checks read permissions.
+#
+# References:
+#   slapd.conf(5)
+#   ldap.conf(5)
+#
+# Tigris: offline
+#   the root's LDAP config files; `ls' reads the mode of whichever
+#   file the path resolves to, live or in a root.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP LS || exit 1
+
+# ldap_facts ROLE FILE: the facts worth reporting, one per line:
+# cred-bind, cred-root, or tls. ROLE is client (bindpw), server
+# (rootpw, TLSCertificateFile, a security line demanding ssf) or
+# ldif (olcRootPW, olcTLSCertificateFile, an olcSecurity line
+# demanding ssf).
+ldap_facts()
+{
+  $AWK -v role="$1" '
+  /^[ \t]*[#;]/ { next }
+  {
+    line = tolower($0)
+    if (role == "client") {
+      if (line ~ /^[ \t]*bindpw([ \t]|$)/ && !seen["cred-bind"]++) print "cred-bind"
+    } else if (role == "server") {
+      if (line ~ /^[ \t]*rootpw([ \t]|$)/ && !seen["cred-root"]++) print "cred-root"
+      if (line ~ /^[ \t]*tlscertificatefile([ \t]|$)/) print "tls"
+      if (line ~ /^[ \t]*security([ \t]|$)/ && line ~ /ssf=[1-9]/) print "tls"
+    } else if (role == "ldif") {
+      if (line ~ /^olcrootpw:/ && !seen["cred-root"]++) print "cred-root"
+      if (line ~ /^olctlscertificatefile:/) print "tls"
+      if (line ~ /^olcsecurity:/ && line ~ /ssf=[1-9]/) print "tls"
+    }
+  }' "$2" 2>/dev/null
+}
+
+# world_readable HOSTPATH: whether ls shows an other-read bit
+world_readable()
+{
+  __mode=`$LS -lL "$1" 2>/dev/null | $AWK '{ print $1 }'`
+  case "$__mode" in
+    ???????r??) return 0;;
+  esac
+  return 1
+}
+
+# existing_sys: the existing files among the arguments (audited-system
+# paths), one per line
+existing_sys()
+{
+  for __f
+  do
+    [ -f "`rootfile $__f`" ] && echo "$__f"
+  done
+}
+
+server_confs=`existing_sys /etc/ldap/slapd.conf /etc/openldap/slapd.conf`
+# shellcheck disable=SC2046
+server_ldifs=`{ rootls /etc/ldap/slapd.d; rootls /etc/openldap/slapd.d; } 2>/dev/null | $GREP -i '\.ldif$'`
+client_confs=`existing_sys /etc/ldap.conf /etc/openldap/ldap.conf /etc/ldap/ldap.conf /etc/pam_ldap.conf /etc/nslcd.conf`
+
+# No LDAP config files: LDAP is not in use here
+[ -z "$server_confs" ] && [ -z "$server_ldifs" ] && [ -z "$client_confs" ] && exit 0
+
+echo
+echo "# Checking the LDAP client and server configuration..."
+
+tls=
+for c in $server_confs
+do
+  ch=`rootfile $c`
+  for fact in `ldap_facts server "$ch"`
+  do
+    case "$fact" in
+      cred-root) world_readable "$ch" &&
+        message WARN ldap001w "Take \`$c' out of the world's sight ('chown root:root \`$c'; chmod 600 \`$c')." "\`$c' holds the LDAP directory manager password and anyone can read it: whoever copies it owns the directory.";;
+      tls) tls=1;;
+    esac
+  done
+done
+for s in $server_ldifs
+do
+  lh=`rootfile $s`
+  for fact in `ldap_facts ldif "$lh"`
+  do
+    case "$fact" in
+      cred-root) world_readable "$lh" &&
+        message WARN ldap001w "Take \`$s' out of the world's sight ('chown root:root \`$s'; chmod 600 \`$s')." "\`$s' holds the LDAP directory manager password and anyone can read it: whoever copies it owns the directory.";;
+      tls) tls=1;;
+    esac
+  done
+done
+for c in $client_confs
+do
+  ch=`rootfile $c`
+  for fact in `ldap_facts client "$ch"`
+  do
+    case "$fact" in
+      cred-bind) world_readable "$ch" &&
+        message WARN ldap001w "Take \`$c' out of the world's sight ('chown root:root \`$c'; chmod 600 \`$c')." "\`$c' holds the LDAP bind password in clear and anyone can read it: whoever copies it binds as the service.";;
+    esac
+  done
+done
+
+[ -n "$server_confs$server_ldifs" ] && [ -z "$tls" ] &&
+  message WARN ldap002w "Give slapd a certificate (TLSCertificateFile) and demand encryption ('security ssf=128 update_ssf=128 simple_bind=64'), or take it off the network." "The directory takes binds with no TLS configured: the passwords cross the network in clear, to whoever listens."
+
+exit 0

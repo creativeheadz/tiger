@@ -1,0 +1,9 @@
+Id: krb003w
+Severity: WARN
+Category: accounts
+Check: check_kerberos
+References: krb5.conf(5)
+
+A Kerberos keytab is readable by anyone. It holds the service's
+long-term keys, so whoever copies it becomes the service. Leave it
+readable by root alone.

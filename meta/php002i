@@ -1,0 +1,8 @@
+Id: php002i
+Severity: INFO
+Category: services
+Check: check_php
+References: php.ini directives
+
+PHP advertises its exact version in every answer. That is the first
+thing an attacker asks; turn expose_php off.

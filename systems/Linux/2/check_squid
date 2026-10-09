@@ -1,0 +1,142 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_squid: a proxy that answers everyone serves everyone: spam,
+#             attacks in your name, a door into the inside network.
+#             `http_access allow all' is that proxy. One with no
+#             `http_access deny !...' line answers on any port, mail
+#             submission among it. And the config file itself can hold
+#             passwords (cachemgr_passwd, peer logins); left readable,
+#             they are everyone's. No squid.conf means no proxy here,
+#             and there is nothing to say.
+#
+# 10/09/2026 - Initial version. The Debian and Red Hat config paths.
+#
+# References:
+#   squid.conf.documented
+#
+# Tigris: offline
+#   the root's squid.conf.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS || exit 1
+
+# squid_facts FILE: one tag per line: open for `http_access allow
+# all', allows for any other `http_access allow', portlock for a
+# `http_access deny !...' line, secret for a password directive
+# (cachemgr_passwd, a login= or password= option).
+squid_facts()
+{
+  $AWK '
+  /^[ \t]*#/ { next }
+  {
+    line = tolower($0)
+    sub(/#.*$/, "", line)
+    if (line ~ /^[ \t]*http_access[ \t]+allow[ \t]+all([ \t]|$)/) { print "open"; next }
+    if (line ~ /^[ \t]*http_access[ \t]+allow([ \t]|$)/) { print "allows"; next }
+    if (line ~ /^[ \t]*http_access[ \t]+deny[ \t]+!/) { print "portlock"; next }
+    if (line ~ /^[ \t]*cachemgr_passwd([ \t]|$)/) { print "secret"; next }
+    if (line ~ /(login|password)=/) print "secret"
+  }' "$1" 2>/dev/null
+}
+
+# world_readable HOSTPATH: whether ls shows an other-read bit
+world_readable()
+{
+  __mode=`$LS -lL "$1" 2>/dev/null | $AWK '{ print $1 }'`
+  case "$__mode" in
+    ???????r??) return 0;;
+  esac
+  return 1
+}
+
+confs=
+for c in /etc/squid/squid.conf /etc/squid3/squid.conf
+do
+  [ -f "`rootfile $c`" ] && confs="$confs $c"
+done
+
+# No squid.conf: no proxy here
+[ -z "$confs" ] && exit 0
+
+echo
+echo "# Checking the Squid proxy configuration..."
+
+for c in $confs
+do
+  ch=`rootfile $c`
+  open= allows= portlock= secret=
+  for fact in `squid_facts "$ch"`
+  do
+    case "$fact" in
+      open) open=1;;
+      allows) allows=1;;
+      portlock) portlock=1;;
+      secret) secret=1;;
+    esac
+  done
+  [ -n "$open" ] && message WARN squid001w "Take the \`http_access allow all' line out of \`$c': name the networks that may use the proxy and no more." "\`$c' lets everyone use the proxy: spam and attacks go out in your name, and the inside network answers whoever asks."
+  [ -n "$allows$open" ] && [ -z "$portlock" ] && message WARN squid002w "Deny what is not a safe port first ('http_access deny !Safe_ports', with the Safe_ports ACL holding only what clients need)." "\`$c' restricts no ports: the proxy connects anywhere, mail submission among it."
+  [ -n "$secret" ] && world_readable "$ch" && message WARN squid003w "Take \`$c' out of the world's sight ('chown root:root \`$c'; chmod 600 \`$c')." "\`$c' holds a proxy password and anyone can read it: whoever copies it manages the cache or logs in as the peer."
+done
+
+exit 0

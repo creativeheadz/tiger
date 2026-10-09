@@ -177,6 +177,16 @@ nft_chains()
     chain = ""; next
   }
   chain != "" && NF { last = $0 }
+  # A log statement anywhere a family filters is evidence kept: it
+  # counts for that family no matter which chain holds it (ufw logs
+  # from its own chains, jumped to from input)
+  chain != "" && NF && !/^[ \t]*chain / {
+    l = $0; sub(/#.*$/, "", l)
+    if (l ~ /(^|[ \t;{}])log([ \t]|$)/ && (fam == "inet" || fam == "ip" || fam == "ip6")) {
+      if (fam != "ip6") print "log", "v4"
+      if (fam != "ip") print "log", "v6"
+    }
+  }
   '
 }
 
@@ -186,6 +196,7 @@ ipt_chain()
   $AWK -v fam="$1" -v tool="$2" '
   /^-P INPUT / { pol = $3 }
   /^-A INPUT / { last = $0 }
+  /^-A INPUT .* -j LOG([ \t]|$)/ { logged = 1 }
   END {
     if (pol == "") exit
     v = ""
@@ -193,6 +204,7 @@ ipt_chain()
     else if (last ~ /^-A INPUT -j REJECT( --reject-with [a-z0-9-]+)?$/) v = "reject"
     how = (pol == "DROP" ? "policy DROP" : (v != "" ? "ends with an unconditional " v : "policy " pol))
     print ((pol == "DROP" || v != "") ? "deny" : "open"), fam, tool " INPUT: " how
+    if (logged) print "log", fam
   }'
 }
 
@@ -356,13 +368,17 @@ do
   if [ -n "$denied" ]; then
     message INFO fire003i "" "Incoming $name traffic is denied by default ($denied)."
   else
-    seen=`$AWK -v f=$fam '$2 == f { $1 = ""; $2 = ""; sub(/^ +/, ""); printf "%s%s", (n++ ? "; " : ""), $0 }' $rules`
+    seen=`$AWK -v f=$fam '$1 != "log" && $2 == f { $1 = ""; $2 = ""; sub(/^ +/, ""); printf "%s%s", (n++ ? "; " : ""), $0 }' $rules`
     if [ -n "$seen" ]; then
       trail="Input chains: $seen. $advice"
     else
       trail="No chain on the input hook filters $name (rules for forwarding or NAT, such as Docker's, do not filter traffic to the host itself). $advice"
     fi
     message WARN $id "$trail" "Incoming $name traffic is not denied by default: no input chain drops what it does not accept."
+  fi
+  logged=`$AWK -v f=$fam '$1 == "log" && $2 == f { print "yes"; exit }' $rules`
+  if [ -z "$logged" ]; then
+    message WARN fire007w "Log the verdicts: a rule with 'log prefix ...' before the drop or reject in each input chain, or 'ufw logging on'." "Incoming $name traffic is not logged: nothing on the input path records what it accepts or drops, so probes leave no evidence."
   fi
 done
 

@@ -1,0 +1,9 @@
+Id: krb002i
+Severity: INFO
+Category: accounts
+Check: check_kerberos
+References: krb5.conf(5)
+
+rc4-hmac is among the permitted Kerberos enctypes. Keep it only
+while old Active Directory servers need it: its keys are only as
+strong as the password behind them, so move what you can to AES.

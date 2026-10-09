@@ -1,0 +1,8 @@
+Id: mail003i
+Severity: INFO
+Category: services
+Check: check_mail
+References: postconf(5), exim(8), doveconf(1)
+
+The mail server advertises its version in its banner. That is
+the first thing an attacker asks; set a banner naming nothing.

@@ -133,6 +133,20 @@ else
     message INFO dns004i "" "A single nameserver ($first) in /etc/resolv.conf: no fallback if it stops answering." ;; esac
 fi
 
+# /etc/hosts: a duplicated line is confusion the resolver settles by
+# taking the first, so a later copy either never applies or, planted
+# ahead of the real one, misleads everything resolving the name
+hosts=`rootfile /etc/hosts`
+if [ -f "$hosts" ]; then
+  $SED -e 's/#.*//' -e 's/[ 	][ 	]*/ /g' -e 's/^ //; s/ $//' -e '/^$/d' "$hosts" |
+  $SORT |
+  $AWK '{ if ($0 in seen) { if (!reported[$0]++) print } else seen[$0] = 1 }' |
+  while IFS= read -r dup
+  do
+    message WARN dns007w "" "Duplicate line in /etc/hosts: '$dup'. The resolver takes the first, so a later copy never applies; planted first, it misleads everything resolving the name."
+  done
+fi
+
 # unbound: access-control opening recursion past localhost, in its
 # configuration and one level of includes
 main=/etc/unbound/unbound.conf

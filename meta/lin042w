@@ -1,0 +1,11 @@
+Id: lin042w
+Severity: WARN
+Category: packages
+Check: deb_nopackfiles
+Controls: CIS 2.3; NIST SI-7, CM-11; ISO 8.19
+
+Packages are removed but not purged: their configuration files remain
+in place, owned by root, and apply again the moment the package is
+reinstalled. Stale configuration has surprised administrators that
+way, re-enabling services and access they thought were gone. Purge
+what is not wanted.

@@ -1,0 +1,7 @@
+Id: int003i
+Severity: INFO
+Category: integrity
+Check: check_integrity
+
+Names the file-integrity watcher in place: AIDE, AFICK, Samhain,
+or osquery. (OSSEC and Wazuh are named by check_ids instead.)

@@ -41,6 +41,9 @@
 # Tigris: offline
 #   the root's release files; lsb_release would describe this host,
 #   so the files it derives from are read inside the root instead.
+#   The guest leg at the end is the exception: cpuinfo, DMI and
+#   /sys/hypervisor describe the auditing host, never a root, so
+#   under --root it is skipped (a live-system section).
 #
 TigerInstallDir='.'
 
@@ -75,9 +78,9 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds CUT EGREP AWK TR  || exit 1
+  haveallcmds CAT CUT EGREP AWK TR  || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
-  
+
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
   exit 0
 }
@@ -85,7 +88,7 @@ done
 
 echo
 echo "# Checking OS release..."
-haveallcmds CUT EGREP AWK TR  || exit 1
+haveallcmds CAT CUT EGREP AWK TR  || exit 1
 haveallfiles BASEDIR WORKDIR || exit 1
 
 # lsb_release describes this host, so under --root the files it
@@ -262,3 +265,40 @@ fi
 
 # Do not warn as there are many distributions out there
 #        message WARN osv003w "" "This check only works for Red Hat and Debian"
+
+# virt_guest SYSROOT: the hypervisor's name when the host whose /proc
+# and /sys live under SYSROOT (empty: this host) is a virtual guest,
+# "unknown" when it is a guest on no recognized platform, and nothing
+# when it is bare metal. Xen's /sys/hypervisor/type is authoritative;
+# then the DMI names, lowercased; then the hypervisor bit in cpuinfo.
+virt_guest()
+{
+  __type=`$CAT "$1/sys/hypervisor/type" 2>/dev/null`
+  case "$__type" in
+    xen) echo xen; return;;
+  esac
+  __dmi=`{ $CAT "$1/sys/devices/virtual/dmi/id/sys_vendor" 2>/dev/null; $CAT "$1/sys/devices/virtual/dmi/id/product_name" 2>/dev/null; } | $TR 'A-Z' 'a-z'`
+  case "$__dmi" in
+    *vmware*) echo vmware; return;;
+    *virtualbox*|*innotek*) echo virtualbox; return;;
+    *parallels*) echo parallels; return;;
+    *qemu*|*kvm*|*bochs*|*seabios*) echo kvm; return;;
+    *bhyve*|*bh-yve*|*bh_yve*) echo bhyve; return;;
+    *hyper-v*|*hyperv*|*microsoft*virtual*) echo hyper-v; return;;
+    *xen*|*hvm*domu*) echo xen; return;;
+    *amazon*|*ec2*) echo ec2; return;;
+    *google*compute*|*google*cloud*) echo gce; return;;
+    *openstack*|*nova*) echo openstack; return;;
+  esac
+  case "`$CAT "$1/proc/cpuinfo" 2>/dev/null`" in
+    *hypervisor*) echo unknown;;
+  esac
+}
+
+# Tigris: live system
+#   cpuinfo, DMI and /sys/hypervisor describe the auditing host, never
+#   a root under audit, so under --root there is nothing to say.
+if [ -z "$TIGRIS_ROOT" ]; then
+  guest=`virt_guest "${Tiger_Sysctl_Root:-}"`
+  [ -n "$guest" ] && message INFO osv003i "" "This machine is a virtual guest ($guest): the findings below describe the guest, while host-level facts, like disk encryption or Secure Boot, describe the machine it runs on instead."
+fi

@@ -15,8 +15,8 @@
 #
 #     Please see the file `COPYING' for the complete copyright notice.
 #
-# check_mac: is a mandatory access control system (AppArmor or SELinux)
-#                 confining anything.
+# check_mac: is a mandatory access control system (AppArmor, SELinux
+#                 or TOMOYO) confining anything, and is PaX switched on.
 #
 # 10/07/2026 atrimbitas - Initial version. The active security modules are
 #                 /sys/kernel/security/lsm; AppArmor's loaded profiles and
@@ -25,13 +25,19 @@
 #                 in complain mode are listed in the summary rather than
 #                 reported one by one: Ubuntu ships several that way.
 #                 Tiger_Sysctl_Root prefixes /sys for the tests.
+# 10/09/2026 - TOMOYO (domains in enforcing mode, from its securityfs
+#                 profile) and PaX (softmode off means on). TOMOYO's
+#                 verdict stands on its own: where it reports, the
+#                 "neither AppArmor nor SELinux" warning stays quiet.
 #
 # References:
 #   https://gitlab.com/apparmor/apparmor/-/wikis/Documentation
 #   man 8 selinux
+#   https://tomoyo.osdn.jp/documentation/
+#   https://pax.grsecurity.net/docs/
 #
 # Tigris: needs root
-#   AppArmor's list of profiles is root's to read.
+#   AppArmor's list of profiles is root's to read, and so is TOMOYO's.
 #
 # Tigris: live system
 #   Under --root it is skipped: it reads the profiles loaded in the running kernel.
@@ -74,7 +80,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds AWK CAT SED || exit 1
+  haveallcmds AWK CAT GREP SED || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
 
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -83,14 +89,15 @@ done
 
 #------------------------------------------------------------------------
 
-haveallcmds AWK CAT SED || exit 1
+haveallcmds AWK CAT GREP SED || exit 1
 
 sys="${Tiger_Sysctl_Root:-}/sys"
+proc="${Tiger_Sysctl_Root:-}/proc"
 # Nothing to judge without the kernel's view (a container without /sys)
 [ -d "$sys/kernel" ] || exit 0
 
 echo
-echo "# Checking mandatory access control (AppArmor, SELinux)..."
+echo "# Checking mandatory access control (AppArmor, SELinux, TOMOYO, PaX)..."
 
 # The active security modules; older kernels have no list, and then the
 # modules' own files say whether they are on
@@ -99,6 +106,38 @@ if [ -z "$lsm" ]; then
   [ "`$CAT "$sys/module/apparmor/parameters/enabled" 2>/dev/null`" = Y ] && lsm="$lsm,apparmor"
   [ -r "$sys/fs/selinux/enforce" ] && lsm="$lsm,selinux"
 fi
+case ",$lsm," in
+  *,tomoyo,*) ;;
+  *) [ -d "$sys/kernel/security/tomoyo" ] && lsm="$lsm,tomoyo" ;;
+esac
+
+# TOMOYO reports on its own, before the AppArmor/SELinux verdict: its
+# domains enforcing, or active and enforcing nothing
+sawtomoyo=
+case ",$lsm," in
+  *,tomoyo,*)
+    sawtomoyo=1
+    profile="$sys/kernel/security/tomoyo/profile"
+    if ! $CAT "$profile" > /dev/null 2>&1; then
+      message ERROR mac004e "" "TOMOYO is active, but its profile cannot be read from $profile: that needs root, and securityfs mounted on /sys/kernel/security."
+    else
+      enforcing=`$GREP -c 'mode=enforcing' "$profile" 2>/dev/null`
+      if [ -n "$enforcing" ] && [ "$enforcing" -gt 0 ]; then
+        d=domains; [ "$enforcing" -eq 1 ] && d=domain
+        message INFO mac008i "" "TOMOYO is enforcing $enforcing $d."
+      else
+        message WARN mac007w "TOMOYO is loaded, but no domain is in enforcing mode (learning and permissive only log). Move the policy's domains to enforcing ('tomoyo-loadpolicy') once the learning is done." "TOMOYO confines nothing: a compromised service can reach everything its user can."
+      fi
+    fi
+    ;;
+esac
+
+# PaX reports on its own too: softmode on means the hardening is
+# compiled in and switched off by default
+case "`$CAT "$proc/sys/kernel/pax/softmode" 2>/dev/null`" in
+  1) message WARN mac005w "Turn PaX softmode off ('sysctl kernel.pax.softmode=0') unless chosen binaries carry their own PaX flags ('paxctl -v'): as it stands nothing is hardened by default." "PaX is in softmode: the exploit mitigation is compiled in and switched off." ;;
+  0) message INFO mac006i "" "PaX is enforcing." ;;
+esac
 
 case ",$lsm," in
   *,selinux,*)
@@ -128,7 +167,7 @@ case ",$lsm," in
     fi
     ;;
   *)
-    message WARN mac001w "Neither AppArmor nor SELinux is active (security modules: ${lsm:-none listed})." "No mandatory access control is enforcing: a compromised service can reach everything its user can."
+    [ -z "$sawtomoyo" ] && message WARN mac001w "Neither AppArmor nor SELinux is active (security modules: ${lsm:-none listed})." "No mandatory access control is enforcing: a compromised service can reach everything its user can."
     ;;
 esac
 

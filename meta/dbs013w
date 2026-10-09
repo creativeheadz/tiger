@@ -1,0 +1,9 @@
+Id: dbs013w
+Severity: WARN
+Category: services
+Check: check_databases
+References: mongod.conf(5)
+
+MongoDB takes unencrypted connections from the network: no TLS
+is configured, and it listens past localhost. Turn TLS on where
+the network reaches it.

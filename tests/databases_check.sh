@@ -8,8 +8,10 @@
 # debian.cnf; a PostgreSQL with trust, md5, ssl off on a network
 # socket and an exposed data directory, plus a Red Hat layout testing
 # the PG_VERSION fallback; and Redis configurations open, locked with
-# a password, locked with ACLs, and socket-only. Then a clean root
-# (nothing), and an offline root.
+# a password, locked with ACLs, and socket-only; a MongoDB open to
+# the network without auth or TLS and an Oracle home allowing pre-12c
+# logons with no valid-node checking. Then a clean root (nothing), a
+# loopback-only MongoDB without auth, and an offline root.
 #
 TIGER=${TIGER:-`cd "\`dirname "$0"\`/.." && pwd`}
 W=`mktemp -d`
@@ -55,6 +57,21 @@ printf 'user default off\nuser bob on nopass\nprotected-mode no\nbind 0.0.0.0\n'
 printf 'requirepass s3cret\nuser bob on nopass\nprotected-mode no\nbind 0.0.0.0\n' > "$r/etc/redis/acl5.conf"
 chmod 600 "$r/etc/redis/acl5.conf"
 printf 'port 0\nprotected-mode no\nbind 0.0.0.0\n' > "$r/etc/redis/port0.conf"
+mkdir -p "$r/var/lib/mongodb"
+cat > "$r/etc/mongod.conf" <<'EOF'
+storage:
+  dbPath: /var/lib/mongodb
+net:
+  bindIp: 0.0.0.0
+security:
+  authorization: disabled
+EOF
+chmod 755 "$r/var/lib/mongodb"
+mkdir -p "$r/u01/app/oracle/product/19c/dbhome_1/network/admin"
+printf 'ORCL:/u01/app/oracle/product/19c/dbhome_1:Y\n' > "$r/etc/oratab"
+cat > "$r/u01/app/oracle/product/19c/dbhome_1/network/admin/sqlnet.ora" <<'EOF'
+SQLNET.ALLOWED_LOGON_VERSION_SERVER=11
+EOF
 run "$r" "$W/out"
 has()   { grep -F -q -- "$1" "$W/out"; }
 count() { grep -F -c -- "$1" "$W/out"; }
@@ -87,6 +104,13 @@ has "[dbs007f] PostgreSQL's data directory \`/var/lib/postgresql/16/main' is rea
 has "[dbs010f] The password in \`/etc/redis/open.conf' is readable by anyone." &&
   [ "`count 'dbs010f'`" = 1 ] &&
   ok "a world-readable password: dbs010f, once" || { bad "redis password"; cat "$W/out"; }
+has "[dbs011f] MongoDB takes unauthenticated connections from the network (no authorization in /etc/mongod.conf, bound to 0.0.0.0):" &&
+  has "[dbs013w] MongoDB takes unencrypted connections from the network (no TLS in /etc/mongod.conf, bound to 0.0.0.0)." &&
+  has "[dbs014f] MongoDB's data directory \`/var/lib/mongodb' is readable by anyone:" &&
+  ok "MongoDB open without auth or TLS, exposed dbPath: dbs011f, dbs013w, dbs014f" || { bad "mongo open"; cat "$W/out"; }
+has "[dbs015w] Oracle allows pre-12c logons (11 in /u01/app/oracle/product/19c/dbhome_1/network/admin/sqlnet.ora):" &&
+  has "[dbs016w] Oracle checks no connecting address (/u01/app/oracle/product/19c/dbhome_1/network/admin/sqlnet.ora sets no TCP.VALIDNODE_CHECKING=yes):" &&
+  ok "Oracle via oratab, weak logons and no valid-node checking: dbs015w, dbs016w" || { bad "oracle"; cat "$W/out"; }
 grep -q "$r" "$W/out" && bad "a finding names where the root is on this host" || ok "findings name the root's own paths"
 
 # order across an include: the last value wins wherever it stands, and
@@ -115,8 +139,32 @@ printf 'local all all peer\nhost all all 127.0.0.1/32 scram-sha-256\n' > "$C/etc
 chmod 700 "$C/var/lib/postgresql/16/main"
 printf 'bind 127.0.0.1 ::1\nrequirepass s3cret\nprotected-mode yes\n' > "$C/etc/redis/redis.conf"
 chmod 600 "$C/etc/redis/redis.conf"
+cat > "$C/etc/mongod.conf" <<'EOF'
+security:
+  authorization: enabled
+net:
+  bindIp: localhost
+  tls:
+    mode: requireTLS
+EOF
+mkdir -p "$C/u01/app/oracle/product/19c/dbhome_1/network/admin"
+printf 'ORCL:/u01/app/oracle/product/19c/dbhome_1:Y\n' > "$C/etc/oratab"
+cat > "$C/u01/app/oracle/product/19c/dbhome_1/network/admin/sqlnet.ora" <<'EOF'
+SQLNET.ALLOWED_LOGON_VERSION_SERVER=12
+TCP.VALIDNODE_CHECKING=yes
+TCP.INVITED_NODES=(db.example.com)
+EOF
 run "$C" "$W/clean.out"
 grep -q 'dbs0[0-9][0-9]' "$W/clean.out" && { bad "clean"; cat "$W/clean.out"; } || ok "a clean root: nothing"
+
+# loopback-only MongoDB without auth: local users are still trusted
+M=$W/mongolocal
+mkdir -p "$M/etc"
+printf 'net:\n  bindIp: 127.0.0.1\n' > "$M/etc/mongod.conf"
+run "$M" "$W/mongo.out"
+grep -F -q "[dbs012w] MongoDB takes unauthenticated connections on its loopback socket (no authorization in /etc/mongod.conf):" "$W/mongo.out" &&
+  ! grep -q 'dbs011f\|dbs013w\|dbs014f' "$W/mongo.out" &&
+  ok "no auth on loopback only: dbs012w alone" || { bad "mongo local"; cat "$W/mongo.out"; }
 
 # an offline root (TIGRIS_ROOT, as tigris --root sets it)
 R=$W/img

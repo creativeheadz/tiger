@@ -1,0 +1,135 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_snmp: an SNMP write community is remote control of the box:
+#             the extend and exec hooks run commands for whoever asks.
+#             One with no source restriction answers the whole network.
+#             The default strings, public and private, are the first
+#             things tried. An agent that knows only SNMPv3 users has
+#             no communities to judge. No snmpd.conf means the daemon
+#             is not configured here, and there is nothing to say.
+#
+# 10/09/2026 - Initial version. rocommunity, rwcommunity and com2sec
+#             from /etc/snmp/snmpd.conf.
+#
+# References:
+#   snmpd.conf(5)
+#
+# Tigris: offline
+#   the root's snmpd.conf.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# snmp_facts FILE: one tag per community worth reporting. rw:STRING
+# for a write community with no source restriction, rwr:STRING for
+# one narrowed to a source, def:STRING for a default string in any
+# community directive. Community strings are case-sensitive; only
+# the directive names are matched loosely. Repeated lines report
+# once.
+snmp_facts()
+{
+  $AWK '
+  /^[ \t]*#/ { next }
+  {
+    d = tolower($1)
+    if (d == "rwcommunity" && NF >= 2) {
+      s = $2
+      # a third token starting an OID (.1.3.6, iso, ...) is a MIB
+      # view, not a source: still the whole network
+      if (NF == 2 || $3 ~ /^(\.|iso|system|snmp)/) tag = "rw:" s
+      else tag = "rwr:" s
+      if (!(tag in seen)) { seen[tag] = 1; print tag }
+      checkdef(s)
+    } else if (d == "rocommunity" && NF >= 2) {
+      checkdef($2)
+    } else if (d == "com2sec" && NF >= 4) {
+      checkdef($4)
+    }
+  }
+  function checkdef(s) {
+    l = tolower(s)
+    if (l == "public" || l == "private") {
+      tag = "def:" s
+      if (!(tag in seen)) { seen[tag] = 1; print tag }
+    }
+  }' "$1" 2>/dev/null
+}
+
+conf=`rootfile /etc/snmp/snmpd.conf`
+
+# No snmpd.conf: the daemon is not configured here
+[ -f "$conf" ] || exit 0
+
+echo
+echo "# Checking the SNMP daemon configuration..."
+
+for fact in `snmp_facts "$conf"`
+do
+  case "$fact" in
+    rw:*) message WARN snmp001w "Take the write community out of /etc/snmp/snmpd.conf, or narrow it to the manager's address ('rwcommunity \`${fact#rw:}' MANAGER')." "SNMP answers a write community ('\`${fact#rw:}') from the whole network: its extend and exec hooks run commands for whoever asks.";;
+    rwr:*) message INFO snmp002i "" "SNMP answers a write community ('\`${fact#rwr:}') narrowed to a source: it is still remote control of the box, so keep the restriction and the string secret.";;
+    def:*) message INFO snmp003i "" "SNMP uses a default community string ('\`${fact#def:}'): the first thing tried. Rename it to something unguessable.";;
+  esac
+done
+
+exit 0

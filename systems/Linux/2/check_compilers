@@ -1,0 +1,143 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_compilers: nothing on a production box builds software, but
+#             the toolchain is often installed anyway: kernel modules
+#             want it, and attackers love it. Their presence is worth
+#             knowing, and their permissions worth checking: a compiler
+#             anyone can write to is a compiler anyone can replace,
+#             and the next build as root runs their code. Malware
+#             scanners are reported the same way, present or not said:
+#             what scans the box reframes everything else. No compiler
+#             and no scanner means neither is installed, and there is
+#             nothing to say.
+#
+# 10/09/2026 - Initial version. The C toolchains (cc, gcc, clang,
+#             tcc) in the usual bin directories; ClamAV and rkhunter
+#             by their binaries and configs.
+#
+# References:
+#   gcc(1)
+#   clamscan(1)
+#
+# Tigris: offline
+#   the root's bin directories and configs; `ls' reads the mode of
+#   whichever file the path resolves to, live or in a root.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS || exit 1
+
+# existing_sys: the existing files among the arguments, one per line
+existing_sys()
+{
+  for __f
+  do
+    [ -f "`rootfile $__f`" ] && echo "$__f"
+  done
+}
+
+# loose_cc HOSTPATH: whether the compiler binary is writable past
+# root: by anyone, or by a group that is not root's
+loose_cc()
+{
+  set X `$LS -lL "$1" 2>/dev/null | $AWK '{ print $1, $4 }'`
+  __mode=$2 __group=$3
+  # other-write is the ninth character, group-write the sixth
+  case "$__mode" in
+    ????????w?) return 0;;
+  esac
+  case "$__mode" in
+    ?????w????) [ "$__group" != root ] && return 0;;
+  esac
+  return 1
+}
+
+found=
+for d in /usr/bin /bin /usr/local/bin
+do
+  for n in cc gcc clang tcc
+  do
+    [ -f "`rootfile $d/$n`" ] && found="${found:+$found }$d/$n"
+  done
+done
+scanners=
+[ -f "`rootfile /usr/bin/clamscan`" ] || [ -f "`rootfile /usr/bin/freshclam`" ] ||
+[ -d "`rootfile /etc/clamav`" ] && scanners="$scanners ClamAV"
+[ -f "`rootfile /usr/bin/rkhunter`" ] || [ -f "`rootfile /etc/rkhunter.conf`" ] && scanners="$scanners rkhunter"
+
+# Neither a compiler nor a scanner: nothing to say
+[ -z "$found$scanners" ] && exit 0
+
+echo
+echo "# Checking the installed compilers and malware scanners..."
+
+[ -n "$found" ] && message INFO cmp001i "" "C compilers are installed ($found): nothing on a production box should need to build software, and attackers build their tools where they land. Take the toolchain out where nothing compiles."
+for c in $found
+do
+  loose_cc "`rootfile $c`" && message WARN cmp002w "Take \`$c' out of the writable state ('chown root:root \`$c'; chmod 755 \`$c')." "The compiler \`$c' is writable past root: whoever can write it replaces it, and the next build runs their code."
+done
+for s in $scanners
+do
+  message INFO cmp003i "" "$s scans this box for malware."
+done
+
+exit 0

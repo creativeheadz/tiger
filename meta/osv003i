@@ -1,0 +1,9 @@
+Id: osv003i
+Severity: INFO
+Category: packages
+Check: check_release
+Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
+
+This machine runs as a virtual guest. The findings describe the
+guest; host-level facts, like disk encryption or Secure Boot,
+describe the machine it runs on instead.

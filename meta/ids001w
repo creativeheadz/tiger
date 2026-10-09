@@ -1,0 +1,9 @@
+Id: ids001w
+Severity: WARN
+Category: intrusion
+Check: check_ids
+References: jail.conf(5)
+
+Fail2ban is configured but no jail is enabled: it watches the
+logs and bans no one. Enable the jails this host needs, or take
+fail2ban out.

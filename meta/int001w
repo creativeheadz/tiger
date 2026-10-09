@@ -1,0 +1,8 @@
+Id: int001w
+Severity: WARN
+Category: integrity
+Check: check_integrity
+References: aide.conf(5)
+
+AIDE is configured but its database was never built: it
+compares against nothing. Initialize it, or take AIDE out.

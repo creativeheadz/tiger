@@ -1,0 +1,9 @@
+Id: dbs016w
+Severity: WARN
+Category: services
+Check: check_databases
+References: sqlnet.ora
+
+Oracle checks no connecting address: the listener answers any
+address. Name who may connect (TCP.VALIDNODE_CHECKING=yes with
+TCP.INVITED_NODES).

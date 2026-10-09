@@ -1,0 +1,173 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_kerberos: the Kerberos client believes what its krb5.conf says
+#             and becomes whoever its keytab names. Single-DES enctypes
+#             (or allow_weak_crypto, which re-enables them) make captured
+#             tickets decryptable offline; rc4-hmac is only as strong as
+#             the Active Directory password behind it; a keytab anyone can
+#             read hands the service's long-term keys to anyone. No
+#             krb5.conf and no keytab means Kerberos is not in use, and
+#             there is nothing to say.
+#
+# 10/09/2026 - Initial version. krb5.conf and its krb5.conf.d drop-ins
+#             are read for the [libdefaults] weak-crypto settings; the
+#             keytab (default_keytab_name, else /etc/krb5.keytab) is
+#             checked for world readability with ls, the way the old
+#             checks read permissions.
+#
+# References:
+#   krb5.conf(5)
+#   MIT Kerberos: Encryption types (weak enctypes, allow_weak_crypto)
+#
+# Tigris: offline
+#   the root's krb5.conf, krb5.conf.d and keytab; `ls' reads the mode
+#   of whichever file the path resolves to, live or in a root.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT GREP LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT GREP LS || exit 1
+
+# libdefaults_facts FILE: the [libdefaults] weak-crypto facts, one per
+# line: "weak" for allow_weak_crypto or a single-DES enctype,
+# "rc4" for an rc4-hmac enctype, "keytab=PATH" for default_keytab_name
+libdefaults_facts()
+{
+  $AWK '
+  /^[ \t]*[#;]/ { next }
+  /^\[/ { inlib = (tolower($0) == "[libdefaults]"); next }
+  !inlib { next }
+  {
+    line = tolower($0)
+    if (line ~ /allow_weak_crypto[ \t]*=[ \t]*true/) { print "weak"; next }
+    if (line ~ /(permitted_enctypes|default_t(k|gs)_enctypes)[ \t]*=/) {
+      if (line ~ /des-cbc-[a-z0-9]*/) print "weak"
+      if (line ~ /(rc4-hmac|arcfour-hmac)([^a-z]|$)/) print "rc4"
+      next
+    }
+    if (line ~ /default_keytab_name[ \t]*=/) {
+      v = $0; sub(/^[^=]*=[ \t]*/, "", v)
+      sub(/[ \t]*[#;].*$/, "", v); sub(/[ \t]*$/, "", v)
+      sub(/^FILE:/, "", v)
+      if (v ~ /^\//) print "keytab=" v
+    }
+  }' "$1" 2>/dev/null
+}
+
+# world_readable HOSTPATH: whether ls shows an other-read bit
+world_readable()
+{
+  __mode=`$LS -lL "$1" 2>/dev/null | $AWK '{ print $1 }'`
+  case "$__mode" in
+    ???????r??) return 0;;
+  esac
+  return 1
+}
+
+main=`rootfile /etc/krb5.conf`
+confs=
+[ -f "$main" ] && confs="$main"
+# shellcheck disable=SC2046
+[ -n "`rootls /etc/krb5.conf.d 2>/dev/null`" ] && confs="$confs `rootls /etc/krb5.conf.d 2>/dev/null | $GREP '\.conf$' | rootpaths`"
+
+keytabs='/etc/krb5.keytab'
+weak= rc4=
+for c in $confs
+do
+  for fact in `libdefaults_facts "$c"`
+  do
+    case "$fact" in
+      weak) weak=1;;
+      rc4) rc4=1;;
+      keytab=*) keytabs="$keytabs ${fact#keytab=}";;
+    esac
+  done
+done
+
+# No krb5.conf and no keytab: Kerberos is not in use here
+[ -z "$confs" ] && {
+  have_keytab=
+  for k in $keytabs
+  do
+    [ -e "`rootfile $k`" ] && { have_keytab=1; break; }
+  done
+  [ -z "$have_keytab" ] && exit 0
+}
+
+echo
+echo "# Checking the Kerberos client configuration..."
+
+[ -n "$weak" ] && message WARN krb001w "Take the single-DES enctypes (des-cbc-crc, des-cbc-md4, des-cbc-md5) out of [libdefaults] in /etc/krb5.conf, and turn allow_weak_crypto off; re-key anything that authenticated under them." "Kerberos permits single-DES encryption: its 56-bit keys fall to brute force, so whoever captures a ticket or the keytab below reads it offline."
+[ -n "$rc4" ] && message INFO krb002i "" "rc4-hmac is among the permitted enctypes: keep it only while old Active Directory servers need it. Its keys are only as strong as the password behind them, so move what you can to AES."
+
+seenkt=
+for k in $keytabs
+do
+  case " $seenkt " in
+    *" $k "*) continue;;
+  esac
+  seenkt="$seenkt $k"
+  kh=`rootfile $k`
+  [ -e "$kh" ] || continue
+  world_readable "$kh" && message WARN krb003w "Make \`$k' readable by root alone ('chown root:root \`$k'; chmod 600 \`$k'." "The keytab \`$k' is readable by anyone: it holds the service's long-term keys, so whoever copies it becomes the service."
+done
+
+exit 0

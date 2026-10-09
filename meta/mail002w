@@ -1,0 +1,9 @@
+Id: mail002w
+Severity: WARN
+Category: services
+Check: check_mail
+References: postconf(5), exim(8)
+
+The mail server relays for the whole world. Spam goes out in
+its name, and the address lands on blocklists. Name only the
+networks that relay through here.

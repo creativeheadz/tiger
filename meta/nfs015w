@@ -1,0 +1,10 @@
+Id: nfs015w
+Severity: WARN
+Category: network
+Check: check_nfsd
+Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
+
+NFS serves clients but /etc/exports exports nothing: an attack
+surface with no purpose. Every RPC service answering the network can
+have flaws, and NFS has had serious ones; a server nobody should use
+should not run. Stop it, or export what it should serve.

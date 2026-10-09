@@ -1,0 +1,158 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_printers: a printer that browses the network believes every
+#             advertisement it hears: jobs, documents among them, go
+#             where the rogue printer says. A cupsd that listens past
+#             localhost offers its admin interface to the network. And
+#             printers.conf holds the device URIs, passwords among
+#             them when the URI carries credentials; left readable,
+#             they are everyone's. /etc/printcap stays retired: it
+#             describes no running daemon. No CUPS config files means
+#             no printing here, and there is nothing to say.
+#
+# 10/09/2026 - Initial version. cupsd.conf and printers.conf.
+#
+# References:
+#   cupsd.conf(5)
+#
+# Tigris: offline
+#   the root's CUPS config files.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK LS || exit 1
+
+# cupsd_facts FILE: one tag per line: browse for `Browsing On',
+# netlisten for a Listen or Port line that answers past localhost
+# (a socket path or a loopback address stays quiet).
+cupsd_facts()
+{
+  $AWK '
+  /^[ \t]*#/ { next }
+  {
+    line = tolower($0)
+    sub(/#.*$/, "", line)
+    if (line ~ /^[ \t]*browsing[ \t]+(on|yes)([ \t]|$)/) { print "browse"; next }
+    if (line ~ /^[ \t]*listen[ \t]+/) {
+      # what is listened on: the last token. A socket path stays
+      # quiet, and so does loopback; anything else on 631, or on
+      # IPv6 anywhere, faces the network.
+      n = split(line, w, /[ \t]+/)
+      what = w[n]
+      if (what ~ /^\//) next
+      if (what ~ /^(localhost|127\.|::1|\[::1\])/) next
+      if (what ~ /\*/ || what ~ /:631/ || what ~ /::/) print "netlisten"
+      next
+    }
+    if (line ~ /^[ \t]*port[ \t]+/) { print "netlisten"; next }
+  }' "$1" 2>/dev/null
+}
+
+# uri_creds FILE: whether a DeviceURI carries user:password credentials
+uri_creds()
+{
+  $AWK '
+  /^DeviceURI[ \t]/ {
+    uri = $2
+    # scheme://user:password@host...
+    if (uri ~ /:\/\/[^\/: \t]+:[^\/@ \t]+@/) { print "creds"; exit }
+  }' "$1" 2>/dev/null
+}
+
+# world_readable HOSTPATH: whether ls shows an other-read bit
+world_readable()
+{
+  __mode=`$LS -lL "$1" 2>/dev/null | $AWK '{ print $1 }'`
+  case "$__mode" in
+    ???????r??) return 0;;
+  esac
+  return 1
+}
+
+cupsd=`rootfile /etc/cups/cupsd.conf`
+printers=`rootfile /etc/cups/printers.conf`
+[ -f "$cupsd" ] || cupsd=
+[ -f "$printers" ] || printers=
+
+# No CUPS config files: no printing here
+[ -z "$cupsd$printers" ] && exit 0
+
+echo
+echo "# Checking the printing configuration..."
+
+if [ -n "$cupsd" ]; then
+  browse= netlisten=
+  for fact in `cupsd_facts "$cupsd"`
+  do
+    case "$fact" in
+      browse) browse=1;;
+      netlisten) netlisten=1;;
+    esac
+  done
+  [ -n "$browse" ] && message WARN print001w "Turn Browsing off in /etc/cups/cupsd.conf unless this host must find network printers by itself." "CUPS browses the network for printers: it believes every advertisement it hears, and print jobs go where the rogue printer says."
+  [ -n "$netlisten" ] && message WARN print002w "Listen on localhost alone ('Listen localhost:631') unless the network must print through here, and keep the admin pages authenticated." "cupsd answers past localhost: its admin interface and the browse port face the network."
+fi
+if [ -n "$printers" ] && [ -n "`uri_creds \"$printers\"`" ]; then
+  world_readable "$printers" && message WARN print003w "Take /etc/cups/printers.conf out of the world's sight ('chown root:root /etc/cups/printers.conf'; chmod 600 /etc/cups/printers.conf), or take the passwords out of the device URIs." "A printer URI in /etc/cups/printers.conf carries a password, and anyone can read it."
+fi
+
+exit 0

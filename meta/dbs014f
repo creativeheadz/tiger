@@ -1,0 +1,8 @@
+Id: dbs014f
+Severity: FAIL
+Category: services
+Check: check_databases
+References: mongod.conf(5)
+
+MongoDB's data directory is readable by strangers: every
+collection can be copied. Leave it to the daemon's user alone.

@@ -1,0 +1,11 @@
+Id: krb001w
+Severity: WARN
+Category: accounts
+Check: check_kerberos
+References: krb5.conf(5)
+
+Kerberos permits single-DES encryption, by an enctype or by
+allow_weak_crypto. Its 56-bit keys fall to brute force, so whoever
+captures a ticket, or the keytab below, reads it offline. Take the
+single-DES enctypes out of [libdefaults] and re-key what
+authenticated under them.

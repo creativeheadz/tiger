@@ -2,10 +2,12 @@
 
 Tigris is a security auditor for Linux, descended from TIGER (Texas A&M,
 1993). The goal is to make it the auditor people pick on purpose: at
-least as good as Lynis, and better where it counts. Lynis is the
-reference point because it is the tool people compare against.
+full functional parity with Lynis, and better where it counts. Lynis
+is the reference point because it is the tool people compare against:
+everything Lynis checks on a platform Tigris supports, Tigris checks
+too, tracked group by group in `doc/parity-matrix.md`.
 
-*Last updated 7 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
+*Last updated 9 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
 Everything marked done is on `master`; "released" means tagged (the last
 tag is `version_3_6_0`).
 
@@ -18,10 +20,11 @@ tag is `version_3_6_0`).
 5. [3.2.x: maintenance](#32x-maintenance)
 6. [3.3: modern Linux baseline](#33-modern-linux-baseline)
 7. [4.0: where Tigris beats Lynis](#40-where-tigris-beats-lynis)
-8. [Ideas parked for later](#ideas-parked-for-later)
-9. [Windows (after 4.0)](#windows-after-40)
-10. [Engineering, ongoing](#engineering-ongoing)
-11. [Not planned](#not-planned)
+8. [Parity with Lynis](#parity-with-lynis)
+9. [Ideas parked for later](#ideas-parked-for-later)
+10. [Windows (after 4.0)](#windows-after-40)
+11. [Engineering, ongoing](#engineering-ongoing)
+12. [Not planned](#not-planned)
 
 ## Ground rules and decisions
 
@@ -41,10 +44,18 @@ Settled, so they do not have to be argued again:
 - **Lynis is a list of ideas, not a source of code.** Lynis is GPL-3.0;
   copying from it would force Tigris to GPL-3.0 and take away the
   "or later" that keeps it the more permissive of the two. Checks are
-  written from the documentation of the thing being checked.
-- **Linux first.** The other Unixes (AIX, HP-UX, IRIX, NeXT, SunOS,
-  Tru64, UNICOS, Mac OS X) are in the `attic/other-unix-2026-10` tag and
-  come back only with a maintainer and a CI runner for them.
+  written from the documentation of the thing being checked, and the
+  parity target is tracked by test group, never by copying tests.
+- **Parity with Lynis is the coverage target.** Everything Lynis checks
+  on a platform Tigris supports, Tigris checks too, group by group in
+  `doc/parity-matrix.md`. Deliberate exceptions (no live probing,
+  retired legacy, no copied code) are recorded in that file and stay
+  exceptions, not drift.
+- **Linux first, then the rest in phases.** The other Unixes (AIX,
+  HP-UX, IRIX, NeXT, SunOS, Tru64, UNICOS, Mac OS X) are in the
+  `attic/other-unix-2026-10` tag and come back in platform phases with
+  a maintainer and a CI runner for each: macOS, then the BSDs, then
+  Solaris and AIX. Linux parity comes first.
 - **Internal names stay for now.** `tigerrc`, the `Tiger_*` settings, the
   `tiger` command and `/etc/tiger` keep working. They change at 4.0, with
   compatibility shims, in one go. `./tigris` is the entry point today.
@@ -64,10 +75,12 @@ Settled, so they do not have to be argued again:
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
 | Tests                | 38 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
+| Lynis parity         | 6 of 43 test groups covered, 10 strong, 15 partial, 10 gap (see below) | 43 test groups across Linux, macOS, BSD, Solaris |
 
-Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
-out-grow it by copying it test for test. It can win on depth, on output
-other tools can use, on honest evidence, and on engineering quality.
+Lynis is broad, maintained and popular (16k GitHub stars). Tigris
+meets it group for group without copying it test for test, and wins
+on depth, on output other tools can use, on honest evidence, and on
+engineering quality.
 
 **Measured** on the reference machine (Linux Mint 22.3 desktop, kernel 7.0,
 12 threads, 62 GB, a 1.8 TB root disk and a 3.6 TB data disk holding
@@ -622,6 +635,48 @@ what scripts and cron see.
   already exists; `tigexp` is what it runs).
 - [ ] A JSON schema 2 only if something has to be removed or renamed.
 
+## Parity with Lynis
+
+Full functional parity, tracked group by group in
+`doc/parity-matrix.md` against Lynis 3.1.8-dev (43 test groups, 477
+real tests): 6 groups covered, 10 strong with minor gaps, 15 partial,
+10 gap, 2 not applicable. New checks follow the standing rules:
+written from the upstream documentation of the thing being checked,
+each with a metadata file per finding id and a fixture suite, offline
+capable where honesty allows.
+
+**Phase A: Linux parity** (first, after the rename).
+- [ ] New checks: Kerberos, LDAP, PHP, SNMP, Squid, CUPS printing,
+  IDS/IPS presence, compilers and their permissions.
+- [ ] Second phases: databases (MongoDB auth, Oracle, DB2), mail
+  (Exim, Postfix, Dovecot depth), MAC frameworks (TOMOYO,
+  grsecurity), crypto (entropy and RNG), file integrity (per-tool
+  presence and config), filesystems (LVM detail, ACL support).
+- [ ] Verify-marked items: GRUB password, firewall logging,
+  promiscuous interfaces, hosts duplicates, `at` jobs, console TTYs,
+  rpcinfo and NFS daemon status, unpurged packages, YUM GPG signing,
+  Docker file-permission depth, prelink handling. Audit the existing
+  checks first; many may already cover them.
+- [ ] Trivial folds: FireWire disable into check_storage, guest
+  detection as informational.
+
+**Phase B: macOS.** CI runner and fixture strategy, then SIP status,
+FileVault, doas, macOS package and App inventory, and the macOS side
+of every portable group.
+
+**Phase C: BSDs.** CI runner and fixtures, then pf, ipfw, newsyslog,
+metalog-adjacent logging, and the BSD sides of accounting, boot
+services and package auditing.
+
+**Phase D: Solaris and AIX.** Only with a maintainer and a CI runner
+each, per the attic rule; until then their groups stay explicitly
+uncovered rather than silently missing.
+
+Lynis Enterprise paid surface (central management, scheduling) is out
+of scope until decided; the command-line audit is the parity target.
+The deliberate exceptions in `doc/parity-matrix.md` (no live
+probing, retired legacy, no copied code) stand over parity work.
+
 ## Ideas parked for later
 
 Not commitments. Written down so they are not lost.
@@ -688,3 +743,5 @@ stable, so it is built against a fixed contract.
 - Automatic remediation. Tigris shows the fix and the administrator runs
   it.
 - Copying code from other auditors.
+- Central management of fleets (the paid Lynis Enterprise surface).
+  Parity targets the command-line audit; this stays out until decided.

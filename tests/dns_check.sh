@@ -3,7 +3,8 @@
 # tests/dns_check.sh - check_dns against a root of its own
 #
 # A fake root with a resolv.conf holding four servers and a bad line,
-# an unbound opening recursion from an included file, and a bind opening
+# a hosts file duplicating a line (dns007w), an unbound opening
+# recursion from an included file, and a bind opening
 # it through a named ACL. Then roots with no usable nameserver, a single
 # real one, a lone loopback stub (fine), an authoritative-only bind
 # (recursion no: not analyzed), and clean daemon configurations.
@@ -32,6 +33,7 @@ mkdir -p "$r/etc" "$r/etc/unbound/unbound.conf.d" "$r/etc/bind"
 printf 'nameserver 192.0.2.1\nnameserver 192.0.2.2\nnameserver 192.0.2.3\nnameserver 192.0.2.4\nnameserver not-an-address\n' > "$r/etc/resolv.conf"
 printf 'server:\n  interface: 127.0.0.1\ninclude: /etc/unbound/unbound.conf.d/*.conf\n' > "$r/etc/unbound/unbound.conf"
 printf 'server:\n  access-control: 127.0.0.0/8 allow\n  access-control: 0.0.0.0/0 allow\n' > "$r/etc/unbound/unbound.conf.d/open.conf"
+printf '127.0.0.1 localhost\n192.0.2.10 db.example\n192.0.2.10 db.example # appended twice\n' > "$r/etc/hosts"
 printf 'include "/etc/bind/named.conf.options";\n' > "$r/etc/bind/named.conf"
 printf 'acl "open" { any; };\noptions {\n  allow-recursion { open; };\n  allow-recursion { any; };\n};\n' > "$r/etc/bind/named.conf.options"
 run "$r" "$W/out"
@@ -46,6 +48,8 @@ has "[dns005f] \`/etc/unbound/unbound.conf.d/open.conf' lets anyone use this res
 has "[dns006f] \`/etc/bind/named.conf.options' lets anyone recurse: allow-recursion names 'open', an ACL holding 'any'." &&
   has "[dns006f] \`/etc/bind/named.conf.options' lets anyone recurse: allow-recursion holds 'any'." &&
   ok "bind open through a named ACL and directly: dns006f" || { bad "bind"; cat "$W/out"; }
+has "[dns007w] Duplicate line in /etc/hosts: '192.0.2.10 db.example'." &&
+  ok "a duplicated hosts line, comments aside: dns007w" || { bad "hosts"; cat "$W/out"; }
 grep -q "$r" "$W/out" && bad "a finding names where the root is on this host" || ok "findings name the root's own paths"
 
 # no usable nameserver: none at all, then all invalid

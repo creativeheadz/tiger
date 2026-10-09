@@ -1,0 +1,9 @@
+Id: cmp001i
+Severity: INFO
+Category: packages
+Check: check_compilers
+References: gcc(1)
+
+C compilers are installed. Nothing on a production box should
+need to build software, and attackers build their tools where
+they land. Take the toolchain out where nothing compiles.

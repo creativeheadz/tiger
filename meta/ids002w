@@ -1,0 +1,9 @@
+Id: ids002w
+Severity: WARN
+Category: intrusion
+Check: check_ids
+References: snort(8), suricata.yaml(5)
+
+Snort or Suricata is configured but loads no rules: loading
+nothing, it detects nothing. Point it at its rules, or take it
+out.

@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_promisc: interfaces in promiscuous mode hand all their traffic
+#             to whoever listens on them: credentials and sessions
+#             among it. Bridges, VM hosts and packet captures need it;
+#             anything else with the flag set is worth a look.
+#
+# 10/09/2026 - Initial version. The flag comes from
+#             /sys/class/net/IFACE/flags (bit 0x100), read as hex so no
+#             tool beyond cat is needed; Tiger_Sysctl_Root prefixes /sys
+#             for the tests.
+#
+# References:
+#   man 7 netdevice (IFF_PROMISC)
+#   ip-link(8)
+#
+# Tigris: live system
+#   Under --root it is skipped: flags files in an image are not live state.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT LS || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT LS || exit 1
+
+net="${Tiger_Sysctl_Root:-}/sys/class/net"
+# Without sysfs (a bare container) there are no interfaces to judge
+[ -d "$net" ] || exit 0
+
+echo
+echo "# Checking for interfaces in promiscuous mode..."
+
+{
+  $LS "$net" 2>/dev/null |
+  while IFS= read -r iface
+  do
+    [ -f "$net/$iface/flags" ] || continue
+    printf '%s %s\n' "$iface" "`$CAT \"$net/$iface/flags\" 2>/dev/null`"
+  done
+} | $AWK '
+  {
+    f = $2; sub(/^0[xX]/, "", f)
+    # bit 0x100 is the third nibble from the right; shorter values
+    # cannot have it set (no strtonum: not in mawk or busybox awk)
+    if (length(f) < 3) next
+    h = substr(f, length(f) - 2, 1)
+    if (h ~ /^[13579bdfBDF]$/) print $1
+  }' |
+while IFS= read -r iface
+do
+  message WARN prom001w "Take it out of promiscuous mode ('ip link set $iface promisc off') unless a bridge, a VM host, or a packet capture needs it; find what put it there." "Interface \`$iface' is in promiscuous mode: it hands all its traffic to whoever listens, credentials and sessions among it."
+done
+
+exit 0

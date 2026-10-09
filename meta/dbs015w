@@ -1,0 +1,9 @@
+Id: dbs015w
+Severity: WARN
+Category: services
+Check: check_databases
+References: sqlnet.ora
+
+Oracle allows logons from before 12c. Their password verifiers
+fall to offline cracking once stolen. Raise
+SQLNET.ALLOWED_LOGON_VERSION_SERVER to 12.

@@ -217,6 +217,34 @@ case "$mgr" in
       unknown="dnf could not answer from its cache${why:+ ($why)}"
     fi
     delete $errf
+    # Repositories that install unsigned packages: gpgcheck off in a
+    # repo file or [main]. Only an explicit off counts; what the
+    # distributor leaves unset stays their default. An unsigned
+    # repository lets a compromised mirror serve trojaned packages,
+    # which install as root.
+    {
+      rootls /etc/yum.repos.d 2>/dev/null
+      printf '%s\n' /etc/dnf/dnf.conf /etc/yum.conf
+    } |
+    while read f
+    do
+      rf=`rootfile "$f"`
+      [ -f "$rf" ] || continue
+      $AWK '
+        /^[ \t]*\[/ { sec = $0; gsub(/[^A-Za-z0-9_.-]/, "", sec); next }
+        { l = $0; sub(/#.*$/, "", l) }
+        tolower(l) ~ /^[ \t]*gpgcheck[ \t]*=[ \t]*(0|no|false)([ \t]*)$/ {
+          if (sec == "main" || sec == "") print "MAIN"; else print sec
+        }' "$rf" |
+      while read repo
+      do
+        if [ "$repo" = MAIN ]; then
+          message WARN upd005w "Set 'gpgcheck=1' in [main] of $f (with a 'gpgkey='), or remove the file." "The [main] default in $f turns package signing off: every repository without its own gpgcheck installs unsigned packages."
+        else
+          message WARN upd005w "Set 'gpgcheck=1' (with a 'gpgkey=') for '$repo' in $f, or remove it." "Repository '$repo' installs unsigned packages (gpgcheck off in $f)."
+        fi
+      done
+    done
     ;;
   zypper)
     cmd=${Tiger_Zypper_Security_Cmd:-}

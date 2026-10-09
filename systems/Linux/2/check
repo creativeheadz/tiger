@@ -133,6 +133,10 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
   skip_check $SYSTEMDIR/check_network_config || $SYSTEMDIR/check_network_config
 }
 
+[ "$Tiger_Check_PROMISC" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_promisc || $SYSTEMDIR/check_promisc
+}
+
 [ "$Tiger_Check_SYSCTL" != 'N' ] && {
   skip_check $SYSTEMDIR/check_sysctl || $SYSTEMDIR/check_sysctl
 }
@@ -171,6 +175,50 @@ SYSTEMDIR=$BASEDIR/systems/Linux/2
 
 [ "$Tiger_Check_PAM" != 'N' ] && {
   skip_check $SYSTEMDIR/check_pam || $SYSTEMDIR/check_pam
+}
+
+[ "$Tiger_Check_KERBEROS" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_kerberos || $SYSTEMDIR/check_kerberos
+}
+
+[ "$Tiger_Check_LDAP" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_ldap || $SYSTEMDIR/check_ldap
+}
+
+[ "$Tiger_Check_PHP" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_php || $SYSTEMDIR/check_php
+}
+
+[ "$Tiger_Check_SNMP" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_snmp || $SYSTEMDIR/check_snmp
+}
+
+[ "$Tiger_Check_SQUID" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_squid || $SYSTEMDIR/check_squid
+}
+
+[ "$Tiger_Check_PRINTERS" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_printers || $SYSTEMDIR/check_printers
+}
+
+[ "$Tiger_Check_IDS" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_ids || $SYSTEMDIR/check_ids
+}
+
+[ "$Tiger_Check_COMPILERS" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_compilers || $SYSTEMDIR/check_compilers
+}
+
+[ "$Tiger_Check_MAIL" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_mail || $SYSTEMDIR/check_mail
+}
+
+[ "$Tiger_Check_CRYPTO" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_crypto || $SYSTEMDIR/check_crypto
+}
+
+[ "$Tiger_Check_INTEGRITY" != 'N' ] && {
+  skip_check $SYSTEMDIR/check_integrity || $SYSTEMDIR/check_integrity
 }
 
 [ "$Tiger_Check_UNITS" != 'N' ] && {

@@ -15,15 +15,17 @@
 #
 #     Please see the file `COPYING' for the complete copyright notice.
 #
-# check_databases: MySQL/MariaDB, PostgreSQL and Redis, from their
-#                 configuration files alone: no server is queried, so no
-#                 credentials are needed and an offline root reads the
-#                 same. Authentication disabled (dbs001f), LOAD DATA
-#                 LOCAL (dbs002w), secrets a stranger can read (dbs003f,
-#                 dbs007f, dbs010f), the server running as root (dbs004f),
-#                 trust authentication (dbs005f), md5 passwords (dbs006w),
-#                 unencrypted network connections (dbs008w), and Redis
-#                 open without a password (dbs009f).
+# check_databases: MySQL/MariaDB, PostgreSQL, Redis, MongoDB and
+#                 Oracle, from their configuration files alone: no server
+#                 is queried, so no credentials are needed and an offline
+#                 root reads the same. Authentication disabled (dbs001f,
+#                 dbs011f, dbs012w), LOAD DATA LOCAL (dbs002w), secrets a
+#                 stranger can read (dbs003f, dbs007f, dbs010f, dbs014f),
+#                 the server running as root (dbs004f), trust
+#                 authentication (dbs005f), md5 passwords (dbs006w),
+#                 unencrypted network connections (dbs008w, dbs013w), Redis
+#                 open without a password (dbs009f), Oracle pre-12c logons
+#                 (dbs015w) and no valid-node checking (dbs016w).
 #
 # 10/07/2026 atrimbitas - Initial version. Includes expand in place, so
 #                 the last value of a setting wins wherever it stands;
@@ -32,11 +34,16 @@
 #                 (Debian's snakeoil SSL, scram-sha-256 since PostgreSQL
 #                 14) are taken as sane. Relative includes resolve
 #                 against the file that names them, which is where the
-#                 packaged configurations keep them. MongoDB is not
-#                 covered.
+#                 packaged configurations keep them.
+# 10/09/2026 - MongoDB (mongod.conf: authorization is the exception,
+#                 it defaults to disabled) and Oracle (sqlnet.ora from
+#                 the oratab homes, then /u01 and /opt/oracle). DB2 is not
+#                 covered: its authentication settings live in the binary
+#                 database-manager configuration, not in flat files.
 #
 # References:
 #   mysqld(8), postgresql.conf(5), pg_hba.conf(5), redis-server(1)
+#   mongod.conf(5), sqlnet.ora
 #
 # Tigris: offline
 #
@@ -78,7 +85,7 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds AWK GREP SED SORT || exit 1
+  haveallcmds AWK FIND GREP SED SORT || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
 
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -87,7 +94,7 @@ done
 
 #------------------------------------------------------------------------
 
-haveallcmds AWK GREP SED SORT || exit 1
+haveallcmds AWK FIND GREP SED SORT || exit 1
 
 dblist=$WORKDIR/dblist.$$
 safe_temp $dblist
@@ -191,6 +198,28 @@ done
 rootls /etc/redis 2>/dev/null | while IFS= read -r c
 do
   case "$c" in *.conf) [ -f "`rootfile "$c"`" ] && echo "redis $c" >> $dblist ;; esac
+done
+[ -f "`rootfile /etc/mongod.conf`" ] && echo "mongo /etc/mongod.conf" >> $dblist
+# Oracle: the homes oratab names, then the usual bases
+oratab=`rootfile /etc/oratab`
+if [ -f "$oratab" ]; then
+  for h in `$AWK -F: '!/^#/ && NF >= 2 && $2 ~ /^\// { print $2 }' "$oratab" 2>/dev/null`
+  do
+    [ -f "`rootfile "$h/network/admin/sqlnet.ora"`" ] && echo "ora $h/network/admin/sqlnet.ora" >> $dblist
+  done
+fi
+for obase in /u01 /opt/oracle
+do
+  oh=`rootfile $obase`
+  [ -d "$oh" ] || continue
+  for ohp in `$FIND "$oh" -name sqlnet.ora -type f 2>/dev/null`
+  do
+    case "$ohp" in
+      "${TIGRIS_ROOT:-$Tiger_Sysctl_Root}"*) osp=${ohp#"${TIGRIS_ROOT:-$Tiger_Sysctl_Root}"} ;;
+      *) osp=$ohp ;;
+    esac
+    echo "ora $osp" >> $dblist
+  done
 done
 $SORT -u -o $dblist $dblist
 [ -s $dblist ] || { delete $dblist; exit 0; }
@@ -391,6 +420,97 @@ do
       why=`exposed "$pf" redis`
       [ -n "$why" ] && message FAIL dbs010f "" "The password in \`$pf' is $why."
     done
+  }
+done
+
+# MongoDB: every mongod.conf. What is not set is not judged, except
+# authorization: it defaults to disabled, so a mongod.conf that never
+# mentions it runs open.
+seen11= seen12= seen13= seen14=
+$GREP '^mongo ' $dblist | $SED 's/^mongo //' | while IFS= read -r conf
+do
+  $AWK '
+    /^[ \t]*#/ { next }
+    { line = $0; sub(/#.*/, "", line)
+      if (line ~ /authorization[ \t]*:/) { v = line; sub(/^[^:]*:[ \t]*/, "", v); gsub(/["'\'']/, "", v); gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (tolower(v) == "enabled") auth="enabled" }
+      else if (line ~ /keyFile[ \t]*:/) { v = line; sub(/^[^:]*:[ \t]*/, "", v); gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (v != "") auth="enabled" }
+      else if (line ~ /bindIpAll[ \t]*:/) { v = line; sub(/^[^:]*:[ \t]*/, "", v); gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (tolower(v) == "true") open="bindIpAll" }
+      else if (line ~ /bindIp[ \t]*:/) { v = line; sub(/^[^:]*:[ \t]*/, "", v)
+        n = split(v, addrs, ",")
+        for (i = 1; i <= n; i++) { a = addrs[i]; gsub(/["'\''][ \t]*/, "", a); gsub(/^[ \t]+|[ \t]+$/, "", a)
+          if (a != "" && a != "localhost" && a != "127.0.0.1" && a != "::1") open=(open == "" ? a : open "," a) } }
+      else if (line ~ /(tls|ssl)\.mode[ \t]*:/) { v = line; sub(/^[^:]*:[ \t]*/, "", v); gsub(/["'\'']/, "", v); gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (tolower(v) != "disabled") tls="on" }
+      else if (line ~ /dbPath[ \t]*:/) { v = line; sub(/^[^:]*:[ \t]*/, "", v); gsub(/["'\'']/, "", v); gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (v ~ /^\//) dbpath=v }
+    }
+    END { print "auth=" auth "\topen=" open "\ttls=" tls "\tdbpath=" dbpath }' "`rootfile "$conf"`" | {
+    auth= open= tls= dbpath=
+    IFS='	' read -r auth open tls dbpath
+    auth=${auth#auth=} open=${open#open=} tls=${tls#tls=} dbpath=${dbpath#dbpath=}
+    if [ -z "$auth" ]; then
+      if [ -n "$open" ]; then
+        case " $seen11 " in *" $conf "*) ;; *)
+          seen11="$seen11 $conf"
+          message FAIL dbs011f "" "MongoDB takes unauthenticated connections from the network (no authorization in $conf, bound to $open): anyone connecting has every privilege without a password." ;; esac
+      else
+        case " $seen12 " in *" $conf "*) ;; *)
+          seen12="$seen12 $conf"
+          message WARN dbs012w "" "MongoDB takes unauthenticated connections on its loopback socket (no authorization in $conf): any local user has every privilege without a password." ;; esac
+      fi
+    fi
+    if [ -n "$open" ] && [ -z "$tls" ]; then
+      case " $seen13 " in *" $conf "*) ;; *)
+        seen13="$seen13 $conf"
+        message WARN dbs013w "" "MongoDB takes unencrypted connections from the network (no TLS in $conf, bound to $open)." ;; esac
+    fi
+    case "$dbpath" in /*)
+      why=`exposed "$dbpath" mongodb`
+      # mongod is Red Hat's daemon group: its own access is legitimate
+      case "$why" in *\`mongod\'*) why= ;; esac
+      [ -n "$why" ] && {
+        case " $seen14 " in *" $dbpath "*) ;; *)
+          seen14="$seen14 $dbpath"
+          message FAIL dbs014f "" "MongoDB's data directory \`$dbpath' is $why: every collection can be copied." ;; esac
+      } ;;
+    esac
+  }
+done
+
+# Oracle: every sqlnet.ora. The last value of each parameter wins.
+seen15= seen16=
+$GREP '^ora ' $dblist | $SED 's/^ora //' | while IFS= read -r conf
+do
+  $AWK '
+    /^[ \t]*#/ { next }
+    { line = $0; sub(/#.*/, "", line)
+      if (line ~ /=/) { k = line; sub(/=.*/, "", k); v = line; sub(/^[^=]*=/, "", v)
+        gsub(/^[ \t()]+|[ \t()]+$/, "", k); gsub(/^[ \t()]+|[ \t()]+$/, "", v)
+        if (k != "") print tolower(k) "\t" v } }' "`rootfile "$conf"`" | {
+    logon= logonf= validnode=
+    while IFS='	' read -r k v
+    do
+      case "$k" in
+        sqlnet.allowed_logon_version_server) logon=$v; logonf=$conf ;;
+        tcp.validnode_checking) case "`printf '%s' "$v" | tr 'A-Z' 'a-z'`" in yes) validnode=Y ;; *) validnode= ;; esac ;;
+      esac
+    done
+    ver=`printf '%s' "$logon" | $SED 's/^[^0-9]*//; s/[^0-9].*//'`
+    case "$ver" in '') ;; *)
+      if [ "$ver" -lt 12 ]; then
+        case " $seen15 " in *" $conf "*) ;; *)
+          seen15="$seen15 $conf"
+          message WARN dbs015w "" "Oracle allows pre-12c logons ($logon in $logonf): their password verifiers fall to offline cracking. Raise SQLNET.ALLOWED_LOGON_VERSION_SERVER to 12." ;; esac
+      fi ;;
+    esac
+    [ -z "$validnode" ] && {
+      case " $seen16 " in *" $conf "*) ;; *)
+        seen16="$seen16 $conf"
+        message WARN dbs016w "" "Oracle checks no connecting address ($conf sets no TCP.VALIDNODE_CHECKING=yes): the listener answers any address. Name who may connect (TCP.VALIDNODE_CHECKING=yes with TCP.INVITED_NODES)." ;; esac
+    }
   }
 done
 

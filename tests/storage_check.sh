@@ -101,6 +101,15 @@ go hera "Tiger_Storage_NoUSB=Y"
 rm -f "$W/hera/etc/modprobe.d/usb.conf"; go hera
 [ "`count stor008w`" = 0 ] && ok "by default USB storage is not looked at" || { bad "usb default"; cat "$W/out"; }
 
+# FireWire storage, when the policy says none
+go hera "Tiger_Storage_NoFireWire=Y"
+has '--WARN-- [stor010w] FireWire can be used' && ok "Tiger_Storage_NoFireWire=Y, nothing blocks it: stor010w" || { bad "firewire"; cat "$W/out"; }
+printf 'blacklist firewire-core\nblacklist firewire-ohci\n' > "$W/hera/etc/modprobe.d/firewire.conf"
+go hera "Tiger_Storage_NoFireWire=Y"
+[ "`count stor010w`" = 0 ] && ok "FireWire blacklisted in modprobe.d: nothing" || { bad "firewire blocked"; cat "$W/out"; }
+rm -f "$W/hera/etc/modprobe.d/firewire.conf"; go hera
+[ "`count stor010w`" = 0 ] && ok "by default FireWire storage is not looked at" || { bad "firewire default"; cat "$W/out"; }
+
 # A container
 tree ctr <<'EOF'
 overlay / overlay rw,relatime,lowerdir=/x 0 0
@@ -115,7 +124,7 @@ go ctr
 # handler, usb-storage blacklisted.
 offline() {
   cp "$W/tigerrc.base" "$W/tigerrc" 2>/dev/null || true
-  { echo "Tiger_Show_INFO_Msgs=Y"; echo "Tiger_Storage_NoUSB=Y"; } >> "$W/tigerrc"
+  { echo "Tiger_Show_INFO_Msgs=Y"; echo "Tiger_Storage_NoUSB=Y"; echo "Tiger_Storage_NoFireWire=Y"; } >> "$W/tigerrc"
   ( cd "$W" && TIGRIS_ROOT=$1 TIGERHOMEDIR=$W sh ./systems/Linux/2/check_storage ) 2>&1 < /dev/null |
     awk '/^--/ { if (l != "") print l; l = $0; next } /^ / { sub(/^ +/, " "); l = l $0; next } { if (l != "") print l; l = "" } END { if (l != "") print l }' |
     tr -s ' ' | grep '^--' | grep -v '^--CONFIG--' > "$W/out"
@@ -136,6 +145,7 @@ printf '[Mount]\nWhat=tmpfs\nWhere=/tmp\nType=tmpfs\nOptions=mode=1777,strictati
 ln -s ../tmp.mount "$B/usr/lib/systemd/system/local-fs.target.wants/tmp.mount"
 echo 'kernel.core_pattern=|/usr/lib/systemd/systemd-coredump %P %u %g %s %t' > "$B/etc/sysctl.d/50-coredump.conf"
 echo 'blacklist usb-storage' > "$B/etc/modprobe.d/usb.conf"
+printf 'blacklist firewire-core\nblacklist firewire-ohci\n' > "$B/etc/modprobe.d/firewire.conf"
 
 offline "$A"
 has '[stor001w] /tmp is mounted without nodev' && ok "offline root: /tmp in fstab without nodev: stor001w" || { bad "offline stor001w"; cat "$W/out"; }
@@ -143,13 +153,78 @@ has '[stor009i] /etc/crypttab names no encrypted device' && ok "offline root: no
 has "[stor007w] A program that crashes" && has "the kernel's default: nothing in its sysctl.d sets it" &&
   ok "offline root: core_pattern unset (the kernel's core) and no limit: stor007w" || { bad "offline stor007w"; cat "$W/out"; }
 has '[stor008w]' && ok "offline root: usb-storage not blacklisted, with the policy on: stor008w" || { bad "offline stor008w"; cat "$W/out"; }
+has '[stor010w]' && ok "offline root: FireWire not blacklisted, with the policy on: stor010w" || { bad "offline stor010w"; cat "$W/out"; }
 
 offline "$B"
 [ "`count 'stor001w'`" = 0 ] && has "[stor002i] /tmp is mounted without noexec" && has "by systemd's tmp.mount" &&
   ok "offline root: /tmp from tmp.mount, nosuid and nodev: only stor002i" || { bad "offline tmp.mount"; cat "$W/out"; }
 has '[stor006w]' && has 'Swap: /dev/sda3' && [ "`count 'cswap'`" = 0 ] &&
   ok "offline root: a swap partition outside crypttab: stor006w; the crypttab one is fine" || { bad "offline stor006w"; cat "$W/out"; }
-[ "`count stor007w`" = 0 ] && [ "`count stor008w`" = 0 ] && [ "`count stor009i`" = 0 ] && ok "offline root: a core handler, usb-storage blacklisted, a crypttab: nothing" || { bad "offline B"; cat "$W/out"; }
+[ "`count stor007w`" = 0 ] && [ "`count stor008w`" = 0 ] && [ "`count stor009i`" = 0 ] && [ "`count stor010w`" = 0 ] && ok "offline root: a core handler, USB and FireWire blacklisted, a crypttab: nothing" || { bad "offline B"; cat "$W/out"; }
+
+# Second phase: LVM metadata, ACLs past the mode, the locate database
+L=$W/second
+mkdir -p "$L/etc/lvm/backup" "$L/etc" "$L/var/lib/mlocate"
+cat > "$L/etc/lvm/backup/vg0" <<'EOF'
+contents = "Text Format Volume Group"
+version = 1
+description = "created by test"
+vg0 {
+	id = "abc123"
+	physical_volumes {
+		pv0 {
+			id = "def456"
+		}
+	}
+	logical_volumes {
+		root {
+			id = "ghi789"
+		}
+		swap {
+			id = "jkl012"
+		}
+	}
+}
+EOF
+printf 'root:!:1:0:::::\n' > "$L/etc/shadow"
+chmod 600 "$L/etc/shadow"
+printf 'mlocate-bytes' > "$L/var/lib/mlocate/mlocate.db"
+chmod 644 "$L/var/lib/mlocate/mlocate.db"
+offline "$L"
+has '[stor011i] LVM volume group vg0 holds logical volumes root, swap.' && ok "LVM metadata: stor011i names the group and its volumes" || { bad "lvm"; cat "$W/out"; }
+has '[stor013w]' && has '`/var/lib/mlocate/mlocate.db'"'"' is readable by anyone' "$W/out" &&
+  ok "a world-readable locate database: stor013w" || { bad "locate"; cat "$W/out"; }
+! grep -q 'stor012w' "$W/out" &&
+  ok "no ACLs on the fixtures: no stor012w" || { bad "acl quiet"; cat "$W/out"; }
+
+# A getfacl that reports an extra entry on shadow, bare modes else
+mkdir -p "$W/fakebin"
+cat > "$W/fakebin/getfacl" <<'EOF'
+#!/bin/sh
+eval "f=\${$#}"
+case "$f" in
+  *shadow) printf '# file: shadow\n# owner: root\n# group: shadow\nuser::r--\nuser:adm:r--\ngroup::r--\nmask::r--\nother::---\n' ;;
+  *) printf '# file: other\n# owner: root\n# group: root\nuser::rw-\ngroup::r--\nother::r--\n' ;;
+esac
+EOF
+chmod 755 "$W/fakebin/getfacl"
+cp "$W/tigerrc.base" "$W/tigerrc"
+{ echo "Tiger_Show_INFO_Msgs=Y"; echo "Tiger_Storage_NoUSB=Y"; echo "Tiger_Storage_NoFireWire=Y"; echo "Tiger_Getfacl='$W/fakebin/getfacl'"; } >> "$W/tigerrc"
+( cd "$W" && TIGRIS_ROOT="$L" TIGERHOMEDIR=$W sh ./systems/Linux/2/check_storage ) 2>&1 < /dev/null |
+  awk '/^--/ { if (l != "") print l; l = $0; next } /^ / { sub(/^ +/, " "); l = l $0; next } { if (l != "") print l; l = "" } END { if (l != "") print l }' |
+  tr -s ' ' | grep '^--' | grep -v '^--CONFIG--' > "$W/out"
+has '[stor012w]' && has '`/etc/shadow'"'"' grants user:adm:r-- beyond its mode' "$W/out" &&
+  ok "an ACL past the mode: stor012w names file and entry" || { bad "acl"; cat "$W/out"; }
+
+T=$W/tight2
+mkdir -p "$T/etc" "$T/var/lib/mlocate"
+printf 'root:!:1:0:::::\n' > "$T/etc/shadow"
+chmod 600 "$T/etc/shadow"
+printf 'mlocate-bytes' > "$T/var/lib/mlocate/mlocate.db"
+chmod 600 "$T/var/lib/mlocate/mlocate.db"
+offline "$T"
+! grep -q 'stor011i\|stor012w\|stor013w' "$W/out" &&
+  ok "no LVM, no ACLs, a guarded database: nothing" || { bad "tight2"; cat "$W/out"; }
 
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

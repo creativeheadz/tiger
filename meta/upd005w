@@ -1,0 +1,10 @@
+Id: upd005w
+Severity: WARN
+Category: packages
+Check: check_updates
+Controls: CIS 7.3, 7.4; NIST SI-2; ISO 8.8; CE Security update management
+
+A package repository installs unsigned packages: gpgcheck is off for
+it, or for [main] which it inherits. A compromised mirror can then
+serve trojaned packages, and they install as root. Signatures are the
+only thing standing between a mirror and root on the machine.

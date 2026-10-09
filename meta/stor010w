@@ -1,0 +1,12 @@
+Id: stor010w
+Severity: WARN
+Category: filesystem
+Check: check_storage
+References: modprobe.d(5)
+Controls: NIST MP-7; ISO 7.10
+
+FireWire can be used, and the policy is to have none. A device on a
+FireWire bus reads and writes memory directly, no operating system
+in the way: whoever plugs one in owns the machine. Blacklist the
+stack (firewire-core, firewire-ohci and the legacy ohci1394) where
+nothing on the bus is needed.

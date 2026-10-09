@@ -1,0 +1,10 @@
+Id: ldap001w
+Severity: WARN
+Category: accounts
+Check: check_ldap
+References: slapd.conf(5), ldap.conf(5)
+
+An LDAP config file holds a credential and anyone can read it: a
+client's bind password, or the directory manager's password. Whoever
+copies it binds as the service, or owns the directory. Leave such
+files readable by root alone.

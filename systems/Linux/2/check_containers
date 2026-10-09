@@ -132,6 +132,26 @@ do
 done
 
 #
+# The daemon's own configuration: what dockerd reads at startup must be
+# root's to change, or whoever may change it commands the daemon
+#
+for f in /etc/docker /etc/docker/daemon.json
+do
+  [ -e "$root$f" ] || continue
+  set -- `$LS -lnd "$root$f" 2>/dev/null`
+  mode=$1 owner=$3
+  case "$mode" in
+    ????????w*)
+      message WARN cont011w "'chmod o-w $f' (directories 755, files 644)." "\`$f' is writable by everyone ($mode): anyone on the system can change what the daemon reads at startup."
+      ;;
+  esac
+  case "$owner" in
+    0) ;;
+    *) message WARN cont012w "'chown root $f'." "\`$f' is owned by $owner, not root: whoever they are controls the daemon's configuration, and so the daemon." ;;
+  esac
+done
+
+#
 # The Docker API on TCP: without TLS, root for anyone who reaches the port
 #
 tcp= tls=

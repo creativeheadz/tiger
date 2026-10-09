@@ -1,0 +1,8 @@
+Id: cry002w
+Severity: WARN
+Category: services
+Check: check_crypto
+
+A private key is readable by strangers: whoever copies it
+decrypts and impersonates. Leave keys readable by root alone
+(the ssl-cert group excepted, which reads keys by design).

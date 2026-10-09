@@ -1,0 +1,11 @@
+Id: dbs011f
+Severity: FAIL
+Category: services
+Check: check_databases
+References: mongod.conf(5)
+
+MongoDB takes unauthenticated connections from the network: no
+authorization is configured, and it listens past localhost.
+Anyone connecting has every privilege without a password. Enable
+authorization and bind it to localhost where the network need not
+reach it.

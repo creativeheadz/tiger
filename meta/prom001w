@@ -1,0 +1,11 @@
+Id: prom001w
+Severity: WARN
+Category: network
+Check: check_promisc
+Fix: Take the interface out of promiscuous mode ('ip link set NAME promisc off').
+References: ip-link(8)
+
+An interface is in promiscuous mode: it hands all its traffic to
+whoever listens, credentials and sessions among it. Bridges, VM hosts
+and packet captures need it; anything else with the flag set means a
+sniffer may be running, or one was and never cleaned up.

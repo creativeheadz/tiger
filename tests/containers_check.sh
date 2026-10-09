@@ -79,8 +79,30 @@ printf 'dockerd\000-H\000fd://\000' > "$r/proc/100/cmdline"
 printf 'Name:\tdockerd\nUid:\t1000\t1000\t1000\t1000\n' > "$r/proc/100/status"; go
 [ "`count cont009i`" = 0 ] && ok "a dockerd running as a user (rootless): no cont009i" || { bad "rootless"; cat "$W/out"; }
 
-rm -f "$r/run/docker.sock"; rm -rf "$r/proc/100"; go
-[ "`count .`" = 0 ] && ok "no socket, no engine: nothing said" || { bad "none"; cat "$W/out"; }
+rm -f "$r/run/docker.sock"; rm -rf "$r/proc/100" "$r/etc/docker"; go
+[ "`count .`" = 0 ] && ok "no socket, no engine, no config: nothing said" || { bad "none"; cat "$W/out"; }
+
+# the daemon's own configuration: writable by everyone, owned by another
+# (a socket must exist or the check has nothing to judge and stays silent)
+mkdir -p "$r/etc/docker" "$r/run"
+: > "$r/run/docker.sock"; chmod 660 "$r/run/docker.sock"
+printf '{ "hosts": ["unix:///var/run/docker.sock"] }\n' > "$r/etc/docker/daemon.json"
+chmod 777 "$r/etc/docker"; chmod 666 "$r/etc/docker/daemon.json"
+[ "`id -u`" = 0 ] && chown 4242:4242 "$r/etc/docker" "$r/etc/docker/daemon.json"
+go
+[ "`count cont011w`" = 2 ] && has "/etc/docker' is writable by everyone" && has "/etc/docker/daemon.json' is writable by everyone" &&
+  ok "directory and file world-writable: cont011w for each" || { bad "writable"; cat "$W/out"; }
+[ "`count cont012w`" = 2 ] && has "/etc/docker' is owned by" && has "/etc/docker/daemon.json' is owned by" &&
+  ok "both owned by another: cont012w for each" || { bad "owned"; cat "$W/out"; }
+chmod 755 "$r/etc/docker"; chmod 644 "$r/etc/docker/daemon.json"
+[ "`id -u`" = 0 ] && chown 0:0 "$r/etc/docker" "$r/etc/docker/daemon.json"
+go
+[ "`count cont011w`" = 0 ] && ok "proper modes: no cont011w" || { bad "modes clean"; cat "$W/out"; }
+if [ "`id -u`" = 0 ]; then
+  [ "`count cont012w`" = 0 ] && ok "root-owned config: silent" || { bad "root clean"; cat "$W/out"; }
+else
+  [ "`count cont012w`" = 2 ] && ok "user-owned config still reported: cont012w" || { bad "user owned"; cat "$W/out"; }
+fi
 
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail
