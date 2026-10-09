@@ -3,10 +3,11 @@
 # tests/hostinfo_check.sh - gethostinfo against uname stubs
 #
 # FreeBSD, OpenBSD and NetBSD must resolve to their kernel names
-# (nothing else in the tree knows them yet); Linux keeps its
-# shortcut and Darwin keeps MacOSX, so the override changes
-# nothing for them. gethostinfo needs a WORKDIR for its probe
-# file. Same output as a user and as root.
+# (nothing else in the tree knows them yet); SunOS passes through
+# the old branch the same way. Linux keeps its shortcut and Darwin
+# keeps MacOSX, so the override changes nothing for them.
+# gethostinfo needs a WORKDIR for its probe file. Same output as
+# a user and as root.
 #
 TIGER=${TIGER:-`cd "\`dirname \"$0\"\`/.." && pwd`}
 W=`mktemp -d`
@@ -24,6 +25,8 @@ probe() {  # probe STUB: gethostinfo with the uname stub
   ok "OpenBSD resolves" || bad "openbsd: `probe openbsd`"
 [ "`probe netbsd`" = "NetBSD 10.0 amd64" ] &&
   ok "NetBSD resolves" || bad "netbsd: `probe netbsd`"
+[ "`probe sunos`" = "SunOS 5.11 i86pc" ] &&
+  ok "SunOS resolves" || bad "sunos: `probe sunos`"
 case "`probe darwin`" in
   'MacOSX 23.1.0 '*) ok "Darwin still MacOSX" ;;
   *) bad "darwin: `probe darwin`" ;;

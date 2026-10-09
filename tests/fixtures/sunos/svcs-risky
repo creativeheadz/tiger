@@ -1,0 +1,7 @@
+#!/bin/sh
+# svcs -a with telnet and finger online
+echo "online         10:00:00 svc:/network/telnet:default"
+echo "online         10:00:01 svc:/network/ssh:default"
+echo "online         10:00:02 svc:/network/finger:default"
+echo "disabled       10:00:03 svc:/network/ftp:default"
+echo "legacy_run     10:00:04 lrc:/etc/rc2_d/S47pppd"

@@ -1,0 +1,6 @@
+#!/bin/sh
+# uname on Solaris 11.4 (x86)
+case "$1" in
+  -s) echo "SunOS" ;;
+  -a) echo "SunOS h 5.11 11.4.42.111.1 i86pc i386 i86pc" ;;
+esac

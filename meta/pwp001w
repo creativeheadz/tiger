@@ -1,0 +1,10 @@
+Id: pwp001w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
+
+Passwords never expire: MAXWEEKS is unset in
+/etc/default/passwd, so a stolen password works until someone
+notices. Give passwords a lifetime (MAXWEEKS=13 is thirteen
+weeks).

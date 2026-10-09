@@ -1,0 +1,103 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_services: what SMF runs, on this Solaris machine. Services
+#             that speak cleartext or trust the network (telnet,
+#             ftp, finger, rlogin, rsh) have no place online: each
+#             one gets svc001w. The list reads `svcs -a', live
+#             state, so an offline root has nothing to read and the
+#             check stays silent there. Only the online state is
+#             judged: anything else is not serving.
+#
+# 10/09/2026 - Initial version. Tiger_Svcs_Cmd points at another
+#             svcs, for the tests.
+#
+# References:
+#   svcs(1), smf(7)
+#
+# Tigris: live system
+#   Under --root it is skipped: service states are the running
+#   machine's, never a root's.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# Under --root there is nothing to read: service states are live
+[ -n "$TIGRIS_ROOT" ] && exit 0
+
+echo
+echo "# Checking SMF services..."
+
+svcs=${Tiger_Svcs_Cmd:-svcs}
+$svcs -a 2>/dev/null | $AWK '
+$1 == "online" {
+  fmri = $NF
+  sub(/:default$/, "", fmri); sub(/.*\//, "", fmri)
+  if (fmri == "telnet" || fmri == "ftp" || fmri == "finger" || fmri == "login" || fmri == "shell")
+    print fmri
+}' | sort -u | while read -r service
+do
+  [ -n "$service" ] || continue
+  message WARN svc001w "Turn the \`$service' service off (svcadm disable $service), or remove it." "SMF runs \`$service': cleartext or trust-based logins hand the machine to anyone listening."
+done
+
+exit 0

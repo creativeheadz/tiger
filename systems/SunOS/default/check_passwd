@@ -1,0 +1,156 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_passwd: who Solaris knows, and whether any of them is wrong.
+#             The users live in /etc/passwd and /etc/shadow, read
+#             through rootfile off an audited root; the roles in
+#             /etc/user_attr. The judgments are the portable check's:
+#             another uid 0 besides root (pass017w), a name or a uid
+#             twice (pass001w, pass002w). Solaris adds one of its own:
+#             root must be a role, not a login (rol001w). The
+#             password policy in /etc/default/passwd is judged too:
+#             no MAXWEEKS means passwords never age (pwp001w), and a
+#             PASSLENGTH under 8 is too short (pwp002w). Shell
+#             validity is deliberately not judged: Solaris ships no
+#             /etc/shells to judge against.
+#
+# 10/09/2026 - Initial version.
+#
+# References:
+#   passwd(5), shadow(5), user_attr(5)
+#
+# Tigris: offline
+#   the root's passwd, shadow and user_attr.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK CAT || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK CAT || exit 1
+
+# users_of: one `name:uid' line per account in the root's passwd
+users_of()
+{
+  $CAT "`rootfile /etc/passwd`" 2>/dev/null | $AWK -F: '
+  NF < 7 || $1 ~ /^[ \t]*#/ { next }
+  { print $1 ":" $3 }'
+}
+
+echo
+echo "# Checking users..."
+
+passwd=`rootfile /etc/passwd`
+[ -f "$passwd" ] || exit 0
+
+users=`users_of`
+[ -n "$users" ] || exit 0
+
+printf '%s' "$users" | $AWK -F: '
+{
+  name[NR] = $1; uid[NR] = $2; n = NR
+  if ($1 != "") names[$1]++
+  if ($2 != "") uids[$2]++
+}
+END {
+  for (i = 1; i <= n; i++) {
+    if (uid[i] == 0 && name[i] != "root")
+      print "pass017w", name[i]
+    if (names[name[i]] > 1)
+      print "pass001w", name[i]
+    if (uid[i] != "" && uids[uid[i]] > 1)
+      print "pass002w", uid[i]
+  }
+}' | sort -u | while read -r id who
+do
+  case "$id" in
+    pass017w) message WARN pass017w "" "Login ID $who has uid == 0." ;;
+    pass001w) message WARN pass001w "" "Username \`$who' exists multiple times." ;;
+    pass002w) message WARN pass002w "" "UID $who exists multiple times." ;;
+  esac
+done
+
+# root must be a role: user_attr's root entry carries type=role
+# among its ;-separated attributes. A case pattern, not a regex:
+# this check runs on Solaris grep one day, which has no \|.
+attr=`rootfile /etc/user_attr`
+if [ -f "$attr" ]; then
+  role=`$AWK -F: '$1 == "root" { print $5 }' "$attr" 2>/dev/null`
+  case ";$role;" in *';type=role;'*) : ;; *)
+    message WARN rol001w "" "root logs in as a plain user instead of a role: whoever gets its password gets an interactive root session." ;;
+  esac
+fi
+
+# The password policy: /etc/default files are shell-sourced, so the
+# last assignment wins. No MAXWEEKS means passwords never expire;
+# a PASSLENGTH under 8 is too short. An absent PASSLENGTH is not
+# judged: the default is the vendor's choice, not the admin's.
+policy=`rootfile /etc/default/passwd`
+if [ -f "$policy" ]; then
+  val() { $AWK -F= -v k="$1" '
+    $1 ~ "^[ \t]*" k "$" { v = $2 }
+    END { sub(/[ \t]*#.*$/, "", v); gsub(/[ \t]/, "", v); print v }' "$policy" 2>/dev/null; }
+  maxweeks=`val MAXWEEKS`
+  passlength=`val PASSLENGTH`
+  [ -n "$maxweeks" ] || message WARN pwp001w "Give passwords a lifetime in /etc/default/passwd (MAXWEEKS=13 is thirteen weeks)." "Passwords never expire: a stolen one works until someone notices."
+  case "$passlength" in ''|*[!0-9]*) : ;;
+    *) [ "$passlength" -ge 8 ] || message WARN pwp002w "Ask for longer passwords in /etc/default/passwd (PASSLENGTH=14)." "Passwords may be $passlength characters: short enough to guess." ;;
+  esac
+fi
+
+exit 0

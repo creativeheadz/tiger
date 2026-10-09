@@ -1,0 +1,5 @@
+#!/bin/sh
+# ipfstat -io on a filtered Solaris box
+echo "pass in quick on lo0 all"
+echo "block in all"
+echo "pass out all keep state"

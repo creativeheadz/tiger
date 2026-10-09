@@ -1,0 +1,11 @@
+Id: rol001w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
+
+root is a plain user when it should be a role: anyone
+compromising its password gets an interactive login as root
+instead of having to assume the role. Make root a role
+(`usermod -K type=role root`) and give administrators their
+own accounts with the root role assigned.

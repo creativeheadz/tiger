@@ -1,0 +1,75 @@
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# SunOS/default/config - 10/09/2026
+#     Version-independent Solaris configuration. Every Solaris 11.4
+#     release resolves here until a behavior split earns a version
+#     tree (see doc/solaris-strategy.md). Only portable tools are
+#     located: anything Linux-shaped (iptables, /proc) lives in the
+#     Linux configs, and the checks that need it do not ship here.
+#
+#-----------------------------------------------------------------------------
+
+TESTEXEC=-x     # findcmd tests with it, as in the Linux configs
+
+UUID=`id -u`
+USERNAME=`whoami`
+# This will work in most shells
+[ "$UUID" = "" ] && UUID=$UID
+[ "$USERNAME" = "" ] && USERNAME=$USER
+export UUID
+
+[ "$USERNAME" != "root" ] && {
+  echo " " 1>&2
+  echo "This script should be run from a super-user account." 1>&2
+  echo " " 1>&2
+}
+
+findcmd()
+{
+  CMD=$1
+
+  SRCH=/bin:/usr/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin
+
+  SAVEIFS=$IFS
+  IFS=:
+  set $SRCH
+  IFS=$SAVEIFS
+  for dir
+  do
+    test $TESTEXEC $dir/$CMD && {
+      echo $dir/$CMD
+      return
+    }
+  done
+}
+
+AWK=`findcmd awk`
+CAT=`findcmd cat`
+CUT=`findcmd cut`
+FIND=`findcmd find`
+GREP=`findcmd grep`
+LS=`findcmd ls`
+SED=`findcmd sed`
+SORT=`findcmd sort`
+TR=`findcmd tr`
+# delete() in initdefs removes the checks' temp files through it
+RM=`findcmd rm`
+
+# The checks run as children of the configured shell: export what
+# they need, as the Linux configs do, or they see nothing
+export TESTEXEC
+export AWK CAT CUT FIND GREP LS SED SORT TR RM

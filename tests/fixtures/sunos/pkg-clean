@@ -1,0 +1,3 @@
+#!/bin/sh
+# pkg verify on a clean image: no output
+exit 0

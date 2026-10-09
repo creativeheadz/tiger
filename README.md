@@ -340,6 +340,16 @@ were retired after that release; they are in the git history under the tag
 everyone who built TIGER. The original [README](README) and [USING](USING)
 still describe the internals accurately.
 
+Solaris 11.4 is being worked (see [doc/solaris-strategy.md](doc/solaris-strategy.md)):
+it still runs real estates, and Solaris for x86 virtualizes, so its
+checks grow against fixtures and a local QEMU VM. AIX is the harder
+case: actively maintained on POWER, but it needs POWER hardware or
+cloud time that no free CI runner offers, and nobody here runs it.
+If you run AIX and can lend a machine or maintain its checks, that
+unlocks the rest of Phase D (see [ROADMAP.md](ROADMAP.md)); until
+then its groups stay explicitly uncovered rather than silently
+missing.
+
 <p align="center">
   <img src="art/tiger-full.png" width="192" alt="A pixel-art tiger's face, front view, fully lit">
 </p>

@@ -1,0 +1,9 @@
+Id: pwp002w
+Severity: WARN
+Category: accounts
+Check: check_passwd
+Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
+
+Passwords may be short: PASSLENGTH in /etc/default/passwd is
+under 8, short enough to guess. Ask for longer passwords
+(PASSLENGTH=14).

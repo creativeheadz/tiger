@@ -1,0 +1,4 @@
+#!/bin/sh
+# pkg verify with two files failing their manifests
+echo "etc/ssh/sshd_config file cksum <NA> 12345"
+echo "usr/bin/su file cksum <NA> 67890"

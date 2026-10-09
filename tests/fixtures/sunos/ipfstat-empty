@@ -1,0 +1,3 @@
+#!/bin/sh
+# ipfstat -io with nothing loaded: no output, status 0
+exit 0

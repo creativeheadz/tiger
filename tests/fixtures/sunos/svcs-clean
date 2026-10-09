@@ -1,0 +1,5 @@
+#!/bin/sh
+# svcs -a with nothing risky online
+echo "online         10:00:01 svc:/network/ssh:default"
+echo "online         10:00:05 svc:/system/filesystem/local:default"
+echo "disabled       10:00:03 svc:/network/ftp:default"

@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# check_firewall: is incoming traffic filtered, on this Solaris
+#             machine. IP Filter (`ipfstat -io') is the answer: an
+#             empty active ruleset means nothing filters, and that is
+#             what fire001w and fire002w mean elsewhere. The tool
+#             reads the running ruleset, never loading anything, so
+#             an offline root has nothing to read and the check stays
+#             silent there. Whether the ipfilter SMF service is
+#             enabled is the services check's business, not this file's.
+#
+# 10/09/2026 - Initial version. Tiger_Ipfstat_Cmd points at another
+#             ipfstat, for the tests.
+#
+# References:
+#   ipfstat(8), ipf(5)
+#
+# Tigris: live system
+#   Under --root it is skipped: the ruleset is the running
+#   machine's, never a root's.
+#
+#-----------------------------------------------------------------------------
+#
+TigerInstallDir='.'
+
+#
+# Set default base directory.
+# Order or preference:
+#      -B option
+#      TIGERHOMEDIR environment variable
+#      TigerInstallDir installed location
+#
+basedir=${TIGERHOMEDIR:=$TigerInstallDir}
+
+for parm
+do
+   case $parm in
+   -B) basedir=$2; break;;
+   esac
+done
+
+#
+# Verify that a config file exists there, and if it does
+# source it.
+#
+[ ! -r $basedir/config ] && {
+  echo "--ERROR-- [init002e] No 'config' file in \`$basedir'."
+  exit 1
+}
+
+. $basedir/config
+
+. $BASEDIR/initdefs
+#
+# If run in test mode (-t) this will verify that all required
+# elements are set.
+#
+[ "$Tiger_TESTMODE" = 'Y' ] && {
+  haveallcmds AWK || exit 1
+  haveallfiles BASEDIR WORKDIR || exit 1
+
+  echo "--CONFIG-- [init003c] $0: Configuration ok..."
+  exit 0
+}
+
+#------------------------------------------------------------------------
+
+haveallcmds AWK || exit 1
+
+# Under --root there is nothing to read: the ruleset is live state
+[ -n "$TIGRIS_ROOT" ] && exit 0
+
+echo
+echo "# Checking the packet filter..."
+
+ipfstat=${Tiger_Ipfstat_Cmd:-ipfstat}
+rules=`$ipfstat -io 2>/dev/null | $AWK 'NF { n++ } END { print n + 0 }'`
+[ "$rules" -gt 0 ] && exit 0
+
+message WARN fire001w "Filter incoming traffic (enable the ipfilter service and load a ruleset with ipf)." "Nothing filters: IP Filter holds no active rules, so incoming IPv4 traffic nothing accepts still gets in."
+message WARN fire002w "Filter incoming traffic (enable the ipfilter service and load a ruleset with ipf)." "Nothing filters: IP Filter holds no active rules, so incoming IPv6 traffic nothing accepts still gets in."
+
+exit 0
