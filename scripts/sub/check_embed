@@ -169,7 +169,7 @@ do
   $SORT -u |
   while read file
   do
-    herefile=`__here "$file"`
+    __hereto herefile "$file"
     [ -r "$herefile" ] && {
       $STRINGS - "$herefile" |
       $SED -e 's/#.*$//' -e '/^$/d' |
@@ -199,7 +199,7 @@ do
   $COMM -23 - $record |
   while read pathname
   do
-    herepath=`__here "$pathname"`
+    __hereto herepath "$pathname"
     if [ -b "$herepath" -o -c "$herepath" -o -p "$herepath" ]; then
       : # Don't process these
     elif [ -d "$herepath" -a $info = 'Y' ]; then
@@ -269,7 +269,7 @@ $AWK '
 ' |
 while read pathname source
 do
-  herepath=`__here "$pathname"`
+  __hereto herepath "$pathname"
   if [ -d "$herepath" ]; then
     check_file 'INFO' root "$pathname" "$source"
   elif [ -f "$herepath" ]; then

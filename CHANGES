@@ -1,6 +1,144 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
+Changes (v 3.7.0)
+--------------------
+
+The offline audit is complete: the sixteen of TIGER's original checks
+that still needed a running system in 3.6.0 read an image now, so
+tigris --root reports an image as fully as a running system. The
+ten checks that cannot (they read the processes, the kernel's
+ruleset, the firmware, the running binaries) say "live system", and
+nothing says "not offline yet" any more. Tigris ships as packages: a
+.deb, an .rpm and an .apk, built and tested in CI and attached to
+every release, a COPR for Fedora and Enterprise Linux
+(creativeheadz/tigris), and a PKGBUILD for the AUR. The progress lines
+carry seconds, and on a terminal a spinner shows the check that is
+running.
+
+On the reference machine (Linux Mint 22.3, kernel 7.0), as root: a full
+run takes 2:00 (104 s user, 85 s system) and writes 334 lines (13 FAIL,
+64 WARN); the quick profile takes 1:03 (62 s, 38 s), 291 lines (13 FAIL,
+48 WARN). Peak memory is 131 MB in both, apt-get mapping its cache as
+before. A browser was open during these runs; 3.6.0 measured the same
+morning gave the same numbers within two seconds. An offline audit of a
+Debian 13 image with systemd and sshd takes 12 seconds and peaks at
+8 MB: the image was exported from a container, so no package cache is
+mapped, and 3.6.0 audited it in 6 seconds, before the 16 checks that
+read it now.
+
+Changes you will see
+
+- tigris --root: every check reads the image except the ten that
+  need the running system (auditd, containers, the firewall, listening
+  ports, AppArmor or SELinux, NTP, rootkits, Secure Boot, systemd's
+  sandboxing and time synchronisation), which are skipped saying so.
+- Packages with every release: tigris_VERSION-1_amd64.deb,
+  tigris-VERSION-1.fcNN.x86_64.rpm, tigris-VERSION-r0.apk with
+  tigris-doc. "dnf copr enable creativeheadz/tigris" on Fedora 43 and
+  44 and EPEL 9 and 10. They install as tigris beside the
+  distribution's tiger, with no file in common: tigris, tigris-diff and
+  tigris-accept on the path, the library in /usr/lib/tigris, the
+  configuration in /etc/tigris, reports in /var/log/tigris.
+- Seconds in the progress lines; on a terminal, a spinner.
+- An installed tigris runs -E and --since: tigexp and tigris-diff were
+  missing beside the installed library ("tigexp: not found", exit 2).
+- A system without the hostname tool (a minimal Fedora container) runs,
+  with uname -n; it died with init007e.
+- check_release can report osv001f (a Red Hat letter release), and
+  compares the minor version it meant to on RHEL 5, 6 and 7 and Ubuntu
+  14, 15 and 17.
+- check_neverlogin reports acc024f again, an account with a valid shell
+  that never logged in, with or without a password: the shared password
+  sets strip the hashes it measured, so it never fired.
+- check_known: the findings after the lost+found pass are in the JSON
+  again (it changed into lost+found, which moved message()'s relative
+  writes into the directory being scanned), live as well as offline.
+- check_perms: a "." in the permission database's setuid or setgid
+  column means the bit is not checked, as it does for every other
+  column (every setuid or setgid file a wildcard entry matched was an
+  ALERT, which only showed offline, where the wildcard matched more
+  than its first file); a reported file no longer makes the entries
+  after it compare against the wrong name (a listed file was then
+  skipped as already listed); and under --root a wildcard entry
+  (/bin/*) names the image's files, not this host's. The wildcard
+  entries still check only their first match, as they always have.
+
+- Offline audit, the rest. Under --root, check_umask and check_rcumask
+  read the root's login.defs, PAM stack, shell start-up files, shells
+  and rc files; check_lilo and check_single its boot loader
+  configuration and inittab (the x86 gates apply only live, since the
+  root's architecture is not this host's); check_services and
+  check_aliases its services file and aliases, includes followed
+  inside the root; check_perms, check_devices and check_logfiles test
+  every file inside the root while the messages keep the system's own
+  paths (the disk-device leg of check_perms reads this host's mount
+  table and stays live); check_exports its exports and bootparams,
+  with the root's hostname as the default host and NIS never asked;
+  check_release its os-release, lsb-release as the fallback (live
+  still asks lsb_release); check_known its shells, inetd entries,
+  trojan paths, socket directories, login strings and mail spool, with
+  lost+found looked for on / and the top-level directories off its
+  mount table (the promiscuous-interface and setuid probes stay live);
+  check_embedded runs strings on the root's binaries and expands its
+  seed globs inside the root; check_neverlogin reads the root's
+  lastlog database directly (with od, sparse holes reading as zeros,
+  the record size worked out from the file). check_ntp and
+  check_rootkit have no honest offline form, one needs a daemon
+  serving time and the other tests the running system's own binaries,
+  and say "live system". Each conversion has a fixture suite, run as a
+  user and as root under mawk, gawk and busybox awk; one found
+  check_known's lost+found leg dying under busybox find, which has no
+  -fprintf (kis004w came out with the fallback text). The live run
+  costs what it did: the conversions resolve paths through a helper
+  that forks only under --root (check_embedded asks thousands of
+  times), and offline getpermit resolves a call's paths in one pass
+  (check_perms took 25 seconds on a small image, now under a second).
+
+- Packages. packaging/stage.sh reshapes a make install tree into the
+  distribution layout: tigris, tigris-diff and tigris-accept in sbin
+  (/usr/bin where sbin is merged), the library in /usr/lib/tigris
+  (/usr/lib64 on 64-bit rpms), /etc/tigris, /var/lib/tigris and
+  /var/log/tigris, with the explain, log-directory and accepted-file
+  defaults rewritten to match; every rewrite asserts its source text,
+  so a source change that moves one fails the build. The undispatched
+  Perl check_network is dropped, so the package needs nothing beyond
+  libc. mkdeb.sh, mkrpm.sh (--srpm for COPR) and mkapk.sh build from
+  the working tree; packaging/ci.sh builds, installs and runs
+  packaging/smoke-installed.sh (the entry points, a real -E run,
+  --since, the diff and accept defaults) for one format in its
+  container, the .deb beside Debian's tiger. CI runs the four as a
+  packages matrix and the release workflow attaches the .deb, the .rpm
+  and both .apks. The rpm builds no -debuginfo (EL9's toolchain errors
+  on the five helpers' empty debugsource list). The COPR builds for
+  Fedora 43 and 44 (x86_64, aarch64) and EPEL 9 and 10 (x86_64). The
+  AUR PKGBUILD builds from the release tarball, and CI checks its
+  .SRCINFO against it.
+
+- Seconds in the progress lines (TIMECMD is HH:MM:SS) and, on a
+  terminal, a spinner in place of each line while its check runs
+  (braille where the locale is UTF-8, ASCII otherwise), finishing as
+  the same line; piped or with -q, the line prints once as before.
+  Both cleanup traps stop a running spinner. tests/progress_check.sh
+  runs tigris piped, under a pty and with -q.
+
+- make install puts tigexp and tigris-diff beside the tree as well as
+  in sbin, where tigris calls them, for /usr/local installs and the
+  packages alike. tests/install_check.sh installs under a throwaway
+  prefix and runs the installed tigris twice offline.
+
+- A version tag creates the GitHub release with its CHANGES section as
+  the notes, publishes the container image and attaches the packages.
+
+- tests/local-ci.sh runs what CI runs, before pushing: lint (sh -n,
+  every suite, the schema, the as-root suites, ShellCheck), the build
+  (in a copy, so the tree stays as it was), the distribution jobs in
+  docker and the packages; the full run as root on request. A section
+  whose tools are missing says SKIP. CI's Debian-checks job checks out
+  on the host and mounts the tree read-only like the other docker
+  jobs, and the container setup step retries, falling back to Azure's
+  Ubuntu mirror.
+
 Changes (v 3.6.0)
 --------------------
 

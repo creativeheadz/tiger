@@ -13,9 +13,9 @@
   <a href="COPYING"><img src="https://img.shields.io/badge/licence-GPL--2.0--or--later-52c7e8?style=flat-square&labelColor=0f1822" alt="Licence: GPL-2.0-or-later"></a>
   <img src="https://img.shields.io/badge/written%20in-POSIX%20sh%20%2B%20awk-4fd67f?style=flat-square&labelColor=0f1822" alt="Written in POSIX sh and awk">
   <br>
-  <img src="https://img.shields.io/badge/finding%20ids-400-e8833a?style=flat-square&labelColor=0f1822" alt="400 finding ids">
+  <img src="https://img.shields.io/badge/finding%20ids-434-e8833a?style=flat-square&labelColor=0f1822" alt="434 finding ids">
   <img src="https://img.shields.io/badge/categories-15-e8833a?style=flat-square&labelColor=0f1822" alt="15 categories">
-  <img src="https://img.shields.io/badge/test%20suites-33-e8833a?style=flat-square&labelColor=0f1822" alt="33 test suites">
+  <img src="https://img.shields.io/badge/test%20suites-47-e8833a?style=flat-square&labelColor=0f1822" alt="47 test suites">
   <img src="https://img.shields.io/badge/CI-Debian%20%C2%B7%20Ubuntu%20%C2%B7%20Fedora%20%C2%B7%20Rocky%20%C2%B7%20openSUSE%20%C2%B7%20Alpine%20%C2%B7%20Arch-c6d6e2?style=flat-square&labelColor=0f1822" alt="Tested on Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch">
 </p>
 
@@ -37,8 +37,8 @@
 <tr>
 <td width="50%" valign="top">
 
-**Nothing to install.** Clone it and run it: shell and awk, no
-compiler, no interpreter, no agent, no network. It runs under mawk, gawk
+**Nothing to install.** Clone it and run it, or install the package:
+shell and awk, no compiler, no interpreter, no agent, no network. It runs under mawk, gawk
 and busybox awk, and stays light enough for a Raspberry Pi.
 
 </td>
@@ -79,7 +79,7 @@ Nothing in the image is ever run.
 
 **A contract for machines.** Every run also writes JSON Lines with a
 versioned schema, a category and the compliance controls per finding,
-and `tigris explain ID` says what any of the 400 finding ids means and
+and `tigris explain ID` says what any of the 434 finding ids means and
 how to fix it.
 
 </td>
@@ -140,20 +140,20 @@ of fifteen categories, which the JSON carries. `make` builds them all into
 
 | Category | Ids | What is looked at |
 |---|---:|---|
-| **accounts** | 69 | Password and shadow files, root's account, groups, sudo's rules (NOPASSWD, wildcards, `!authenticate`), PAM's password quality and lockout, every account's PATH, login shells |
-| **filesystem** | 74 | Setuid and setgid files against what the packages ship, world-writable files and directories, devices, files nobody owns, `/tmp` and `/dev/shm` mount options, disk encryption, swap, core dumps, umask |
-| **services** | 43 | What enabled systemd services and timers run, their unit files and sandboxing, time synchronisation, inetd, sendmail, Apache |
-| **network** | 36 | What listens on which port, IPv4 and IPv6, and as whom; network sysctls; NFS exports; NTP; sendmail's configuration |
+| **filesystem** | 76 | Setuid and setgid files against what the packages ship, world-writable files and directories, devices, files nobody owns, `/tmp` and `/dev/shm` mount options, disk encryption, swap, core dumps, umask |
+| **accounts** | 69 | Password and shadow files, root's account, groups, sudo's rules (NOPASSWD, wildcards, `!authenticate`), PAM's password quality and lockout, every account's PATH, login shells, accounts that never logged in |
+| **services** | 68 | What enabled systemd services and timers run, their unit files and sandboxing, time synchronisation, inetd, sendmail, Apache, nginx and its TLS, MySQL and MariaDB, PostgreSQL, Redis, certificates about to expire |
+| **network** | 42 | What listens on which port, IPv4 and IPv6, and as whom; network sysctls; NFS exports; NTP; DNS resolvers (`resolv.conf`, unbound, BIND); sendmail's configuration |
 | **tigris** | 33 | Tigris's own configuration and the run itself |
 | **intrusion** | 21 | Rootkit traces, processes running deleted binaries, `.exrc` files, places intruders are known to use |
-| **kernel** | 18 | Hardening sysctls, AppArmor or SELinux enforcing, kernel lockdown |
+| **kernel** | 19 | Hardening sysctls, AppArmor or SELinux enforcing, kernel lockdown |
 | **packages** | 18 | Installed files against dpkg, rpm, apk and pacman; security updates waiting and whether they install themselves; dpkg's mode overrides |
 | **ssh** | 18 | sshd's effective configuration: root login, passwords, empty passwords, X11, PAM, weak ciphers, MACs and key exchange |
+| **logging** | 15 | Log files, auditd running with rules, logs kept across reboots, remote logging (rsyslog, syslog-ng, journal upload) |
 | **boot** | 14 | Secure Boot (off, in setup mode, on), lockdown, single-user mode, the boot loader's password |
-| **logging** | 12 | Log files, auditd running with rules, logs kept across reboots |
+| **cron** | 14 | `/etc/crontab`, `cron.d`, the `cron.daily` and other scripts, and users' crontabs: who can write them, whose they are, and what the jobs they hold run |
 | **integrity** | 11 | Signatures of system binaries, and AIDE, Tripwire or integrit when installed |
 | **containers** | 10 | Who can use the Docker or Podman socket, the Docker API on TCP without TLS, privileged containers, host namespaces, the host's `/` mounted in one |
-| **cron** | 14 | `/etc/crontab`, `cron.d`, the `cron.daily` and other scripts, and users' crontabs: who can write them, whose they are, and what the jobs they hold run |
 | **firewall** | 6 | Incoming traffic denied unless something accepts it, IPv4 and IPv6, read from the kernel's ruleset (nft, iptables, ufw, firewalld), and the ports Docker publishes past it |
 
 ### Profiles
@@ -199,7 +199,7 @@ package databases. Nothing in the image is run.
 
 | Reads an offline root | Skipped there, with the reason |
 |---|---|
-| The file system scan (setuid and setgid files against what its packages ship, world-writable directories, files whose owner its own passwd does not know, devices outside /dev, dangling links, odd names), accounts and passwords (the root's passwd, shadow and group files, homes, dot files, every account's PATH, root's access), cron, systemd units, the kernel and network settings it applies at boot (its sysctl.d, layered as systemd-sysctl layers it), mount options and encryption from its fstab and crypttab, core dumps, USB storage, package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides | Anything that needs the running system (processes, listening ports, the firewall, Secure Boot, the CPU's flaws), and the checks that cannot read an offline root yet |
+| Everything that is on disk: the file system scan (setuid and setgid files against what its packages ship, world-writable directories, files whose owner its own passwd does not know, devices outside /dev, dangling links, odd names), the permissions of its system files, devices and log files, accounts and passwords (the root's passwd, shadow and group files, homes, dot files, every account's PATH, root's access, accounts that never logged in), umask in login.defs and the shells' start-up files, cron, systemd units, the boot loader and single-user mode, the kernel and network settings it applies at boot (its sysctl.d, layered as systemd-sysctl layers it), mount options and encryption from its fstab and crypttab, core dumps, USB storage, package integrity (dpkg, rpm, apk, pacman), security updates waiting, PAM, sshd's configuration (worked out from its files, as sshd would), sudo's rules, dpkg's mode overrides, services and mail aliases, NFS exports, the release, the places intruders use, the paths embedded in its binaries, nginx, databases, DNS, logging and certificates | What needs the running system, skipped saying so: processes and listening ports, the firewall, Secure Boot and the CPU's flaws, AppArmor or SELinux, auditd, time daemons, rootkit traces in the running binaries, containers |
 
 On Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch the package
 checks report the same of a copy of a system as of the system itself, and
@@ -271,9 +271,25 @@ new one), for CI and monitoring:
 
 ## Install
 
-Tigris needs no compiler. If you have one, `make && make -C c install`
-builds a few small C helpers into `bin/`, which Tigris then prefers to its
-shell equivalents. To install system-wide:
+Every release comes with packages, built and tested in CI, that install
+as `tigris` beside a distribution's own `tiger` without sharing a file
+with it: `tigris` on the path, the library in `/usr/lib/tigris`, the
+configuration in `/etc/tigris`, reports in `/var/log/tigris`.
+
+```sh
+sudo dnf copr enable creativeheadz/tigris && sudo dnf install tigris   # Fedora 43 and 44, EPEL 9 and 10
+sudo apt install ./tigris_*.deb                # Debian, Ubuntu: the .deb from the release page
+sudo dnf install ./tigris-*.rpm                # Fedora: the .rpm from the release page
+sudo apk add --allow-untrusted tigris-*.apk    # Alpine: the .apk from the release page
+```
+
+An AUR `PKGBUILD` is in [`packaging/`](packaging); it goes on the AUR
+as soon as the AUR registers new accounts again.
+
+From a checkout, Tigris needs no compiler. If you have one,
+`make && make -C c install` builds a few small C helpers into `bin/`,
+which Tigris then prefers to its shell equivalents. To install
+system-wide from source:
 
 ```sh
 ./configure
@@ -293,12 +309,14 @@ archive, not this fork.
 ## Where it is going
 
 [ROADMAP.md](ROADMAP.md) has the decisions, the status and what is next.
-3.6.0 brought the compliance mapping, the transparent summary and five
-server-side checks; 3.5.0 brought the offline audit. Still to come: the
-rest of TIGER's original checks offline, until an image reads as fully
-as a running system, and later a PowerShell engine for Windows against
-the same contract. Every change is measured for wall time, CPU and
-memory.
+3.7.0 finished the offline audit, so an image reads as fully as a
+running system, and brought the packages; 3.6.0 the compliance mapping,
+the transparent summary and five server-side checks; 3.5.0 the offline
+audit. Next is 4.0: the internals renamed in one go (`tigris.conf`,
+`Tigris_*`, `/etc/tigris`) with shims for old configurations, a `Fix`
+line in every finding's metadata, and later a PowerShell engine for
+Windows against the same contract. Every change is measured for wall
+time, CPU and memory.
 
 ## Lineage
 

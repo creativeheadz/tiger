@@ -1,6 +1,6 @@
 # Maintainer: Andrei Trimbitas <a.trimbitas@oldforge.tech>
 pkgname=tigris
-pkgver=3.6.0
+pkgver=3.7.0
 pkgrel=1
 pkgdesc='Security auditor for Linux, descended from TIGER'
 arch=('x86_64' 'aarch64')
@@ -9,7 +9,9 @@ license=('GPL-2.0-or-later')
 makedepends=('gcc' 'make')
 backup=('etc/tigris/tigerrc' 'etc/tigris/cronrc')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/creativeheadz/tigris/archive/refs/tags/version_${pkgver//./_}.tar.gz")
-sha256sums=('0aaeb8e6139237804f173b68d2243d4e27bc0588f51af5aeef859843bd56ccd1')
+# SKIP until the tag exists: the sum of the tag's tarball is put here, and
+# .SRCINFO regenerated, in the commit after the release (packaging/README.md)
+sha256sums=('SKIP')
 
 build() {
 	cd "$srcdir/$pkgname-version_${pkgver//./_}"
