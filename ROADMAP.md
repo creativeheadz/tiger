@@ -5,9 +5,9 @@ Tigris is a security auditor for Linux, descended from TIGER (Texas A&M,
 least as good as Lynis, and better where it counts. Lynis is the
 reference point because it is the tool people compare against.
 
-*Last updated 7 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
+*Last updated 9 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
 Everything marked done is on `master`; "released" means tagged (the last
-tag is `version_3_6_0`).
+tag is `version_3_7_0`).
 
 ## Contents
 
@@ -51,7 +51,7 @@ Settled, so they do not have to be argued again:
 
 ## Where things stand
 
-|                      | Tigris 3.6.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
+|                      | Tigris 3.7.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
@@ -62,8 +62,8 @@ Settled, so they do not have to be argued again:
 | Compliance mapping   | CIS v8, NIST 800-53, ISO 27001:2022, Cyber Essentials, per finding, in the JSON                          | Enterprise (paid) edition only |
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
-| Offline audit        | `tigris --root`: 23 checks read an image, nothing in it is run; a container image with every distribution's package tools | None |
-| Tests                | 38 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
+| Offline audit        | `tigris --root`: every check reads an image except the ten that need the running system, nothing in it is run; a container image with every distribution's package tools | None |
+| Tests                | 47 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris cannot
 out-grow it by copying it test for test. It can win on depth, on output
@@ -73,18 +73,23 @@ other tools can use, on honest evidence, and on engineering quality.
 12 threads, 62 GB, a 1.8 TB root disk and a 3.6 TB data disk holding
 1.9 TB, 2.4k packages), run as root on an otherwise idle machine:
 
-| | 3.2.4 as released | 3.5.0, full | 3.5.0, `--profile quick` | 3.6.0, full | 3.6.0, `--profile quick` |
+| | 3.2.4 as released | 3.6.0, full | 3.6.0, `--profile quick` | 3.7.0, full | 3.7.0, `--profile quick` |
 |---|---|---|---|---|---|
-| Report | 49,651 lines; 24 checks refused to run | 318 lines: 13 FAIL, 67 WARN | 267 lines: 13 FAIL, 47 WARN | 343 lines: 13 FAIL, 70 WARN | 285 lines: 13 FAIL, 47 WARN |
-| Wall time | 7:16 | 1:59 | 1:00 | 2:01 | 1:01 |
-| CPU (user + system) | not recorded | 102 s + 83 s | 59 s + 35 s | 104 s + 85 s | 60 s + 37 s |
-| Peak memory | 159 MB | 134 MB | 134 MB | 131 MB | 131 MB |
+| Report | 49,651 lines; 24 checks refused to run | 343 lines: 13 FAIL, 70 WARN | 285 lines: 13 FAIL, 47 WARN | 334 lines: 13 FAIL, 64 WARN | 291 lines: 13 FAIL, 48 WARN |
+| Wall time | 7:16 | 2:01 | 1:01 | 2:00 | 1:03 |
+| CPU (user + system) | not recorded | 104 s + 85 s | 60 s + 37 s | 104 s + 85 s | 62 s + 38 s |
+| Peak memory | 159 MB | 131 MB | 131 MB | 131 MB | 131 MB |
 
 3.3.0 took 1:58 and 34.6 MB full, 0:58 and 13.9 MB quick; 3.4.0 took
-1:58 and 134 MB full, 1:02 and 134 MB quick. The 131 MB is apt-get
-mapping its package cache for under a second. An offline audit of a
-Debian 13 image with systemd and sshd (3.5.0) takes 9 seconds and
-peaks at 67 MB; 3.6.0 takes about 10 seconds there.
+1:58 and 134 MB full, 1:02 and 134 MB quick; 3.5.0 took 1:59 and
+134 MB full, 1:00 quick. The 131 MB is apt-get mapping its package
+cache for under a second. An offline audit of a Debian 13 image with
+systemd and sshd took 9 seconds and 67 MB in 3.5.0, about 10 seconds
+in 3.6.0, and 12 seconds and 8 MB in 3.7.0. The 3.7.0 image was
+exported from a container (no package cache to map); its 3.6.0 audit
+took 6 seconds, before the 16 checks that read it now. A browser was
+open during the 3.7.0 runs; 3.6.0 re-measured the same morning gave
+the same numbers within two seconds.
 
 3.4.0's peak is apt-get mapping its package cache for under a second
 when check_updates asks what is waiting; without that check the quick
@@ -598,17 +603,20 @@ what scripts and cron see.
   the root's own passwd; cron; systemd units (`systemd-analyze --root
   cat-config`); the kernel and network settings it applies at boot.
   mount options and encryption from fstab and crypttab; the file system
-  scan, ownership judged by the root's passwd and group. On an image
-  with systemd, 8 checks are skipped as needing the running system and
-  16 of TIGER's original ones (check_perms, check_umask, check_exports,
-  check_aliases, check_logfiles, check_rootkit, check_known,
-  check_services, check_lilo, check_single, check_rcumask,
-  check_release, check_ntp, check_devices, check_embedded,
-  check_neverlogin) still cannot read an offline root. A container image
-  (`docker run -v ROOTFS:/target:ro tigris --root /target`) carries
-  every distribution's package tools for it.
-- [ ] **Offline audit, the rest**: the 16 of TIGER's original checks
-  listed above, so that an image reads as fully as a running system.
+  scan, ownership judged by the root's passwd and group. A container
+  image (`docker run -v ROOTFS:/target:ro tigris --root /target`)
+  carries every distribution's package tools for it.
+- [x] **Offline audit, the rest** (3.7.0): the 16 of TIGER's original
+  checks that could not read a root in 3.6.0 (permissions, devices and
+  log files, umask and the rc umask, the boot loader and single-user
+  mode, services and aliases, NFS exports, the release, the places
+  intruders use, embedded paths, accounts that never logged in) read it
+  now, so an image reads as fully as a running system; check_ntp and
+  check_rootkit have no honest offline form and say "live system". On
+  an image with systemd and sshd, ten checks are skipped as needing
+  the running system (auditd, containers, the firewall, listening
+  ports, AppArmor or SELinux, NTP, rootkits, Secure Boot, systemd's
+  sandboxing and time synchronisation) and none as "not offline yet".
 - [x] **A transparent summary** (3.6.0): counts by severity and category,
   and the score shows its formula, in the text report and the JSON
   summary alike (`util/summary`).
@@ -663,6 +671,7 @@ stable, so it is built against a fixed contract.
   file, a deleted one, a changed mode and a stray, and requires exactly
   those four new findings on top of the image's own baseline. Test
   awk-dependent code under mawk, gawk and busybox awk.
+  `tests/local-ci.sh` runs what CI runs, before pushing.
 - **Safety:** no `eval` of data read from the system, `mktemp` for every
   temporary file, everything quoted. Files such as `/etc/os-release` and
   `/etc/pacman.conf` are read as text, never sourced. Tigris runs as
@@ -671,13 +680,14 @@ stable, so it is built against a fixed contract.
   biggest wins so far were `util/flogit` (an `ls | awk` per file) and
   `deb_checkmd5sums` (a `dpkg -S` per diversion at 130 MB each). The
   next is the profiles above.
-- **Packaging:** `.deb`, `.rpm` and apk built in CI (done), under the
-  name `tigris` and separate from Debian's `tiger`; an AUR package
-  (files ready, live with the next release: 3.6.0 predates
-  `packaging/`); a COPR (done: `creativeheadz/tigris`, Fedora 43/44
-  and EPEL 9/10); a container image that scans a host or an image
-  (done). Debian packaging of the fork is for later and would be its
-  own package.
+- **Packaging:** `.deb`, `.rpm` and apk built in CI and attached to
+  every release from 3.7.0 (done), under the name `tigris` and
+  separate from Debian's `tiger`; a COPR (done: `creativeheadz/tigris`,
+  Fedora 43/44 and EPEL 9/10); a container image that scans a host or
+  an image (done); an AUR package (`packaging/PKGBUILD`, published
+  once the AUR registers new accounts again: it had stopped doing so
+  in October 2026). Debian packaging of the fork is for later and
+  would be its own package.
 - **Docs:** man pages (done), `doc/json-format.md` (done), and a GitHub Pages
   site generated from the check metadata once it exists.
 

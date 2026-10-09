@@ -93,7 +93,10 @@ haveallvars TESTLINK || exit 1
 
 display_what_access()
 {
-  file=$1
+  # Its own name for the file: $file is the database entry being checked,
+  # and setting it here made the entries after a reported file compare
+  # against the wrong name (a listed file was then skipped as "listed").
+  _dwfile=$1
   onoff=$2
   who=$3
   what=$4
@@ -102,21 +105,23 @@ display_what_access()
 
   if [ "$access" = 'X' ]; then
     access='execute'
-    [ -d "`__here "$file"`" ] && access='search'
+    __hereto _dwhere "$_dwfile"
+    [ -d "$_dwhere" ] && access='search'
   fi
 
   [ "$onoff" = '0' ] && {
-    message $level perm001w "" "$file should not have $who $access."
+    message $level perm001w "" "$_dwfile should not have $who $access."
   }
 }
            
 check_file()
 {
-  [ "$suid" != "$rsuid" -a "$rsuid" = '1' ] && {
+  # A "." in the database means the bit is not checked, here as below
+  [ "$suid" != '.' -a "$suid" != "$rsuid" -a "$rsuid" = '1' ] && {
     message ALERT perm023a "" "$filename is setuid to \`$rowner'."
     changelog "ALERT : chmod : u-s : $filename"
   }
-  [ "$sgid" != "$rsgid" -a "$rsgid" = '1' ] && {
+  [ "$sgid" != '.' -a "$sgid" != "$rsgid" -a "$rsgid" = '1' ] && {
     message ALERT perm024a "" "$filename is setgid to \`$rgroup'."
     changelog "ALERT : chmod : g-s : $filename"
   }
@@ -185,10 +190,21 @@ check_file()
       m='w'
     fi
     
-    getpermit $file |
+    # A wildcard entry names the audited system's files: expand it there,
+    # not on this host. Only its first match is checked, as getpermit has
+    # always given live (the wildcard entries' columns are misaligned in
+    # the database, so they have never been a full check).
+    case "$file" in
+      *'*'*|*'?'*|*'['*)
+        if [ -n "$TIGRIS_ROOT" ]; then set -- `rootglob "$file"`; else set -- $file; fi
+        [ $# -gt 0 ] || continue
+        target=$1;;
+      *) target=$file;;
+    esac
+    getpermit "$target" |
     while read filename rowner rgroup rur ruw rux rgr rgw rgx ror row rox rsuid rsgid rstk
     do
-      herename=`__here "$filename"`
+      __hereto herename "$filename"
       test ! $TESTLINK "$herename" && [ -f "$herename" -o -d "$herename" ] &&
       if [ "$file" = "$filename" ]; then
 	check_file "$filename"

@@ -489,7 +489,7 @@ __getpermit()
         printf("1 ");
       else
         printf("0 ");
-      if(substr($1, 7, 1) == "s" || substr($1, 4, 1) == "S")
+      if(substr($1, 7, 1) == "s" || substr($1, 7, 1) == "S")
         printf("1 ");
       else
         printf("0 ");
@@ -508,30 +508,39 @@ __getpermit()
 # given, so messages name the system's own paths.
 __rootpermit()
 {
-  __rootpw=`rootfile /etc/passwd`
-  __rootgr=`rootfile /etc/group`
-  if [ -n "$1" ]; then printf '%s\n' "$@"; else cat; fi |
-  while IFS= read -r __rp
-  do
-    __rh=`rootfile "$__rp"`
-    [ -n "$__rh" ] && printf '%s\t%s\n' "$__rp" "`$LS -ldn \"$__rh\" 2>/dev/null`"
-  done |
-  $AWK -F'\t' -v pw="$__rootpw" -v gr="$__rootgr" '
-    BEGIN {
-      while ((getline l < pw) > 0) { split(l, f, ":"); if (!(f[3] in u)) u[f[3]] = f[1] }
-      while ((getline l < gr) > 0) { split(l, f, ":"); if (!(f[3] in g)) g[f[3]] = f[1] }
-    }
-    {
-      if (split($2, a, " ") < 4) next
-      printf("%s %s %s ", $1, (a[3] in u) ? u[a[3]] : a[3], (a[4] in g) ? g[a[4]] : a[4])
-      for (i = 2; i < 11; i++) {
-        c = substr(a[1], i, 1)
-        printf("%s ", (c != "-" && c != "S" && c != "T") ? 1 : 0)
+  # One pass of rootpaths for the root's passwd and group files and every
+  # path asked for: a process per path, and two more per call, made
+  # check_perms take 25 seconds on a small image.
+  # mktemp, not $$: the two sides of a pipeline share $$, and check_embed
+  # has one getpermit still finishing while the next starts
+  __rpin=`mktemp "$WORKDIR/rootpermit.XXXXXX"` || return 1
+  { printf '/etc/passwd\n/etc/group\n'; if [ -n "$1" ]; then printf '%s\n' "$@"; else cat; fi; } > "$__rpin"
+  rootpaths < "$__rpin" | paste "$__rpin" - |
+  {
+    IFS='	' read -r __rx __rootpw
+    IFS='	' read -r __rx __rootgr
+    while IFS='	' read -r __rp __rh
+    do
+      [ -n "$__rh" ] && printf '%s\t%s\n' "$__rp" "`$LS -ldn \"$__rh\" 2>/dev/null`"
+    done |
+    $AWK -F'\t' -v pw="$__rootpw" -v gr="$__rootgr" '
+      BEGIN {
+        while ((getline l < pw) > 0) { split(l, f, ":"); if (!(f[3] in u)) u[f[3]] = f[1] }
+        while ((getline l < gr) > 0) { split(l, f, ":"); if (!(f[3] in g)) g[f[3]] = f[1] }
       }
-      printf("%s ", (substr(a[1], 4, 1) == "s" || substr(a[1], 4, 1) == "S") ? 1 : 0)
-      printf("%s ", (substr(a[1], 7, 1) == "s" || substr(a[1], 4, 1) == "S") ? 1 : 0)
-      printf("%s \n", (substr(a[1], 10, 1) == "t" || substr(a[1], 10, 1) == "T") ? 1 : 0)
-    }'
+      {
+        if (split($2, a, " ") < 4) next
+        printf("%s %s %s ", $1, (a[3] in u) ? u[a[3]] : a[3], (a[4] in g) ? g[a[4]] : a[4])
+        for (i = 2; i < 11; i++) {
+          c = substr(a[1], i, 1)
+          printf("%s ", (c != "-" && c != "S" && c != "T") ? 1 : 0)
+        }
+        printf("%s ", (substr(a[1], 4, 1) == "s" || substr(a[1], 4, 1) == "S") ? 1 : 0)
+        printf("%s ", (substr(a[1], 7, 1) == "s" || substr(a[1], 7, 1) == "S") ? 1 : 0)
+        printf("%s \n", (substr(a[1], 10, 1) == "t" || substr(a[1], 10, 1) == "T") ? 1 : 0)
+      }'
+  }
+  delete "$__rpin"
 }
 
 getpermit()
@@ -720,12 +729,49 @@ __here()
 {
   if [ -n "$TIGRIS_ROOT" ]; then rootfile "$1"; else printf '%s\n' "$1"; fi
 }
+# __hereto VAR PATH: VAR=`__here PATH` without the subshell on the running
+# system, for a loop that asks once per file (check_embed asks thousands
+# of times, and the forks alone cost it half as much again).
+__hereto()
+{
+  if [ -n "$TIGRIS_ROOT" ]; then __hv=`rootfile "$2"`; else __hv=$2; fi
+  eval "$1=\$__hv"
+}
 rootls()
 {
   __rdir=`rootfile "$1"`
   for __rent in "$__rdir"/* "$__rdir"/.[!.]*
   do
     [ -e "$__rent" ] || [ -L "$__rent" ] && printf '%s\n' "${1%/}/${__rent##*/}"
+  done
+}
+# rootglob PATTERN: the audited system's paths matching PATTERN, an
+# absolute pattern such as /etc/init.d/*, as the shell's glob gives them
+# on the running system: no dotfiles unless the pattern asks for them,
+# nothing when none matches. A pattern without a slash is tiger-relative
+# and expands here, as live; a wildcard in a directory part is expanded
+# first.
+rootglob()
+{
+  case "$1" in
+    *'*'*|*'?'*|*'['*) ;;
+    *) printf '%s\n' "$1"; return;;
+  esac
+  case "$1" in
+    */*) ;;
+    *) for __ge in $1; do printf '%s\n' "$__ge"; done; return;;
+  esac
+  set -- "${1%/*}" "${1##*/}"
+  [ -n "$1" ] || set -- / "$2"
+  for __gd in `rootglob "$1"`
+  do
+    rootls "$__gd" | while read -r __gent
+    do
+      case "${__gent##*/}" in
+        .*) case "$2" in .*) ;; *) continue;; esac;;
+      esac
+      case "${__gent##*/}" in $2) printf '%s\n' "$__gent";; esac
+    done
   done
 }
 

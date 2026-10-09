@@ -1,10 +1,10 @@
-%define _tag version_3_6_0
+%define _tag version_3_7_0
 # No -debuginfo: five small helpers, and EL9's toolchain errors on their
 # empty debugsource list.
 %define debug_package %{nil}
 
 Name:           tigris
-Version:        3.6.0
+Version:        3.7.0
 Release:        1%{?dist}
 Summary:        Security auditor for Linux, descended from TIGER
 License:        GPL-2.0-or-later
@@ -50,5 +50,8 @@ sh packaging/stage.sh %{buildroot} %{_libdir}/tigris %{_sbindir}
 %{_mandir}/man8/tigris-accept.8*
 
 %changelog
+* Fri Oct 09 2026 Andrei Trimbitas <a.trimbitas@oldforge.tech> - 3.7.0-1
+- Tigris 3.7.0: the offline audit complete, packages, a spinner.
+
 * Thu Oct 08 2026 Andrei Trimbitas <a.trimbitas@oldforge.tech> - 3.6.0-1
 - First package of the fork, co-installable beside tiger.

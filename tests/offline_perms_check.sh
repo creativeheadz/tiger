@@ -5,7 +5,10 @@
 # Builds a root that is wrong in known ways and runs tigris --root on
 # it with the three checks on: an /etc/passwd that is group- and
 # world-writable and owned by milo (the database expects root's 644),
-# a setuid /bin/login, a regular file and an unexpected directory in
+# a setuid /bin/login (unexpected) and a setuid /bin/su (expected: it
+# must stay silent), a group-writable /bin/aaa that the database's
+# /bin/* entry must find inside the root and not on this host, a
+# regular file and an unexpected directory in
 # /dev, an all-symlinks directory and an expected one that must stay
 # silent, a btmp with the wrong mode, and missing wtmp and lastlog.
 # Syslog stands in for messages; a second root with only a persistent
@@ -33,6 +36,8 @@ printf 'root:x:0:0:root:/root:/bin/bash\nmilo:x:%s:%s:Milo:/home/milo:/bin/bash\
 chmod 666 "$R/etc/passwd"
 printf 'root:x:0:\ncrew:x:%s:\nutmp:x:4243:\n' "$G" > "$R/etc/group"
 printf '#!/bin/sh\n:\n' > "$R/bin/login"; chmod 4755 "$R/bin/login"
+printf '#!/bin/sh\n:\n' > "$R/bin/su"; chmod 4755 "$R/bin/su"
+: > "$R/bin/aaa"; chmod 775 "$R/bin/aaa"
 echo sneaky > "$R/dev/sneaky"
 echo hidden > "$R/dev/hidedir/cache"
 ln -s ../sneaky "$R/dev/byfoo/alias"
@@ -42,7 +47,7 @@ ln -s sneaky "$R/dev/mylink"
 : > "$R/var/run/utmp"
 if [ "$uid" = 0 ]; then
   chown -R "$U:$G" "$R"
-  chmod 4755 "$R/bin/login"
+  chmod 4755 "$R/bin/login" "$R/bin/su"
   mknod -m 666 "$R/dev/sda" b 8 0
   mknod -m 644 "$R/dev/kmem" c 1 1
   chown "$U:4243" "$R/var/run/utmp"; chmod 664 "$R/var/run/utmp"
@@ -73,6 +78,10 @@ has '"id":"perm001w".*/etc/passwd should not have world write' &&
   ok "a world-writable passwd: perm001w" || bad "perm001w"
 has '"id":"perm023a".*/bin/login is setuid to .milo' &&
   ok "an unexpected setuid: perm023a" || bad "perm023a"
+has '"id":"perm023a".*/bin/su is setuid' &&
+  bad "the setuid the database expects of /bin/su was reported" || ok "a setuid the database expects (/bin/su) stays silent"
+has '"id":"perm001w".*/bin/aaa should not have group write' &&
+  ok "the /bin/* entry expands inside the root: perm001w for /bin/aaa" || bad "/bin/* was not expanded inside the root"
 has '"id":"dev003w".*File /dev/sneaky is a regular file in a device directory' &&
   ok "a regular file in /dev: dev003w" || bad "dev003w file"
 has '"id":"dev003w".*The directory /dev/hidedir resides in a device directory' &&

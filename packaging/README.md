@@ -72,8 +72,12 @@ Each release bumps the version where the formats carry it literally:
 
 - `version` (as today), and the `Version` in `packaging/tigris.spec`
   with its `_tag`, `Source0` and `%changelog` entry;
-- `pkgver` in `packaging/PKGBUILD`, the tag tarball's `sha256sums`,
-  and a regenerated `.SRCINFO`;
+- `pkgver` in `packaging/PKGBUILD` and `.SRCINFO`, with `sha256sums`
+  at `SKIP`: the tag's tarball does not exist before the tag. Once it
+  does, the commit after the release puts its sum in
+  (`curl -sL .../version_X_Y_Z.tar.gz | sha256sum`), regenerates
+  `.SRCINFO` (`makepkg --printsrcinfo`, in an Arch container if need
+  be), and that pair is what goes to the AUR;
 - the `.deb` (from `version`) and the `.apk` (stamped at build) follow
   on their own.
 
