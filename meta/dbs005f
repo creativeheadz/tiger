@@ -4,6 +4,7 @@ Category: services
 Check: check_databases
 Fix: Use scram-sha-256 (or peer, on the local socket).
 References: pg_hba.conf(5)
+Controls: CIS 5.2; NIST IA-2, IA-5(1); ISO 5.17, 8.5; CE User access control
 
 A pg_hba.conf line authenticates with 'trust': no password is asked.
 Anyone reaching the server as the line's users and addresses is let

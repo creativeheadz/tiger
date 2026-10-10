@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_kerberos
 References: krb5.conf(5)
+Controls: CIS 3.10; NIST SC-13; ISO 8.24; CE Secure configuration
 
 Kerberos permits single-DES encryption, by an enctype or by
 allow_weak_crypto. Its 56-bit keys fall to brute force, so whoever

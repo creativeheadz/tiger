@@ -3,6 +3,7 @@ Severity: FAIL
 Category: services
 Check: check_databases
 References: mongod.conf(5)
+Controls: CIS 3.3; NIST AC-3, SC-28; ISO 8.3; CE Secure configuration
 
 MongoDB's data directory is readable by strangers: every
 collection can be copied. Leave it to the daemon's user alone.

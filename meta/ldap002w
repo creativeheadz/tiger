@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_ldap
 References: slapd.conf(5)
+Controls: CIS 3.10; NIST SC-8; ISO 5.14, 8.24
 
 The directory takes binds with no TLS configured. The passwords
 cross the network in clear, to whoever listens. Give it a

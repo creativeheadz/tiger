@@ -2,6 +2,7 @@ Id: swd001w
 Severity: WARN
 Category: packages
 Check: check_software
+Controls: CIS 3.3, 4.1; NIST AC-3, CM-5; ISO 8.3, 8.9; CE Secure configuration
 
 An application or a brew Cellar entry is writable past root.
 Anyone who can write it plants code someone else runs. Take

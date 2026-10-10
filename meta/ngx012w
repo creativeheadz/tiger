@@ -4,6 +4,7 @@ Category: services
 Check: check_nginx
 Fix: Log errors to a file (error_log /var/log/nginx/error.log).
 References: ngx_http_core_module
+Controls: CIS 8.2; NIST AU-2, AU-12; ISO 8.15
 
 Errors are thrown away: error_log goes to /dev/null. Failures then
 leave no trace: failed starts, denied requests, backend errors, all

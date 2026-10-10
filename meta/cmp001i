@@ -3,6 +3,7 @@ Severity: INFO
 Category: packages
 Check: check_compilers
 References: gcc(1)
+Controls: CIS 4.8; NIST CM-7; ISO 8.9; CE Secure configuration
 
 C compilers are installed. Nothing on a production box should
 need to build software, and attackers build their tools where

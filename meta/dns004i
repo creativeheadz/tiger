@@ -4,6 +4,7 @@ Category: network
 Check: check_dns
 Fix: Name a second resolver, on another host.
 References: resolv.conf(5)
+Controls: ISO 8.14
 
 A single nameserver in /etc/resolv.conf, and no fallback when it stops
 answering. A lone loopback address is not reported: that is a

@@ -2,6 +2,7 @@ Id: int002w
 Severity: WARN
 Category: integrity
 Check: check_integrity
+Controls: NIST SI-7; ISO 8.16
 
 AFICK is configured but its database was never built: it
 compares against nothing. Initialize it, or take AFICK out.

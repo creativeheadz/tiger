@@ -4,6 +4,7 @@ Category: logging
 Check: check_remotelog
 Fix: Rename it to end in .conf, or move its rules where rsyslog reads.
 References: rsyslog.conf(5)
+Controls: CIS 8.2; NIST AU-2, AU-12; ISO 8.15
 
 A file in rsyslog's includes directory will never be read, because its
 name does not match the glob the configuration includes (usually

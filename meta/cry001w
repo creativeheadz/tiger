@@ -3,6 +3,7 @@ Severity: WARN
 Category: services
 Check: check_crypto
 References: rngd(8)
+Controls: NIST SC-12, SC-13; ISO 8.24
 
 The random-number daemon feeds from a software device: it goes
 through the motions and adds no entropy. Point it at the

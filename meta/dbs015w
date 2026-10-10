@@ -3,6 +3,7 @@ Severity: WARN
 Category: services
 Check: check_databases
 References: sqlnet.ora
+Controls: CIS 5.2; NIST IA-5(1); ISO 5.17, 8.5; CE User access control
 
 Oracle allows logons from before 12c. Their password verifiers
 fall to offline cracking once stolen. Raise

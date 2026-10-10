@@ -18,6 +18,10 @@
 #   check:NAME   every finding id whose metadata names NAME as its check;
 #                an id with several checks takes all of theirs
 #   id:ID        that id alone, instead of its checks' rules
+#   id:ID | - | - | - | -   a finding mapped to nothing on purpose; a comment
+#                above it says why. tests/explain_check.sh requires every
+#                finding that can show a gap to have a Controls: line or
+#                such a rule, so none is left unmapped by accident
 #
 # An ERROR or CONFIG message says a check could not run, which is evidence
 # of nothing: those ids get no controls, whatever the rules say.
@@ -143,6 +147,128 @@ id:ssh017w                | 3.10               | SC-8, SC-13              | 8.24
 id:ssh018w                | 3.10               | SC-8, SC-13              | 8.24                | Secure configuration
 id:ssh019w                | 3.10               | SC-8, SC-13              | 8.24                | Secure configuration
 
+# ---- compilers, packages and updates
+id:cmp001i                | 4.8                | CM-7                     | 8.9                 | Secure configuration
+id:cmp002w                | 3.3, 4.1           | AC-3, CM-5               | 8.3, 8.9            | Secure configuration
+id:swd001w                | 3.3, 4.1           | AC-3, CM-5               | 8.3, 8.9            | Secure configuration
+id:lch001w                | 3.3, 4.1           | AC-3, CM-5               | 8.3, 8.9            | Secure configuration
+id:swd002w                | 7.3                | SI-2                     | 8.8                 | Security update management
+id:upd006w                | 7.3                | SI-2                     | 8.8                 | Security update management
+id:ips001w                | 2.3                | SI-7                     | 8.19                | -
+
+# ---- certificates, keys and cryptography
+id:crt001f                | 3.10               | SC-12, SC-17             | 8.24                | -
+id:crt002w                | 3.10               | SC-17                    | 8.24                | -
+id:ngx011w                | 3.10               | SC-12, SC-17             | 8.24                | -
+id:cry001w                | -                  | SC-12, SC-13             | 8.24                | -
+id:cry002w                | 3.3                | AC-3, SC-12              | 8.3, 8.24           | User access control
+id:ngx003f                | 3.3                | AC-3, SC-12              | 8.3, 8.24           | User access control
+id:ngx004w                | 3.3                | AC-3, SC-12              | 8.3, 8.24           | User access control
+id:krb001w                | 3.10               | SC-13                    | 8.24                | Secure configuration
+id:krb002i                | 3.10               | SC-13                    | 8.24                | Secure configuration
+id:krb003w                | 3.3, 5.2           | AC-3, IA-5(7)            | 5.17, 8.3           | User access control
+
+# ---- databases
+id:dbs001f                | 5.2                | IA-2, IA-5(1)            | 5.17, 8.5           | User access control
+id:dbs002w                | 3.3                | AC-3                     | 8.3                 | Secure configuration
+id:dbs003f                | 3.3, 5.2           | AC-3, IA-5(7)            | 5.17, 8.3           | User access control
+id:dbs004f                | 4.1                | AC-6                     | 8.2                 | User access control
+id:dbs005f                | 5.2                | IA-2, IA-5(1)            | 5.17, 8.5           | User access control
+id:dbs006w                | 5.2                | IA-5(1), SC-13           | 5.17, 8.24          | User access control
+id:dbs007f                | 3.3                | AC-3, SC-28              | 8.3                 | Secure configuration
+id:dbs008w                | 3.10               | SC-8                     | 5.14, 8.24          | -
+id:dbs009f                | 4.4, 5.2           | SC-7, IA-2               | 8.5, 8.20           | Firewalls, User access control
+id:dbs010f                | 3.3, 5.2           | AC-3, IA-5(7)            | 5.17, 8.3           | User access control
+id:dbs011f                | 4.4, 5.2           | SC-7, IA-2               | 8.5, 8.20           | Firewalls, User access control
+id:dbs012w                | 5.2                | IA-2                     | 8.5                 | User access control
+id:dbs013w                | 3.10               | SC-8                     | 5.14, 8.24          | -
+id:dbs014f                | 3.3                | AC-3, SC-28              | 8.3                 | Secure configuration
+id:dbs015w                | 5.2                | IA-5(1)                  | 5.17, 8.5           | User access control
+id:dbs016w                | 4.4                | SC-7                     | 8.20                | Firewalls
+
+# ---- name resolution
+id:dns001f                | 4.1                | CM-6                     | 8.9                 | -
+id:dns002w                | 4.1                | CM-6                     | 8.9                 | -
+id:dns003w                | 4.1                | CM-6                     | 8.9                 | -
+id:dns004i                | -                  | -                        | 8.14                | -
+id:dns005f                | 4.8                | SC-5, SC-7               | 8.20                | Firewalls
+id:dns006f                | 4.8                | SC-5, SC-7               | 8.20                | Firewalls
+id:dns007w                | 4.1                | CM-6                     | 8.9                 | Secure configuration
+
+# ---- doas and disk encryption
+id:dos001w                | 5.4                | AC-6, IA-2               | 8.2, 8.5            | User access control
+id:dos003w                | 3.3, 5.4           | AC-3, AC-6               | 8.2, 8.3            | User access control
+id:fde001w                | 3.6                | SC-28                    | 7.9, 8.24           | -
+
+# ---- intrusion detection and integrity
+id:ids001w                | 13.2               | SI-4, AC-7               | 8.16                | -
+id:ids002w                | 13.3               | SI-4                     | 8.16                | -
+id:int001w                | -                  | SI-7                     | 8.16                | -
+id:int002w                | -                  | SI-7                     | 8.16                | -
+id:prom001w               | -                  | SI-4                     | 8.16                | -
+id:inet001w               | 4.8, 3.10          | CM-7, SC-8               | 8.21, 5.14          | Secure configuration
+
+# ---- logging and accounting
+id:act001w                | 8.2, 8.5           | AU-2, AU-12              | 8.15                | -
+id:ngx002w                | 8.2, 8.5           | AU-2, AU-12              | 8.15                | -
+id:ngx012w                | 8.2                | AU-2, AU-12              | 8.15                | -
+id:rlog002i               | 8.9                | AU-9.2                   | 8.15                | -
+id:rlog003w               | 8.2                | AU-2, AU-12              | 8.15                | -
+
+# ---- mail
+id:mail001w               | 3.10               | SC-8                     | 5.14, 8.24          | -
+id:mail002w               | 4.4, 4.8           | SC-7, CM-7               | 8.20, 8.21          | Firewalls
+id:mail003i               | 4.1                | CM-6                     | 8.9                 | Secure configuration
+
+# ---- web servers
+id:ngx001w                | 4.1                | CM-6                     | 8.9                 | Secure configuration
+id:ngx005f                | 3.10               | SC-8, SC-13              | 8.24                | Secure configuration
+id:ngx006w                | 3.10               | SC-8, SC-13              | 8.24                | Secure configuration
+id:ngx007w                | 3.10               | SC-13                    | 8.24                | Secure configuration
+id:ngx008f                | 4.1                | AC-6, AC-6(2)            | 8.2                 | User access control
+id:ngx009w                | 4.1                | CM-7                     | 8.9                 | Secure configuration
+id:ngx010i                | 3.10               | SC-8                     | 5.14                | Secure configuration
+
+# ---- PHP
+id:php001w                | 4.1                | CM-6, SI-10              | 8.9, 8.28           | Secure configuration
+id:php002i                | 4.1                | CM-6                     | 8.9                 | Secure configuration
+id:php003i                | 4.1                | SI-11                    | 8.9                 | Secure configuration
+
+# ---- printing
+id:print001w              | 4.8                | CM-7, SC-7               | 8.21                | Secure configuration
+id:print002w              | 4.4                | SC-7                     | 8.20                | Firewalls
+id:print003w              | 3.3, 5.2           | AC-3, IA-5(7)            | 5.17, 8.3           | User access control
+
+# ---- SNMP, LDAP and proxies
+id:snmp001w               | 4.8, 5.2           | IA-5(7), SC-7            | 5.17, 8.20          | User access control
+id:snmp002i               | 5.2                | IA-5(7)                  | 5.17                | User access control
+id:snmp003i               | 5.2                | IA-5(1), IA-5(7)         | 5.17, 8.5           | User access control
+id:ldap001w               | 3.3, 5.2           | AC-3, IA-5(7)            | 5.17, 8.3           | User access control
+id:ldap002w               | 3.10               | SC-8                     | 5.14, 8.24          | -
+id:squid001w              | 4.4, 4.8           | SC-7                     | 8.20                | Firewalls
+id:squid002w              | 4.4                | SC-7                     | 8.20                | Firewalls
+id:squid003w              | 3.3, 5.2           | AC-3, IA-5(7)            | 5.17, 8.3           | User access control
+
+# ---- kernel
+id:sip001w                | 4.1                | AC-3(3)                  | 8.9                 | Secure configuration
+
+# ---- exempt
+# acpt001w: Tigris's own accepted-risk bookkeeping (category tigris), not the system.
+id:acpt001w               | -                  | -                        | -                   | -
+# cmp003i: a scanner being present is the arrangement wanted; the message says what it reframes, not what is missing.
+id:cmp003i                | -                  | -                        | -                   | -
+# crt003i: openssl is missing, so expiry was not judged; like a CONFIG, this is evidence of nothing.
+id:crt003i                | -                  | -                        | -                   | -
+# cry003i: the live entropy level, shown without judgment (it moves every second).
+id:cry003i                | -                  | -                        | -                   | -
+# dos002i: a note that password findings are scoped to commands; the text says to take it as read.
+id:dos002i                | -                  | -                        | -                   | -
+# ids003i: names the intrusion detection in place; not a gap.
+id:ids003i                | -                  | -                        | -                   | -
+# int003i: names the file-integrity watcher in place; not a gap.
+id:int003i                | -                  | -                        | -                   | -
+# rlog001i: forwarding is the arrangement to have; the finding only records where the copies go.
+id:rlog001i               | -                  | -                        | -                   | -
 # Tigris's own messages (its configuration, the run, its helpers) are about
 # Tigris, not the system: check:config, check:initdefs, check:tiger,
 # check:tigris, check:gen_mounts, check:tigercron, check:check_symlink,

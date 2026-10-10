@@ -4,6 +4,7 @@ Category: services
 Check: check_nginx
 Fix: Send Strict-Transport-Security (add_header, with max-age).
 References: ngx_http_headers_module; RFC 6797
+Controls: CIS 3.10; NIST SC-8; ISO 5.14; CE Secure configuration
 
 A server does HTTPS without Strict-Transport-Security: first visits
 can be silently downgraded to HTTP. The header is one line, and

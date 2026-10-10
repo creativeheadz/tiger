@@ -4,6 +4,7 @@ Category: services
 Check: check_nginx
 Fix: Allow TLSv1.2 and TLSv1.3 only.
 References: ngx_http_ssl_module
+Controls: CIS 3.10; NIST SC-8, SC-13; ISO 8.24; CE Secure configuration
 
 SSLv2 or SSLv3 is allowed: protocols broken beyond repair, disabled in
 every client years ago. Offering them invites only downgrade attacks

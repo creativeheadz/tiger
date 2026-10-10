@@ -4,6 +4,7 @@ Category: services
 Check: check_databases
 Fix: Make it redis's alone: chown redis:redis (or root), chmod 600.
 References: redis-server(1)
+Controls: CIS 3.3, 5.2; NIST AC-3, IA-5(7); ISO 5.17, 8.3; CE User access control
 
 A Redis configuration file holding a password can be read by accounts
 that should never see it. Whoever reads the password authenticates as

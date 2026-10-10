@@ -4,6 +4,7 @@ Category: services
 Check: check_nginx
 Fix: Point the directive at the file, or put the file there.
 References: ngx_http_ssl_module
+Controls: CIS 3.10; NIST SC-12, SC-17; ISO 8.24
 
 A certificate or key the configuration names is not there. nginx
 refuses to start with it, so on a running server this is dead

@@ -2,6 +2,7 @@ Id: dos001w
 Severity: WARN
 Category: accounts
 Check: check_doas
+Controls: CIS 5.4; NIST AC-6, IA-2; ISO 8.2, 8.5; CE User access control
 
 doas lets someone run any command as root without a password.
 Whoever gets that session gets root. Take nopass off, or name

@@ -4,6 +4,7 @@ Category: services
 Check: check_databases
 Fix: Set password_encryption to scram-sha-256 and re-set the passwords.
 References: postgresql.conf(5)
+Controls: CIS 5.2; NIST IA-5(1), SC-13; ISO 5.17, 8.24; CE User access control
 
 Passwords are stored as md5. A stolen pg_authid falls to billions of
 guesses a second on commodity hardware; scram-sha-256 has been the

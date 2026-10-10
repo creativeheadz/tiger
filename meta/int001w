@@ -3,6 +3,7 @@ Severity: WARN
 Category: integrity
 Check: check_integrity
 References: aide.conf(5)
+Controls: NIST SI-7; ISO 8.16
 
 AIDE is configured but its database was never built: it
 compares against nothing. Initialize it, or take AIDE out.

@@ -4,6 +4,7 @@ Category: network
 Check: check_dns
 Fix: Keep the three resolvers that should answer, in order.
 References: resolv.conf(5)
+Controls: CIS 4.1; NIST CM-6; ISO 8.9
 
 /etc/resolv.conf names more than three servers, but the resolver only
 uses the first three; the rest are never asked. The usual cause is

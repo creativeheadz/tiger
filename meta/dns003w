@@ -4,6 +4,7 @@ Category: network
 Check: check_dns
 Fix: Replace it with the resolver's address.
 References: resolv.conf(5)
+Controls: CIS 4.1; NIST CM-6; ISO 8.9
 
 A nameserver line in /etc/resolv.conf does not hold an IP address (a
 name, 0.0.0.0, or a typo), so it is ignored. Names cannot bootstrap

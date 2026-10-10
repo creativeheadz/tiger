@@ -4,6 +4,7 @@ Category: services
 Check: check_certs
 Fix: Renew the certificate now, not when it lapses.
 References: openssl-x509(1)
+Controls: CIS 3.10; NIST SC-17; ISO 8.24
 
 A certificate this server presents expires within 30 days. Renewals
 fail for dull reasons (an expired account key, a challenge the web

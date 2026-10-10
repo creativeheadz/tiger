@@ -4,6 +4,7 @@ Category: services
 Check: check_databases
 Fix: Remove skip-grant-tables and restart the server.
 References: mysqld(8)
+Controls: CIS 5.2; NIST IA-2, IA-5(1); ISO 5.17, 8.5; CE User access control
 
 MySQL or MariaDB runs with skip-grant-tables: authentication is off
 and anyone connecting has every privilege without a password. It is a

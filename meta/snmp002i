@@ -3,6 +3,7 @@ Severity: INFO
 Category: services
 Check: check_snmp
 References: snmpd.conf(5)
+Controls: CIS 5.2; NIST IA-5(7); ISO 5.17; CE User access control
 
 SNMP answers a write community narrowed to a source. It is still
 remote control of the box, so keep the restriction and the string

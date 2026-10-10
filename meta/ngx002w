@@ -4,6 +4,7 @@ Category: services
 Check: check_nginx
 Fix: Log somewhere: access_log /var/log/nginx/access.log.
 References: ngx_http_log_module
+Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 
 A server never logs requests: access_log is off, and nothing in its
 locations logs either. Without request logs an intrusion leaves no

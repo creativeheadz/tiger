@@ -4,6 +4,7 @@ Category: services
 Check: check_databases
 Fix: Set local-infile=0 where it is not needed.
 References: mysqld(8)
+Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 LOAD DATA LOCAL is enabled. On the server it lets a SQL user read
 files off the machine connecting; on a client it lets any server the

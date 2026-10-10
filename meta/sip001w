@@ -2,6 +2,7 @@ Id: sip001w
 Severity: WARN
 Category: kernel
 Check: check_sip
+Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 
 System Integrity Protection is off, in whole or in the named
 parts. Root can rewrite the system, and no software barrier

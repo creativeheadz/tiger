@@ -2,6 +2,7 @@ Id: cry002w
 Severity: WARN
 Category: services
 Check: check_crypto
+Controls: CIS 3.3; NIST AC-3, SC-12; ISO 8.3, 8.24; CE User access control
 
 A private key is readable by strangers: whoever copies it
 decrypts and impersonates. Leave keys readable by root alone

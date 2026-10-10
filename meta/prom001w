@@ -4,6 +4,7 @@ Category: network
 Check: check_promisc
 Fix: Take the interface out of promiscuous mode ('ip link set NAME promisc off').
 References: ip-link(8)
+Controls: NIST SI-4; ISO 8.16
 
 An interface is in promiscuous mode: it hands all its traffic to
 whoever listens, credentials and sessions among it. Bridges, VM hosts

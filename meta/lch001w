@@ -2,6 +2,7 @@ Id: lch001w
 Severity: WARN
 Category: boot
 Check: check_launchd
+Controls: CIS 3.3, 4.1; NIST AC-3, CM-5; ISO 8.3, 8.9; CE Secure configuration
 
 A launchd job, or the program it runs, is writable past root.
 Anyone who can rewrite the job chooses what runs at boot or

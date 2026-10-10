@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_kerberos
 References: krb5.conf(5)
+Controls: CIS 3.3, 5.2; NIST AC-3, IA-5(7); ISO 5.17, 8.3; CE User access control
 
 A Kerberos keytab is readable by anyone. It holds the service's
 long-term keys, so whoever copies it becomes the service. Leave it

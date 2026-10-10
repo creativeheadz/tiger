@@ -4,6 +4,7 @@ Category: services
 Check: check_databases
 Fix: Turn ssl on, with a certificate the clients check.
 References: postgresql.conf(5)
+Controls: CIS 3.10; NIST SC-8; ISO 5.14, 8.24
 
 PostgreSQL takes unencrypted connections from the network: ssl is off
 while it listens past localhost. Passwords and data cross the wire

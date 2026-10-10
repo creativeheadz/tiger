@@ -4,6 +4,7 @@ Category: services
 Check: check_nginx
 Fix: Offer strong ciphers only (HIGH without the weak ones).
 References: ngx_http_ssl_module
+Controls: CIS 3.10; NIST SC-13; ISO 8.24; CE Secure configuration
 
 Weak ciphers are offered (RC4, single DES or 3DES, MD5, anonymous or
 null, EXPORT, LOW) or the security level is lowered to 0 or 1, so a

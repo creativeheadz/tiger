@@ -3,6 +3,7 @@ Severity: WARN
 Category: services
 Check: check_mail
 References: postconf(5), exim(8), doveconf(1)
+Controls: CIS 3.10; NIST SC-8; ISO 5.14, 8.24
 
 Mail passwords cross in clear: SMTP AUTH or a plaintext
 authenticator with nothing requiring TLS, or Dovecot with

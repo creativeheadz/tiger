@@ -4,6 +4,7 @@ Category: services
 Check: check_certs
 Fix: Renew the certificate before clients refuse it.
 References: openssl-x509(1)
+Controls: CIS 3.10; NIST SC-12, SC-17; ISO 8.24
 
 A certificate this server presents (its web server's, or one kept in
 the usual places) has expired. Clients that check dates refuse it, so

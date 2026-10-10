@@ -4,6 +4,7 @@ Category: services
 Check: check_nginx
 Fix: Run the workers unprivileged (user nginx or www-data).
 References: ngx_core_module
+Controls: CIS 4.1; NIST AC-6, AC-6(2); ISO 8.2; CE User access control
 
 nginx's workers run as root. They parse every request, so a flaw in
 request handling is a root flaw; the master alone needs root, to bind

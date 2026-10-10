@@ -4,6 +4,7 @@ Category: network
 Check: check_dns
 Fix: Allow localhost and the local networks only.
 References: unbound.conf(5)
+Controls: CIS 4.8; NIST SC-5, SC-7; ISO 8.20; CE Firewalls
 
 Unbound answers recursion to anyone: an access-control line allows
 0.0.0.0/0 or ::/0. An open resolver serves the whole Internet,

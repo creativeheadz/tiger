@@ -236,5 +236,19 @@ done`
 [ -z "$stale" ] && ok "every rule in doc/controls.map names a check or an id that exists" ||
   { bad "rules in doc/controls.map that name nothing:"; echo "$stale" | sed 's/^/     /'; }
 
+# Every finding that can show a gap has a Controls: line, or an id: rule
+# saying on purpose that it maps to none (a comment gives the reason). So a
+# new finding is never left unmapped by accident, and the decision not to
+# map one is visible in the map.
+unmapped=`for f in "$TIGER"/meta/*; do
+  id=${f##*/}
+  grep -qE '^Severity: .*(ALERT|FAIL|WARN|INFO)' "$f" || continue
+  grep -q '^Controls: ' "$f" && continue
+  grep -qE "^id:$id[ 	]*\|" "$TIGER/doc/controls.map" && continue
+  echo "$id"
+done`
+[ -z "$unmapped" ] && ok "every finding that can show a gap is mapped or declared unmapped" ||
+  { bad "findings with no compliance mapping and no id: rule in doc/controls.map:"; echo "$unmapped" | sed 's/^/     /'; }
+
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

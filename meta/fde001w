@@ -2,6 +2,7 @@ Id: fde001w
 Severity: WARN
 Category: filesystem
 Check: check_filevault
+Controls: CIS 3.6; NIST SC-28; ISO 7.9, 8.24
 
 FileVault is off: the disk reads in any other machine,
 passwords and keys included. Turn it on, unless this machine

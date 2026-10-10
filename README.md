@@ -224,6 +224,10 @@ finding's controls and the JSON carries them:
 A finding is evidence for an assessment, not a verdict on a control:
 most controls ask for things no tool on one host can see.
 
+Every finding that can show a gap is mapped, or declared unmapped on
+purpose with a reason in the map, and `tests/explain_check.sh` fails the
+build when one is neither, so a new finding cannot slip past the mapping.
+
 ## Reports, drift and exit status
 
 Every run writes `log/security.report.HOST.DATE` and, beside it, the same

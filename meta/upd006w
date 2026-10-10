@@ -2,6 +2,7 @@ Id: upd006w
 Severity: WARN
 Category: packages
 Check: check_pkg
+Controls: CIS 7.3; NIST SI-2; ISO 8.8; CE Security update management
 
 Package update notices touch installed packages. Some entries
 are security, and the list does not say which: read them and

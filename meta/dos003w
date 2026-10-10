@@ -2,6 +2,7 @@ Id: dos003w
 Severity: WARN
 Category: accounts
 Check: check_doas
+Controls: CIS 3.3, 5.4; NIST AC-3, AC-6; ISO 8.2, 8.3; CE User access control
 
 doas's rules are writable past root. Whoever can write them
 can give themselves root. Take the file out of the writable

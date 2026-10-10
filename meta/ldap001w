@@ -3,6 +3,7 @@ Severity: WARN
 Category: accounts
 Check: check_ldap
 References: slapd.conf(5), ldap.conf(5)
+Controls: CIS 3.3, 5.2; NIST AC-3, IA-5(7); ISO 5.17, 8.3; CE User access control
 
 An LDAP config file holds a credential and anyone can read it: a
 client's bind password, or the directory manager's password. Whoever

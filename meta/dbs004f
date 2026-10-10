@@ -4,6 +4,7 @@ Category: services
 Check: check_databases
 Fix: Run it as mysql (user=mysql in [mysqld]).
 References: mysqld(8)
+Controls: CIS 4.1; NIST AC-6; ISO 8.2; CE User access control
 
 mysqld runs as root. Anything it is told to do, from FILE privileges
 to user-defined functions, it does as root, and any flaw in it is a

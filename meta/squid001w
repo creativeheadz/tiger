@@ -3,6 +3,7 @@ Severity: WARN
 Category: services
 Check: check_squid
 References: squid.conf.documented
+Controls: CIS 4.4, 4.8; NIST SC-7; ISO 8.20; CE Firewalls
 
 The proxy lets everyone use it. Spam and attacks go out in its
 name, and the inside network answers whoever asks. Name the

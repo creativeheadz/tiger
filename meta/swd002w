@@ -2,6 +2,7 @@ Id: swd002w
 Severity: WARN
 Category: packages
 Check: check_software
+Controls: CIS 7.3; NIST SI-2; ISO 8.8; CE Security update management
 
 macOS is not checking for updates by itself: security updates
 wait until someone looks. Turn automatic update checks back

@@ -3,6 +3,7 @@ Severity: WARN
 Category: packages
 Check: check_compilers
 References: gcc(1)
+Controls: CIS 3.3, 4.1; NIST AC-3, CM-5; ISO 8.3, 8.9; CE Secure configuration
 
 A compiler is writable past root: whoever can write it replaces
 it, and the next build runs their code. Leave it owned and

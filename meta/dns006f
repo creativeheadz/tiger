@@ -4,6 +4,7 @@ Category: network
 Check: check_dns
 Fix: Allow localhost and the local networks only.
 References: named.conf(5)
+Controls: CIS 4.8; NIST SC-5, SC-7; ISO 8.20; CE Firewalls
 
 Bind answers recursion to anyone: an allow-recursion list holds 'any',
 directly or through a named ACL. An open resolver serves the whole

@@ -2,6 +2,7 @@ Id: act001w
 Severity: WARN
 Category: logging
 Check: check_accounting
+Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 
 Process accounting is not on, or its file is missing: who ran
 what is nobody's record. Turn it on.
