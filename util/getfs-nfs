@@ -53,7 +53,9 @@ fscase="`$GET_MOUNTS |
 
 while read user dir
 do
-  eval "case $dir/ in $fscase esac"
+  # the directory is read by the case, not parsed: it is a home directory
+  # from passwd, which may be an offline root's
+  eval "case \"\$dir/\" in $fscase esac"
   echo "$user $dir $host"
 done
 #

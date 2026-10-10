@@ -56,10 +56,11 @@ if run_section lint; then
   sh tests/schema_check.sh || fail=1
 
   if sudo -n true 2>/dev/null; then
-    say "== lint: as root too (offline accounts, cron, offline scan)"
+    say "== lint: as root too (offline accounts, cron, offline scan, hostile root)"
     sudo sh tests/offline_accounts_check.sh || fail=1
     sudo sh tests/cron_check.sh || fail=1
     sudo sh tests/offline_scan_check.sh || fail=1
+    sudo sh tests/hostile_root_check.sh || fail=1
   else
     say "SKIP: no passwordless sudo, the as-root suites only run on CI"
   fi

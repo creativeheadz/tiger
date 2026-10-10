@@ -287,12 +287,8 @@ check_users()
        getpermit ${home%/*}/ | {
          read _f owner group ur uw ux gr gw gx or ow ox suid sgid sticky
 
-	 eval "case \"$owner\" in
-		$Tiger_Admin_Accounts)
-			;;
-		*)
-			message WARN acc023w \"\" \"Login ID $user's parent directory (${home%/*}) has non-administrative \\\`$owner' ownership.\"
-	 esac"
+	 matchlist "$owner" "$Tiger_Admin_Accounts" ||
+	   message WARN acc023w "" "Login ID $user's parent directory (${home%/*}) has non-administrative \`$owner' ownership."
 
          [ "${gw}${ow}" != '00' ] && {
            str="Login ID $user's parent directory (${home%/*}/) has"
@@ -311,10 +307,10 @@ check_users()
 
      # Dormant account check.
      [ "$home" != / -a -n "$home" -a "$Tiger_Dormant_Limit" != 0 -a $uid -gt $Tiger_Accounts_Trust ] && {
-       notadmin=`eval "case \"$user\" in $Tiger_Admin_Accounts) ;; *) echo $user;; esac"`
-       [ -n "$notadmin" ] &&  \
-       [ `$FIND "$h/" -mtime -$Tiger_Dormant_Limit 2>/dev/null | $HEAD -n 1 | $WC -l` -eq 0 ] && 
+       if ! matchlist "$user" "$Tiger_Admin_Accounts"; then
+         [ `$FIND "$h/" -mtime -$Tiger_Dormant_Limit 2>/dev/null | $HEAD -n 1 | $WC -l` -eq 0 ] &&
            message WARN acc021w "" "Login ID $user appears to be a dormant account."
+       fi
      }
 
      # Non-zero sized .hushlogin
@@ -331,17 +327,16 @@ check_users()
      [ -z "$shell" ] && shell=/bin/sh
      test $TESTEXEC "`__here $shell`" && [ -n "$uid" ] && [ $uid -gt $Tiger_Accounts_Trust ] && {
        rc=`__here "${home}/.${shell##*/}rc"`
-       eval "
-         case \"$shell\" in
-           $shcase)
-             [ ! -r \"$rc\" ] && {
-               message WARN acc019w \"\" \"Login ID $user may be missing a shell initialization file ${home}/.${shell##*/}rc.\"
-             }
-             ;;
-           *)
-             # Invalid shells are handled in the check_password module.
-             ;;
-         esac"
+       # a shell /etc/shells lists is expected to have its rc file; invalid
+       # shells are check_passwd's. Compared line for line as text: the
+       # list comes from the system being audited, so it is never parsed
+       # as code, nor split and globbed against this host's files.
+       case "$__nl$shells$__nl" in
+         *"$__nl$shell$__nl"*)
+           [ ! -r "$rc" ] &&
+             message WARN acc019w "" "Login ID $user may be missing a shell initialization file ${home}/.${shell##*/}rc."
+           ;;
+       esac
      }
 
      # Check permissions on user dotfiles.
@@ -377,12 +372,16 @@ check_users()
   IFS=$saveifs
 }
 
-# Define shcase to be a list of valid shells, so we can check for
-# shell initilization files.
-shcase='/bin/sh|/bin/csh|/bin/bash|/bin/tcsh|/bin/ksh'
+# The valid shells, one per line, so we can check for shell initialization
+# files: the system's /etc/shells, or a built-in list without one. They
+# are compared as text in check_users. (Until October 2026 this was a case
+# pattern run through eval, so a line of an offline root's /etc/shells
+# was run as code.)
+__nl='
+'
+shells="/bin/sh$__nl/bin/csh$__nl/bin/bash$__nl/bin/tcsh$__nl/bin/ksh"
 [ -n "$ETCSHELLS" ] && [ -s "`__here $ETCSHELLS`" ] && {
-  shells=`$GREP -v '^#' "\`__here $ETCSHELLS\`"`
-  shcase=`echo $shells | $TR ' ' '|'`
+  shells=`$AWK '/^[ \t]*#/ { next } NF { print $1 }' "\`__here $ETCSHELLS\`"`
 }
 
 if [ -n "$Tiger_PasswdFiles" ]; then

@@ -148,31 +148,21 @@ DEVLIST="$dir/[a-z0-9]*"
 for file in $DEVLIST
 do
 
+	# Expected regular files in these directories are EXPECTEDFILES
 	[ ! -h "`__here "$file"`" ] && [ -f "`__here "$file"`" ] &&  {
-	file=`echo $file | $SED -e 's/"/\\\"/g'`
-    	eval "case \"$file\" in
-		$EXPECTEDFILES)
-		# Expected regular files in this directories
-		;;
-		*)
-       		      message WARN dev003w \"\" \"File $file is a regular file in a device directory.\"
-		;;
-	esac"
+	  matchlist "$file" "$EXPECTEDFILES" ||
+	    message WARN dev003w "" "File $file is a regular file in a device directory."
 	}
 
+	# Expected directories are EXPECTEDDIRS. A directory of nothing but
+	# symlinks is an alias tree made by udev (/dev/disk/by-*) or LVM
+	# (/dev/<volume group>), not a hiding place
 	[ -d "`__here "$file"`" ] && {
-	eval "case \"$file\" in
-		$EXPECTEDDIRS)
-		# Expected directories
-		;;
-		*)
-		# A directory of nothing but symlinks is an alias tree made by udev
-		# (/dev/disk/by-*) or LVM (/dev/<volume group>), not a hiding place
-		if $LS -lA \"`__here \"$file\"`\" | $SED 1d | $GREP -qv '^l' ; then
-		message WARN dev003w \"\" \"The directory $file resides in a device directory.\"
-		fi
-		;;
-	esac"
+	  matchlist "$file" "$EXPECTEDDIRS" || {
+	    if $LS -lA "`__here "$file"`" | $SED 1d | $GREP -qv '^l' ; then
+	      message WARN dev003w "" "The directory $file resides in a device directory."
+	    fi
+	  }
 	}
 
     	case $file in

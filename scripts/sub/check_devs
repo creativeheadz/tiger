@@ -57,18 +57,16 @@ dldevdirs=
 
 [ ! -n "$DEVDIRSYS" ] && DEVDIRSYS="/dev/"
 
-set $DEVDIRSYS $FS_DEVDIRS $dldevdirs
-greps="$GREP -v '^'$1 $file"
-shift
-for dir
-do
-  greps="$greps | $GREP -v '^'$dir"
-done
-
+# Devices under the device directories are expected; the rest are not.
+# The directories are matched as prefixes, as words, never as patterns or
+# as code (the diskless clients' come from bootparams, which is data).
 # The "hw" hack is due to SGI renaming devices in IRIX 6.5
 # systemd keeps zero-permission placeholder nodes under .../systemd/inaccessible/
 # for its InaccessiblePaths= sandboxing; they are expected, not planted
-eval $greps | $GREP -v '^'/hw | $GREP -v '/systemd/inaccessible/' > $WORKDIR/dev.list.$$
+$AWK -v dirs="$DEVDIRSYS $FS_DEVDIRS $dldevdirs" '
+  BEGIN { n = split(dirs, d, " ") }
+  { for (i = 1; i <= n; i++) if (index($0, d[i]) == 1) next; print }' $file |
+  $GREP -v '^'/hw | $GREP -v '/systemd/inaccessible/' > $WORKDIR/dev.list.$$
 
 [ -s $WORKDIR/dev.list.$$ ] && {
   message ALERT fsys006a "" "Unexpected device files found:"

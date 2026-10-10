@@ -64,18 +64,13 @@ haveallcmds GETCLIENTDIRS AWK && {
   `
 }
 
-set $FS_WDIRSYS $dltmpdirs
-
-greps="$GREP -v '^'$1"
-
-shift
-for dir
-do
-  greps="$greps | $GREP -v '^'$dir"
-done
-
+# The directories that are meant to be world writable are left out,
+# matched as prefixes, as words, never as patterns or as code (the
+# diskless clients' come from bootparams, which is data).
 $SED -e 's%\([^/]\)$%\1/%' $file |
-eval $greps > $WORKDIR/wdir.tmp.$$
+$AWK -v dirs="$FS_WDIRSYS $dltmpdirs" '
+  BEGIN { n = split(dirs, d, " ") }
+  { for (i = 1; i <= n; i++) if (index($0, d[i]) == 1) next; print }' > $WORKDIR/wdir.tmp.$$
 
 [ -s $WORKDIR/wdir.tmp.$$ ] && {
   message FAIL fsys008f "" 'The following directories are world writable:'

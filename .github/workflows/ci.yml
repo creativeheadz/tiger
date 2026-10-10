@@ -104,6 +104,10 @@ jobs:
         run: |
           sh tests/offline_scan_check.sh
           sudo sh tests/offline_scan_check.sh
+      - name: a hostile offline root runs nothing, as a user and as root
+        run: |
+          sh tests/hostile_root_check.sh
+          sudo sh tests/hostile_root_check.sh
       - name: check_firewall against captured rulesets
         run: sh tests/firewall_check.sh
       - name: check_sip against csrutil fixtures, as a user and as root

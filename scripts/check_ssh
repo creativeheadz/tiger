@@ -110,13 +110,7 @@ parse_Protocol()
 		line=${line##${proto}}
 		line=${line##,}
 
-		eval "case \"$proto\" in
-			$Tiger_SSH_Protocol)
-				;;
-			*)
-				return 0
-				;;
-		esac"
+		matchlist "$proto" "$Tiger_SSH_Protocol" || return 0
 	done
 	return 1
 }
@@ -132,14 +126,8 @@ parse_directive()
 	list=$2
 
 	[ -z "$list" ] && return 1
-	eval "case \"$value\" in
-		$list)
-			return 1
-			;;
-		*)
-			return 0
-			;;
-	esac"
+	matchlist "$value" "$list" && return 1
+	return 0
 }
 
 #
@@ -158,26 +146,30 @@ parse_sshd_config_file()
 		line=${line%%\#*}
 		key=${line%% *}
 		line=${line##${key}}
+		# the value is the first word after the keyword, quoted from here
+		# on: unquoted, a second word became parse_directive's list
+		val=${line#"${line%%[! 	]*}"}
+		val=${val%%[ 	]*}
 
 		case "$key" in
 			Protocol)
 				found_Protocol=1
-				parse_Protocol $line $1 && {
+				parse_Protocol "$val" && {
 					message WARN ssh001w "" "Protocol $proto is enabled in $file"
-				}	
+				}
 				;;
-				
+
 			RhostsAuthentication)
 				found_RhostsAuthentication=1
-				parse_directive $line $Tiger_SSH_RhostsAuthentication && {
-					message WARN ssh003w "" "The RhostsAuthentication directive in $1 is set to the unapproved value: $line."
+				parse_directive "$val" "$Tiger_SSH_RhostsAuthentication" && {
+					message WARN ssh003w "" "The RhostsAuthentication directive in $1 is set to the unapproved value: $val."
 				}
 				;;
 
 			PasswordAuthentication)
 				found_PasswordAuthentication=1
-				parse_directive $line $Tiger_SSH_PasswordAuthentication && {
-					message WARN ssh004w "" "The PasswordAuthentication directive in $1 is set to the unapproved value: $line."
+				parse_directive "$val" "$Tiger_SSH_PasswordAuthentication" && {
+					message WARN ssh004w "" "The PasswordAuthentication directive in $1 is set to the unapproved value: $val."
 				}
 				;;
 		esac
@@ -187,10 +179,10 @@ parse_sshd_config_file()
 	[ $found_Protocol = 0 ] && parse_Protocol "2,1" && {
 		message WARN ssh001w "" "Protocol $proto is enabled in $file"
 	}
-	[ $found_RhostsAuthentication = 0 ] && parse_directive "no" $Tiger_SSH_RhostsAuthentication && {
+	[ $found_RhostsAuthentication = 0 ] && parse_directive "no" "$Tiger_SSH_RhostsAuthentication" && {
 		message WARN ssh003w "" "The RhostsAuthentication directive in $1 is set to the unapproved default value: no."
 	}
-	[ $found_PasswordAuthentication = 0 ] && parse_directive "yes" $Tiger_SSH_PasswordAuthentication && {
+	[ $found_PasswordAuthentication = 0 ] && parse_directive "yes" "$Tiger_SSH_PasswordAuthentication" && {
 		message WARN ssh004w "" "The PasswordAuthentication directive in $1 is set to the unapproved defult value: yes."
 	}
 }
@@ -341,7 +333,7 @@ if [ -n "$effective" ]; then
 		[ -z "$value" ] && continue
 		ok=N
 		case "$test" in
-			is) eval "case \"\$value\" in $want) ok=Y ;; esac" ;;
+			is) matchlist "$value" "$want" && ok=Y ;;
 			le) case "$value" in *[!0-9]*) ok=Y ;; *) [ "$value" -le "$want" ] && ok=Y ;; esac ;;
 		esac
 		[ "$ok" = N ] && message $level $code "" "sshd: $key is $value: $text"

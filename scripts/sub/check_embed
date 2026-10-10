@@ -102,24 +102,16 @@ check_file()
   lgetpermit "$__fcmd" |
   while read __path fowner __group ur uw ux gr gw gx or ow ox suid sgid stk
   do
-    eval "case \$fowner in
-      $okowner) ;;
-      *) {
-	if [ \"\$__fcmd\" != \"\$__path\" ]; then
-	  message \$__level embed001\$l \"\" \"Path \\\`\$__fcmd' contains \\\`$__path' which is not owned by \$__owner (owned by \$fowner).\"
-	else
-	  message \$__level embed002\$l \"\" \"Path \\\`\$__fcmd' is not owned by \$__owner (owned by \$fowner).\"
-	fi
-	showwhere \"\$__where\"
-      }
-      ;;
-    esac"
-
-    [ -n "$Tiger_Embedded_OK_Group_Write" -a "$gw" = '1' ] && {
-      eval "case \$__group in
-	$Tiger_Embedded_OK_Group_Write) gw=0;;
-      esac"
+    matchlist "$fowner" "$okowner" || {
+      if [ "$__fcmd" != "$__path" ]; then
+	message $__level embed001$l "" "Path \`$__fcmd' contains \`$__path' which is not owned by $__owner (owned by $fowner)."
+      else
+	message $__level embed002$l "" "Path \`$__fcmd' is not owned by $__owner (owned by $fowner)."
+      fi
+      showwhere "$__where"
     }
+
+    [ "$gw" = '1' ] && matchlist "$__group" "$Tiger_Embedded_OK_Group_Write" && gw=0
       
     case "$gw$ow" in
       00) __what="";;

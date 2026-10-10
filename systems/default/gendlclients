@@ -51,5 +51,5 @@ done |
 $SORT -u |
 while read client server filesys
 do
-  eval "case \"$server\" in $HOSTNAMESLIST) echo \"$client $filesys\";; esac"
+  matchlist "$server" "$HOSTNAMESLIST" && echo "$client $filesys"
 done

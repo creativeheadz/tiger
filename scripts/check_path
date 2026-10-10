@@ -121,11 +121,7 @@ checkcmds()
 	echo "$_execfile /$_srcfile(PATH)" >> $TigerCheckEmbedded
       }
       
-      [ "$gw" = '1' -a -n "$okgroup" ] && {
-	eval "case \"$_group\" in
-	  $okgroup) gw=0;;
-	esac"
-      }
+      [ "$gw" = '1' ] && matchlist "$_group" "$okgroup" && gw=0
       
       case "$gw$ow" in
 	00) _msg='';;
@@ -138,18 +134,13 @@ checkcmds()
 	message WARN path001w "" "$_execfile in $_user's PATH from $_srcfile is $_msg writable."
 	changelog "WARN : chmod : $__newmode : $_execfile"
       }
-      if [ "$suid" = '0' ]; then
-	eval "case \"\$_owner\" in
-	  $okown);;
-	  *) message WARN path002w \"\" \"$_execfile in $_user's PATH from $_srcfile is not owned by root (owned by $_owner).\"
-	  changelog \"WARN : chown : root : $_execfile\"
-	  ;;
-	esac"
+      if matchlist "$_owner" "$okown"; then
+	:
+      elif [ "$suid" = '0' ]; then
+	message WARN path002w "" "$_execfile in $_user's PATH from $_srcfile is not owned by root (owned by $_owner)."
+	changelog "WARN : chown : root : $_execfile"
       else
-	eval "case \"$_owner\" in
-	  $okown);;
-	  *) message INFO path008i \"\" \"Setuid program $_execfile in $_user's PATH from $_srcfile is not owned by root (owned by $_owner).\";;
-	esac"
+	message INFO path008i "" "Setuid program $_execfile in $_user's PATH from $_srcfile is not owned by root (owned by $_owner)."
       fi
     }
   done

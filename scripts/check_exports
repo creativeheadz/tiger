@@ -190,11 +190,12 @@ check_entry()
     set X $roothosts
     IFS="$saveifs"
     shift
+    # exported with root access to a diskless client whose root it is:
+    # expected; to anyone else: reported below
     dlclient=1
-    # roothost is a magic variable name... don't change it.
     for roothost
     do
-      eval "case \"$dir\" in $casediskless esac"
+      is_dlclient_root "$roothost" "$dir" || dlclient=0
     done
 
     roothosts=`
@@ -240,36 +241,46 @@ parse_bootparam()
 # configured a list (which still wins).
 if [ -n "$TIGRIS_ROOT" ] && [ "$HOSTNAMESLIST" = "$HOSTNAME" ]; then
   __hostname=`__here /etc/hostname`
-  [ -r "$__hostname" ] && read HOSTNAMESLIST < "$__hostname"
+  # a host name and nothing else: it is matched as a pattern below, and
+  # the root's /etc/hostname is whatever the image says it is
+  [ -r "$__hostname" ] && {
+    read -r HOSTNAMESLIST < "$__hostname"
+    HOSTNAMESLIST=`printf '%s' "$HOSTNAMESLIST" | $TR -cd 'A-Za-z0-9.-'`
+  }
 fi
 
-casediskless='*) dlclient=0;;'
-
+# The diskless clients served from here: one "client filesys" line per
+# bootparams entry whose server is one of HOSTNAMESLIST. Kept as data and
+# read back line by line (it used to be generated into a case statement,
+# so an entry of the bootparams file was parsed as shell).
+dlclients=$WORKDIR/dlclients.$$
+safe_temp $dlclients
+TigerCleanup="$TigerCleanup $dlclients"
 haveallcmds GEN_BOOTPARAM_SETS && {
-  casediskless=`
-  {
-    $GEN_BOOTPARAM_SETS | 
-    while read bootparam_set
-    do
-      parse_bootparam < $bootparam_set
-      
-      delete $bootparam_set $bootparam_set.src
-    done
-  } |
+  $GEN_BOOTPARAM_SETS |
+  while read bootparam_set
+  do
+    parse_bootparam < $bootparam_set
+    delete $bootparam_set $bootparam_set.src
+  done |
   $SORT -u |
   while read client server filesys
   do
-    eval "case \"$server\" in
-      $HOSTNAMESLIST)
-      echo $filesys') 
-      case \\$roothost in
-	'$client'*) ;;
-      *) dlclient=0;;
-      esac;;' ;;
-    esac"
-  done
-  echo '*) dlclient=0;;'
-  `
+    matchlist "$server" "$HOSTNAMESLIST" && echo "$client $filesys"
+  done > $dlclients
+}
+
+# is_dlclient_root HOST DIR: is DIR the root filesystem of the diskless
+# client HOST (or of one whose name HOST begins with)?
+is_dlclient_root()
+{
+  [ -s "$dlclients" ] || return 1
+  while read __dlc __dlf
+  do
+    [ "$__dlf" = "$2" ] || continue
+    case "$1" in "$__dlc"*) return 0 ;; esac
+  done < $dlclients
+  return 1
 }
 
 saveifs="$IFS"
@@ -295,4 +306,5 @@ do
 done |
 $OUTPUTMETHOD
 
+delete $dlclients
 exit 0

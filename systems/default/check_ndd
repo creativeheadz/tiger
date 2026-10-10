@@ -89,13 +89,7 @@ do
   do
     case "$dev" in ''|\#*) continue ;; esac
     val=`$NDD -get $dev $parm 2>/dev/null`
-    eval "case \"$val\" in
-        $good)
-          ;;
-        *)
-          message $level $mesgid \"\" \"$mesg\"
-          ;;
-      esac"
+    matchlist "$val" "$good" || message $level $mesgid "" "$mesg"
   done < $file
 done
 

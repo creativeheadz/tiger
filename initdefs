@@ -186,6 +186,47 @@ json_escape()
         }'
 }
 
+#
+# matchlist VALUE PATTERNS: does VALUE match one of the |-separated shell
+# patterns in PATTERNS? PATTERNS should be a setting of Tigris's own
+# (Tiger_Admin_Accounts, Tiger_PATH_OK_Owners, a column of a data file);
+# VALUE is whatever was read from the system or from an offline root (an
+# account name, a shell, an owner) and is never parsed as code, whatever
+# characters it holds. An empty PATTERNS matches nothing.
+#
+# The list has to go through eval: the | between two patterns is syntax,
+# which an expanded variable does not supply. Only the list goes in; the
+# value is read by the case as a variable. Every test of a system value
+# against a pattern list goes through here, so that no check writes an
+# eval with the value inside it (which ran a name from an offline root's
+# passwd as a command, as root, until October 2026).
+#
+# A list holding anything a pattern list never needs (quotes, $, `, ;, &,
+# parentheses, redirections, #, blanks, a newline) is not given to eval at
+# all: each of its alternatives is compared as plain text instead. So a
+# caller that passes data as the list by mistake gets a wrong answer at
+# worst, never a command run.
+#
+matchlist()
+{
+  [ -n "$2" ] || return 1
+  __mlv=$1
+  case "$2" in
+    *"
+"*|*[';&()<>`$"\# 	'\']*)
+      __mlrest=$2
+      while :
+      do
+        __mlp=${__mlrest%%|*}
+        [ "$__mlv" = "$__mlp" ] && return 0
+        [ "$__mlp" = "$__mlrest" ] && return 1
+        __mlrest=${__mlrest#*|}
+      done ;;
+  esac
+  eval "case \"\$__mlv\" in $2) return 0;; esac"
+  return 1
+}
+
 # Is this finding accepted? ACCEPT_FILE (tigris.accepted, managed by
 # tigris-accept) has one entry per line: id, expiry (YYYY-MM-DD or -),
 # message glob (or -), reason. Sets accepted_reason and accepted_until on
@@ -740,6 +781,9 @@ __hereto()
 rootls()
 {
   __rdir=`rootfile "$1"`
+  # a path that resolves to nothing in the root (a symlink loop) has no
+  # entries; without this, "$__rdir"/* listed this host's /
+  [ -n "$__rdir" ] || return 0
   for __rent in "$__rdir"/* "$__rdir"/.[!.]*
   do
     [ -e "$__rent" ] || [ -L "$__rent" ] && printf '%s\n' "${1%/}/${__rent##*/}"
