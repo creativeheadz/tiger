@@ -376,17 +376,14 @@ do
 		socktext="socket $socket"
 		trail=""
 	fi
+	# The process and its user against the lists of those allowed. A
+	# process names itself, so its name is data any local user chooses:
+	# compared, never parsed (it went through eval, which ran a name
+	# holding a backquote as root, until October 2026).
 	isokprocess="no"
 	isokuser="no"
-	# TODO This should change into a function since it's used twice in the
-	# code
-	[ -n "$okprocess" ] && \
-	isokprocess=`eval "case \"$proc\" in ${okprocess})  echo \"yes\" ;; \
-	*) echo \"no\" ;; esac"`
-	# Probably redundant since this is done already at the top
-	[ -n "$okprocessusers" ] && \
-	isokuser=`eval "case \"$user\" in ${okprocessusers})  echo \"yes\" ;; \
-	*) echo \"no\" ;; esac"`
+	matchlist "$proc" "$okprocess" && isokprocess="yes"
+	matchlist "$user" "$okprocessusers" && isokuser="yes"
 	if [ "$isokprocess" = "no" ] ; then
 		if [ "$isokuser" = "yes" ] ; then
 			# an if, not && ||: message() can return non-zero, and

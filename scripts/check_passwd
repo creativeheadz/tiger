@@ -49,7 +49,7 @@
 # 01/18/2004 rbrad Applied Savannah patch:
 #	* 2466 - update list of shells to ignore.
 # 01/21/2004 jfs Moved comment from check_accounts to here and expanded
-#       shcase definition to be equivalent to the one there.
+#       shell list definition to be equivalent to the one there.
 # 03/03/2004 jfs Check if users do not have a shell defined
 # 05/03/2004 jfs Define Tiger_Passwd_Hashes if not defined (Debian bug #246885)
 # 12/27/2004 jfs Delete temporary passwd files only on exit (Debian bug #284899)
@@ -143,33 +143,32 @@ check_passwd_entries()
   while read login hash uid gid gcos home shell
   do
 
-    # Check the password hash.
-    [ -z "$Tiger_Passwd_Hashes" ] && Tiger_Passwd_Hashes='crypt3|md5|sha512|xxxxxxxxxxxxx'
-    eval "case \"$hash\" in
-      \"\")
-        message FAIL pass011f \"\" \"Username \\\`$login' has an empty password field.\"
-        ;;
-      $Tiger_Passwd_Hashes|\*)
-        ;;
-      *)
-        message WARN pass013w \"\" \"Username \\\`$login' is not using an acceptable password hash ($hash).\"
-        ;;
-    esac"
+    # Check the password hash: gen_passwd_sets names it (crypt3, md5,
+    # sha256, sha512, yescrypt, ...), * is locked, empty is none. The
+    # system's values are compared, never parsed: until October 2026 they
+    # went through eval, so an image's could run as code.
+    [ -z "$Tiger_Passwd_Hashes" ] && Tiger_Passwd_Hashes='crypt3|md5|sha256|sha512|yescrypt|gost-yescrypt|bcrypt|scrypt'
+    case "$hash" in
+      "") message FAIL pass011f "" "Username \`$login' has an empty password field." ;;
+      '*') ;;
+      *) matchlist "$hash" "$Tiger_Passwd_Hashes" ||
+           message WARN pass013w "" "Username \`$login' is not using an acceptable password hash ($hash)." ;;
+    esac
 
     # Report additional UID-0 accounts.
     [ "$uid" = 0 -a "$login" != root ] && {
       message WARN pass017w "" "Login ID $login has uid == 0."
     }
 
-    # Perform administrative checks (Maybe this should be a function...)
-    eval "case \"$login\" in
-      \"$Tiger_Admin_Accounts\")
-         [ \"$hash\" != '*' ] && {
-           message FAIL pass018f \"\" \"Administrative user $login does not have an impossible password.\"
-         }
-         continue
-         ;;
-    esac"
+    # Administrative accounts (Tiger_Admin_Accounts) must have an
+    # impossible password, and the shell checks below are not for them.
+    # (The list was quoted inside an eval, so it matched no login at all
+    # until October 2026, and the login could run as code.)
+    if matchlist "$login" "$Tiger_Admin_Accounts"; then
+      [ "$hash" != '*' ] &&
+        message FAIL pass018f "" "Administrative user $login does not have an impossible password."
+      continue
+    fi
 
     # Report users with / as their homedir. Service accounts that cannot
     # log in (systemd-*, polkitd, ...) are given / on purpose; skip them.
@@ -183,24 +182,21 @@ check_passwd_entries()
     # Mark as an emptyshell, if shell is not specified.
     [ "x$shell" = "x" -o "x$shell" = "x " ] && shell=emptyshell
 
-    # Check for valid shells.
-    # TODO: The hardcoded list of shells could be user defined 
-    # (i.e. in tigerrc)
-    eval "case \"$shell\" in
-      /bin/false|/usr/bin/false|/dev/null|/sbin/nologin|/bin/true|/usr/sbin/nologin)
-         ;;
-      $shcase)
-         [ \"$hash\" = \* ] && {
-	   message WARN pass014w \"\" \"Login ($login) is disabled, but has a valid shell.\"
-         } 
-         ;;
-      emptyshell)
-         message WARN pass015w \"\" \"Login ID $login has an empty shell.\"
-         ;;
+    # Check for valid shells: the ones that refuse a login, a shell the
+    # system lists (compared line for line as text, never parsed), an
+    # empty one, or anything else. root, locked with a shell, is how
+    # Debian and Ubuntu are meant to be run (sudo -i needs the shell).
+    case "$shell" in
+      /bin/false|/usr/bin/false|/dev/null|/sbin/nologin|/bin/true|/usr/sbin/nologin) ;;
+      emptyshell) message WARN pass015w "" "Login ID $login has an empty shell." ;;
       *)
-         message WARN pass015w \"\" \"Login ID $login does not have a valid shell ($shell).\"
-         ;;
-    esac"
+        case "$__nl$shells$__nl" in
+          *"$__nl$shell$__nl"*)
+            [ "$hash" = '*' ] && [ "$login" != root ] &&
+              message WARN pass014w "" "Login ($login) is disabled, but has a valid shell." ;;
+          *) message WARN pass015w "" "Login ID $login does not have a valid shell ($shell)." ;;
+        esac ;;
+    esac
   done
 
   IFS=$saveifs
@@ -246,16 +242,18 @@ conflict_check()
   delete $WORKDIR/p2uid.$$ $WORKDIR/p2name.$$
 }
 
-# Define shcase to be a list of valid shells, so we can check for
-# shell initilization files.
-shcase='/bin/sh|/bin/csh|/bin/bash|/bin/tcsh|/bin/ksh'
+# The valid shells, one per line: the system's /etc/shells, or a built-in
+# list without one. Compared as text in the loop above (they were a case
+# pattern run through eval, so a line of an image's /etc/shells ran).
+__nl='
+'
+shells="/bin/sh$__nl/bin/csh$__nl/bin/bash$__nl/bin/tcsh$__nl/bin/ksh"
 if [ "$OS" = "SunOS" ] ; then
-	shcase="$shcase|/sbin/sh|/usr/bin/bash"
+	shells="$shells$__nl/sbin/sh$__nl/usr/bin/bash"
 fi
 
 [ -n "$ETCSHELLS" ] && [ -s "`__here $ETCSHELLS`" ] && {
-  shells=`$GREP -v '^#' "\`__here $ETCSHELLS\`"`
-  shcase=`echo $shells | $TR ' ' '|'`
+  shells=`$AWK '/^[ \t]*#/ { next } NF { print $1 }' "\`__here $ETCSHELLS\`"`
 }
 
 if [ -n "$Tiger_PasswdFiles" ]; then

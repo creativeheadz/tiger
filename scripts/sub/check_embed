@@ -173,7 +173,9 @@ do
           print $i;
       }' |
       $GREP '^/[-/a-zA-Z0-9_.]*$' |
-      $AWK '{printf("%s %s\n", "'"$file"'", $1);}'
+      # the program's own path through the environment: a name spliced
+      # into the awk program could close its string and call system()
+      f="$file" $AWK '{printf("%s %s\n", ENVIRON["f"], $1);}'
     }
   done 2>/dev/null |
   $SORT -u |

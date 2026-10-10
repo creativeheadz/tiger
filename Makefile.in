@@ -161,7 +161,6 @@ MISCFILES=./initdefs \
 	./util/getfs-nfs \
 	./util/getfs-std \
 	./util/gethostinfo \
-	./util/getnetgroup \
 	./util/getpermit \
 	./util/installsig \
 	./util/logit \

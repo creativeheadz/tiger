@@ -5,9 +5,12 @@
 # tigris --root reads images that may be hostile, and runs as root to do
 # it. Whatever it reads from one is data, and none of it may be run. This
 # root plants a command in each place a check once parsed as shell code:
-# an account's name, shell and home directory, a line of /etc/shells, a
+# an account's name, password hash, shell and home directory, a line of
+# /etc/shells, a
 # group name, a file name in /dev, /etc/hostname (matched against
-# bootparams), a value in sshd_config. Each command is a bare redirection
+# bootparams), a value in sshd_config, a program name in root's PATH
+# (built into an awk program), a top-level directory's name (built into
+# a sed script). Each command is a bare redirection
 # that would create a file named pwned.* in the directory Tigris runs
 # from, so a Tigris that fails this test is not harmed by it. None may
 # appear, and the checks must still report what they report on a fair
@@ -45,13 +48,19 @@ n\`>pwned.name\`:x:$U:$G::/home/n:/bin/bash
 fair:x:$((U + 1)):$G:Fair:/home/fair:/bin/bash
 sh1:x:$((U + 2)):$G::/home/fair:/bin/sh\`>pwned.shell\`
 hh:x:$((U + 3)):$G::/h\`>pwned.home\`/x:/bin/bash
+ct:x:$((U + 4)):$G::/home/c%g;eid>pwned.tilde;#:/bin/bash
 EOF
+# a home directory whose name ends the sed s command that expands ~ in
+# a C shell start-up file, and adds GNU sed's e
+mkdir -p "$R/home/c%g;eid>pwned.tilde;#"
+printf 'set path = ( ~/bin /bin )\n' > "$R/home/c%g;eid>pwned.tilde;#/.cshrc"
 cat > "$R/etc/shadow" <<EOF
 root:*:19000:0:99999:7:::
-n\`>pwned.name\`:*:19000:0:99999:7:::
+n\`>pwned.name\`:\`>pwned.hash\`:19000:0:99999:7:::
 fair:\$6\$saltsalt\$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEF:19000:0:99999:7:::
 sh1:*:19000:0:99999:7:::
 hh:*:19000:0:99999:7:::
+ct:*:19000:0:99999:7:::
 EOF
 printf 'root:x:0:\ng`>pwned.group`:x:%s:\n' "$G" > "$R/etc/group"
 printf '/bin/x`>pwned.shells`\n/bin/sh\n/bin/bash\n' > "$R/etc/shells"
@@ -59,7 +68,17 @@ printf '/bin/x`>pwned.shells`\n/bin/sh\n/bin/bash\n' > "$R/etc/shells"
 # root's PATH holds a group-writable program; its group is named by the
 # image's /etc/group
 printf 'PATH=/usr/local/bin:/bin\nexport PATH\n' > "$R/.profile"
+# and in root's home, where the every-account PATH check reads it
+cp "$R/.profile" "$R/root/.profile"
 printf '#!/bin/sh\n' > "$R/usr/local/bin/tool"; chmod 775 "$R/usr/local/bin/tool"
+# a program in root's PATH whose name closes the string an awk program
+# was built around (check_embed) and calls system()
+evil='x",system("id>pwned.awk"),"'
+printf '#!/bin/sh\n/bin/true\n' > "$R/usr/local/bin/$evil"; chmod 755 "$R/usr/local/bin/$evil"
+# a top-level directory, where lost+found is looked for offline, whose
+# name ends a sed s command and adds GNU sed's e, which runs a command
+mkdir -p "$R/a%%;eid>pwned.sed;#/lost+found"
+: > "$R/a%%;eid>pwned.sed;#/lost+found/stray"
 
 # a regular file in /dev whose name holds the command
 : > "$R/dev/a\`>pwned.dev\`"
@@ -73,10 +92,12 @@ printf 'PasswordAuthentication `>pwned.ssh`\nPermitRootLogin yes\n' > "$R/etc/ss
 
 [ "$uid" = 0 ] && chown -R "$U:$G" "$R"
 
+# Every check on, so that each one that reads what was planted is put to
+# it (only five were, and check_passwd's own eval went unseen until the
+# next day); the package database checks have no database here to read
 {
-  sed -n 's/^\(Tiger_Check_[A-Z_]*\)=.*/\1=N/p' "$W/tigerrc"
+  sed -n 's/^\(Tiger_Check_[A-Z_]*\)=.*/\1=Y/p' "$W/tigerrc"
   echo 'Tiger_Deb_CheckMD5Sums=N'; echo 'Tiger_Deb_NoPackFiles=N'; echo 'Tiger_Deb_StatOverride=N'
-  for c in ACCOUNTS PATH BACKUPS EXPORTS SSH; do echo "Tiger_Check_$c=Y"; done
 } > "$W/profiles/hostile"
 chmod 644 "$W/profiles/hostile"
 
@@ -86,7 +107,7 @@ json=`ls "$W"/log/*.jsonl 2>/dev/null | head -1`
 has() { grep -q -- "$1" "$json"; }
 
 # nothing planted ran, wherever it would have landed in the copy
-for v in name shell home shells group dev host ssh
+for v in name hash shell home shells group dev host ssh awk sed tilde
 do
   found=`find "$W" -name "pwned.$v" 2>/dev/null`
   [ -z "$found" ] && ok "nothing run from the image ($v)" || bad "a command planted in the image ran ($v): $found"
