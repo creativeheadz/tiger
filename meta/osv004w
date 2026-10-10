@@ -6,7 +6,7 @@ Fix: Move to the stable release, or accept the finding on a machine meant to run
 References: os-release(5)
 Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
 
-The machine is running an unreleased version of Debian GNU/Linux.
-This version is not supported by the security team so it might not
-be up-to-date security wise (support is only provided for the latest
-release). That is, "run at your own risk".
+The machine runs Debian testing or unstable: its os-release has no
+version number and its debian_version names a codename. The Debian
+security team supports only the stable releases, so fixes reach
+testing late and unstable without review; "run at your own risk".

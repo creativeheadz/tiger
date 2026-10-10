@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# mkeol [OUT]: the end-of-support table check_release reads
+#                 (systems/Linux/2/eol_list), from endoflife.date.
+#
+#   For the maintainer, before a release: it needs the network and curl,
+#   which an audit never does. One line per release cycle:
+#
+#     ID CYCLE EOL EXTENDED
+#
+#   ID is the distribution's os-release ID (centos-stream for CentOS
+#   Stream, whose os-release says centos), CYCLE the release as
+#   endoflife.date names it (13, 24.04, 9, 3.24, lmde7), EOL the last day
+#   of its security support (YYYY-MM-DD; "past" when it has ended on a
+#   day nobody recorded; "-" when no end is set), EXTENDED the end of
+#   paid extended support, or "-".
+#
+#-----------------------------------------------------------------------------
+#
+T=`cd "\`dirname "$0"\`/.." && pwd`
+OUT=${1:-$T/systems/Linux/2/eol_list}
+AWK=${AWK:-awk}
+command -v curl >/dev/null 2>&1 || { echo "mkeol: curl is needed" >&2; exit 2; }
+W=`mktemp -d "${TMPDIR:-/tmp}/mkeol.XXXXXX"` || exit 2
+trap 'rm -rf "$W"' 0
+
+{
+  echo "# End of security support per release, read by check_release."
+  echo "# From https://endoflife.date on `date -u +%Y-%m-%d` by util/mkeol; do not edit,"
+  echo "# run sh util/mkeol before a release instead."
+  echo "#"
+  echo "# os-release ID  cycle  end of security support  end of paid extended support"
+  # endoflife.date's product, and the os-release ID it describes
+  for pair in debian:debian ubuntu:ubuntu linuxmint:linuxmint rhel:rhel centos:centos \
+      centos-stream:centos-stream rocky-linux:rocky almalinux:almalinux oracle-linux:ol \
+      fedora:fedora amazon-linux:amzn opensuse:opensuse-leap sles:sles alpine-linux:alpine
+  do
+    p=${pair%%:*}; id=${pair#*:}
+    curl -fsSL "https://endoflife.date/api/$p.json" > "$W/$p.json" || { echo "mkeol: cannot fetch $p" >&2; exit 2; }
+    $AWK -v id="$id" '
+      # a field of one record: a string as it is, true and false as
+      # "past" and "-" for the end of support, "-" for anything else
+      function val(r, k,   i, rest) {
+        i = index(r, "\"" k "\":")
+        if (!i) return "-"
+        rest = substr(r, i + length(k) + 3)
+        if (substr(rest, 1, 1) == "\"") { rest = substr(rest, 2); return substr(rest, 1, index(rest, "\"") - 1) }
+        if (k == "eol" && rest ~ /^true/) return "past"
+        return "-"
+      }
+      { s = s $0 }
+      END {
+        n = split(s, rec, /[}],?[ \t]*[{]/)
+        for (i = 1; i <= n; i++) {
+          c = val(rec[i], "cycle"); if (c == "-" || (c in seen)) continue
+          seen[c] = 1
+          e = val(rec[i], "eol"); x = val(rec[i], "extendedSupport")
+          if (x !~ /^[0-9]/) x = "-"
+          printf "%-14s %-8s %-10s %s\n", id, c, e, x
+        }
+      }' "$W/$p.json" || exit 2
+  done
+} > "$W/out" || exit 2
+[ "`grep -vc '^#' "$W/out"`" -gt 50 ] || { echo "mkeol: too few releases fetched; $OUT left as it was" >&2; exit 2; }
+cat "$W/out" > "$OUT"
+echo "mkeol: `grep -vc '^#' "$OUT"` releases in $OUT"

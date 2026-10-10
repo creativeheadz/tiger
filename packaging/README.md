@@ -68,6 +68,11 @@ useradd -m builder; echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
 ## Releases
 
+Before a release, `sh util/mkeol` refreshes `systems/Linux/2/eol_list`,
+the end of each distribution release's security support that
+check_release judges against (from endoflife.date; it needs the
+network, which an audit never does).
+
 Each release bumps the version where the formats carry it literally:
 
 - `version` (as today), and the `Version` in `packaging/tigris.spec`

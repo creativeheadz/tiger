@@ -2,10 +2,11 @@ Id: osv001f
 Severity: FAIL
 Category: packages
 Check: check_release
-Fix: Upgrade to a supported release.
+Fix: Reinstall with a distribution that is still supported.
 References: os-release(5)
 Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
 
-The operating system version appears to be less than RedHat 6.2
-Due to security enhancements and fixes available in recent releases,
-running an older version of RedHat is strongly discouraged.
+This is Red Hat Linux, the distribution Red Hat made before Red Hat
+Enterprise Linux. Its last release, 9, stopped receiving security
+updates in 2004, so every hole found since is open on this system.
+There is no upgrade path from it: install a supported distribution.

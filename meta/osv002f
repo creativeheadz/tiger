@@ -2,10 +2,20 @@ Id: osv002f
 Severity: FAIL
 Category: packages
 Check: check_release
-Fix: Upgrade to a supported Debian release.
-References: os-release(5)
+Fix: Upgrade to a release the distribution still supports (do-release-upgrade, dnf system-upgrade, or the release notes' upgrade steps), or buy its extended support.
+References: os-release(5); https://endoflife.date
 Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
 
-The operating system version appears to be less than Debian 3.0
-Due to security enhancements and fixes available in recent releases,
-running an older version of Debian is strongly discouraged.
+The installed release of the distribution is past the end of its
+security support: holes found since that date are fixed in the
+releases still supported, not in this one, and its package manager
+offers no updates for them. The release comes from /etc/os-release
+(the image's, under --root) and the date from the table Tigris
+carries, systems/Linux/2/eol_list, made from endoflife.date by
+util/mkeol for every Tigris release; an audit never goes to the
+network for it.
+
+Where the distribution sells extended support (RHEL, Ubuntu Pro's
+ESM, SUSE, Freexian's ELTS for Debian), the detail says until when; a
+system that has it can accept this finding with tigris-accept until
+that date.
