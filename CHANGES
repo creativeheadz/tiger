@@ -1,6 +1,71 @@
 NOTE: To read changes made to the Debian package (since
 August 23rd 2001) see the changelog.Debian file
 
+Changes (v 3.8.1)
+--------------------
+
+A security release. Auditing a hostile image with tigris --root could
+run a command, as root, on the machine doing the audit. Several checks
+tested a value read from the audited system (an account's name, shell
+or home directory, a line of /etc/shells, a group or owner name, a file
+name in /dev, the image's /etc/hostname) by building a shell case
+statement around it and running it through eval, so a backquote in the
+value ran. Every release with --root, 3.5.0 to 3.8.0, is affected; on a
+running system those values are root's to set. Upgrade if you audit
+images you did not build yourself. Every such test now goes through one
+helper that reads the value as a variable and never parses it, and
+tests/hostile_root_check.sh plants a command in each of those places,
+in CI as a user and as root: on 3.8.0 seven of its eight run.
+
+Every finding now says what to do about it: a one-line Fix for every
+id that asks for action and References for all of them, shown by
+tigris explain and in the HTML reference. The 87 findings that had no
+compliance control are mapped, or declared unmapped with the reason in
+doc/controls.map. tests/explain_check.sh fails the build on a finding
+without them, or on a control id the JSON schema would reject.
+
+On the reference machine (Linux Mint 22.3, kernel 7.0), as root: a full
+run takes 2:01 (109 s user, 87 s system) and peaks at 131 MB, as 3.7.0
+did.
+
+Changes you will see
+
+- An image whose directory resolves to nothing (a symlink loop) no
+  longer lists this host's / in its place.
+- tigris -v prints "Tigris, version ..." (it said "tiger, version"), -h
+  and --help name the version, which they printed empty, and --help
+  is no longer an unknown option.
+- Installed copies, the .deb, .rpm and .apk among them, reported their
+  version as "undetermined": make install left out version.h.
+- tigris -c with a space in the path reads that file. The tigerrc was
+  silently not read, and every check ran. The run record escapes the
+  config path, host, OS, release and architecture, so a quote in any
+  of them no longer makes the JSON invalid.
+- tigris-diff with an empty earlier report (a run that died) lists the
+  new run's findings as new. It read them all as resolved, so --since
+  reported nothing.
+- ssh012w for LoginGraceTime 0, which means no limit at all: it passed
+  as being under 60 seconds.
+- snmp001w, not snmp002i, for a write community whose source is
+  "default", 0.0.0.0/0 or ::/0, which is every address; rwcommunity6
+  and rocommunity6 are read too.
+- krb001w for single DES in default_tkt_enctypes, which a mistyped
+  pattern never matched, and krb5.conf.d is read as Kerberos reads it:
+  RHEL's crypto-policies file, which has no .conf suffix, was skipped.
+- check_nfsd runs on a live system. It called a helper it did not
+  define, and said nothing.
+- stor012w for sudoers.d files and SSH host keys: a typo kept them out
+  of the ACL check.
+- RHEL's commented forwarding example, #*.* @@remote-host:514, is no
+  longer read as logs being forwarded (rlog001i), which hid rlog002i.
+- embed001 and embed002 have explanations. They were always reported,
+  but the escaping that put them through eval hid them from
+  explain_check.
+- check_perms checks every match of a wildcard entry of the permission
+  database (/bin/*, /etc/security/*), not only the first. Eleven
+  entries whose last columns had run together are split, and a
+  duplicate /usr entry that reported an empty id is gone.
+
 Changes (v 3.8.0)
 --------------------
 

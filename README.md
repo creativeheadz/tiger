@@ -72,7 +72,8 @@ Findings you accept stay accepted, with a reason and an expiry date.
 
 **Audits images without booting them.** `tigris --root /mnt/image`
 reads a mounted disk, an unpacked container image or a VM snapshot.
-Nothing in the image is ever run.
+Nothing in the image is ever run, and nothing read from it is treated
+as code: a test plants commands in an image to prove it.
 
 </td>
 <td valign="top">
@@ -313,15 +314,16 @@ archive, not this fork.
 ## Where it is going
 
 [ROADMAP.md](ROADMAP.md) has the decisions, the status and what is next.
-3.7.0 finished the offline audit, so an image reads as fully as a
-running system, and brought the packages; 3.6.0 the compliance mapping,
-the transparent summary and five server-side checks; 3.5.0 the offline
-audit. 3.8.0 carries the same audit to macOS and FreeBSD, from fixture
-roots on any machine. Next is 4.0: the internals renamed in one go (`tigris.conf`,
-`Tigris_*`, `/etc/tigris`) with shims for old configurations, a `Fix`
-line in every finding's metadata, and later a PowerShell engine for
-Windows against the same contract. Every change is measured for wall
-time, CPU and memory.
+3.8.1 makes sure nothing an audited image holds can run as code, and
+gives every finding a one-line fix and references; 3.8.0 carries the
+audit to macOS and FreeBSD, from fixture roots on any machine; 3.7.0
+finished the offline audit, so an image reads as fully as a running
+system, and brought the packages; 3.6.0 the compliance mapping, the
+transparent summary and five server-side checks; 3.5.0 the offline
+audit. Next is 4.0: the internals renamed in one go (`tigris.conf`,
+`Tigris_*`, `/etc/tigris`) with shims for old configurations, and later
+a PowerShell engine for Windows against the same contract. Every change
+is measured for wall time, CPU and memory.
 
 ## Lineage
 

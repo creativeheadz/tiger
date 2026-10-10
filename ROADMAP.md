@@ -7,9 +7,9 @@ is the reference point because it is the tool people compare against:
 everything Lynis checks on a platform Tigris supports, Tigris checks
 too, tracked group by group in `doc/parity-matrix.md`.
 
-*Last updated 9 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
+*Last updated 10 October 2026.* `[x]` done, `[ ]` to do, `[~]` started.
 Everything marked done is on `master`; "released" means tagged (the last
-tag is `version_3_7_0`).
+tag is `version_3_8_1`).
 
 ## Contents
 
@@ -143,6 +143,14 @@ fast the disks can be walked (a bare `find` over the same disks takes
    with 16,000 lines of dangling symlinks hides the few that matter.
 
 ## What has shipped
+
+**Released: 3.8.1 (10 October 2026).** A security release: a hostile
+image audited with `--root` could run a command as root on the auditing
+machine, through values its checks parsed as shell code (3.5.0 to 3.8.0
+are affected). Nothing read from a system is parsed as code now, and
+`tests/hostile_root_check.sh` keeps it so. Also a Fix and References
+for every finding, the last 87 findings mapped to controls, and ten
+bug fixes from the review of 10 October. The full list is in `CHANGES`.
 
 **Released: 3.4.0 (7 October 2026).** Twelve new checks for how a Linux
 system is run today, profiles, a non-root mode that says what it
