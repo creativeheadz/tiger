@@ -250,6 +250,20 @@ done`
 [ -z "$unmapped" ] && ok "every finding that can show a gap is mapped or declared unmapped" ||
   { bad "findings with no compliance mapping and no id: rule in doc/controls.map:"; echo "$unmapped" | sed 's/^/     /'; }
 
+# Every control named in a Controls: line has the shape the JSON schema
+# (doc/tigris-report.schema.json) accepts, so a typo in doc/controls.map
+# cannot make a live report fail validation
+badctl=`grep -h '^Controls: ' "$TIGER"/meta/* | sed 's/^Controls: //' | tr ';' '\n' | sed 's/^ *//' | while read -r fw items
+do
+  case "$fw" in
+    CIS) pat='^[0-9]+\.[0-9]+$' ;; NIST) pat='^[A-Z]{2}-[0-9]+(\([0-9]+\))?$' ;;
+    ISO) pat='^[5-8]\.[0-9]+$' ;; CE) continue ;; *) echo "framework $fw"; continue ;;
+  esac
+  echo "$items" | tr ',' '\n' | sed 's/^ *//' | grep -vE "$pat" | sed "s/^/$fw /"
+done | sort -u`
+[ -z "$badctl" ] && ok "every control in the Controls: lines has the shape the JSON schema accepts" ||
+  { bad "controls the JSON schema would reject:"; echo "$badctl" | sed 's/^/     /'; }
+
 # Every finding has References, and every one that asks for something to be
 # done (ALERT, FAIL, WARN, ERROR) has a one-line Fix. INFO and CONFIG ids
 # that only confirm an arrangement may have none.
