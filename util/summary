@@ -35,13 +35,43 @@
 #
 #-----------------------------------------------------------------------------
 #
-json=N
-[ "$1" = -j ] && { json=Y; shift; }
+# -c: the same for the terminal at the end of a run (no "# ", the ids by
+# level, how to read one up); -C colours it, for a terminal that wants it
+json=N console=N colour=N
+while :
+do
+  case "$1" in
+    -j) json=Y; shift ;;
+    -c) console=Y; shift ;;
+    -C) colour=Y; shift ;;
+    *) break ;;
+  esac
+done
 report=$1
-[ -n "$report" ] && [ -r "$report" ] || { echo "usage: summary [-j] REPORT.jsonl" >&2; exit 2; }
+[ -n "$report" ] && [ -r "$report" ] || { echo "usage: summary [-j | -c [-C]] REPORT.jsonl" >&2; exit 2; }
 AWK=${AWK:-awk}
 
-$AWK -v json="$json" '
+$AWK -v json="$json" -v console="$console" -v colour="$colour" '
+  # s in the colour c (an SGR code) when colouring, else as it is
+  function paint(c, s) { return (colour == "Y" ? "\033[" c "m" s "\033[0m" : s) }
+  # the line saying how many checks were skipped for reason r, and why
+  function skipline(r,   n, one) {
+    n = skipr[r]; one = (n == 1)
+    if (r == "needs root") printf "  %d check%s root and %s skipped: run Tigris as root to include %s.\n", n, (one ? " needs" : "s need"), (one ? "was" : "were"), (one ? "it" : "them")
+    else if (r == "live system") printf "  %d check%s a running system and %s skipped.\n", n, (one ? " needs" : "s need"), (one ? "was" : "were")
+    else if (r == "not offline yet") printf "  %d check%s read an offline root yet and %s skipped.\n", n, (one ? " cannot" : "s cannot"), (one ? "was" : "were")
+    else printf "  %d check%s skipped (%s).\n", n, (one ? " was" : "s were"), r
+  }
+  # a list of words wrapped at w columns, each line after the first
+  # starting with ind
+  function wrap(list, w, ind,   a, n, i, out, line) {
+    n = split(list, a, " "); out = ""; line = ""
+    for (i = 1; i <= n; i++) {
+      if (line != "" && length(line) + 1 + length(a[i]) > w) { out = out line "\n" ind; line = "" }
+      line = line (line == "" ? "" : " ") a[i]
+    }
+    return out line
+  }
   # the value of a string key, raw
   function raw(rec, key,   i, j) {
     i = index(rec, "\"" key "\":\"")
@@ -60,7 +90,7 @@ $AWK -v json="$json" '
     }
     return out line
   }
-  index($0, "{\"type\":\"skip\"") == 1 { nskip++; next }
+  index($0, "{\"type\":\"skip\"") == 1 { nskip++; skipr[raw($0, "reason")]++; next }
   index($0, "{\"type\":\"finding\"") != 1 { next }
   {
     lvl = raw($0, "level"); id = raw($0, "id"); cat = raw($0, "category")
@@ -91,6 +121,33 @@ $AWK -v json="$json" '
       printf ",\"score\":{\"value\":%d,\"formula\":\"100 - 10*ALERT - 4*FAIL - 1*WARN, each distinct finding id once, not below 0; INFO, ERROR, accepted findings and skipped checks do not count\",\"deducted\":{\"ALERT\":%d,\"FAIL\":%d,\"WARN\":%d}}",
         score, ded["ALERT"], ded["FAIL"], ded["WARN"]
       printf "\n"
+      exit
+    }
+    if (console == "Y") {
+      # the counts worst first, zeros dimmed; then anything left out
+      split("ALERT FAIL WARN INFO ERROR", lv, " ")
+      sgr["ALERT"] = "1;31"; sgr["FAIL"] = "31"; sgr["WARN"] = "33"; sgr["INFO"] = "36"; sgr["ERROR"] = "35"
+      line = ""
+      for (k = 1; k <= 5; k++) {
+        l = lv[k]; n = count[l] + 0
+        line = line (k > 1 ? "   " : "  ") paint(n ? sgr[l] : "2", n " " l)
+      }
+      print line
+      # what is not in the counts, and why
+      if (accepted) printf "  %d accepted finding%s left out (tigris-accept -l lists %s).\n", accepted, (accepted == 1 ? "" : "s"), (accepted == 1 ? "it" : "them")
+      split("needs root|live system|not offline yet", known, "|")
+      for (k = 1; k <= 3; k++) if (known[k] in skipr) skipline(known[k])
+      for (r in skipr) if (r != known[1] && r != known[2] && r != known[3]) skipline(r)
+      # the score, green from 80, yellow from 50, red below
+      printf "  %s (100 minus 10 per ALERT id, 4 per FAIL id, 1 per WARN id)\n",
+        paint(score >= 80 ? "1;32" : (score >= 50 ? "1;33" : "1;31"), "Score " score " of 100")
+      for (k = 1; k <= 3; k++) {
+        l = lv[k]
+        if (distinct[l]) printf "  %s %s\n", paint(sgr[l], sprintf("%-5s", l)), wrap(ids[l], 68, "        ")
+      }
+      worst = (ids["ALERT"] != "" ? ids["ALERT"] : (ids["FAIL"] != "" ? ids["FAIL"] : ids["WARN"]))
+      sub(/ .*/, "", worst)
+      if (worst != "") printf "  tigris explain %s says what a finding means and how to fix it.\n", worst
       exit
     }
     nd = distinct["ALERT"] + distinct["FAIL"] + distinct["WARN"]

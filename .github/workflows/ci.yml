@@ -40,6 +40,8 @@ jobs:
         run: sh tests/accept_check.sh
       - name: Transparent summary
         run: sh tests/summary_check.sh
+      - name: How a finding reads in the text report
+        run: sh tests/report_text_check.sh
       - name: Certificates
         run: sh tests/certs_check.sh
       - name: Databases

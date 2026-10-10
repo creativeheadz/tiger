@@ -33,6 +33,14 @@ chmod 755 "$W/scripts/check_system"
 case $st in 0|2|3|4|5) ok "piped run finishes (exit $st)";; *) bad "piped run finishes (exit $st)";; esac
 grep -q '^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]> ' "$W/out" && ok "progress lines carry seconds" || bad "progress lines carry seconds"
 [ "`tr -cd '\r' < "$W/out" | wc -c`" = 0 ] && ok "no carriage returns when piped" || bad "no carriage returns when piped"
+# one line says what is audited; no credits, no configuration chatter;
+# the run ends with the summary and where the reports are; no colour
+head -1 "$W/out" | grep -q "^Tigris [0-9][0-9.]* .* `uname -s` " && ok "the first line names Tigris, its version and the system" || bad "first line: `head -1 "$W/out"`"
+grep -q 'Based on Tiger\|Configuring\.\.\.\|Will try to check\|con005c\|con004c' "$W/out" && bad "credits or configuration chatter on a normal run" || ok "no credits or configuration chatter"
+grep -q '^  Score [0-9]* of 100' "$W/out" && grep -q '^  Report  ' "$W/out" && grep -q '^  JSON    ' "$W/out" &&
+  ok "the run ends with the summary and the reports' paths" || bad "end of run: `tail -5 "$W/out"`"
+esc=`printf '\033'`
+grep -q "${esc}\[[0-9;]*m" "$W/out" && bad "colour codes in piped output" || ok "no colour when piped"
 
 # --- on a terminal: the line spins, then finishes as the same line
 printf '' | script -qec true /dev/null >/dev/null 2>&1
@@ -43,6 +51,12 @@ if [ $? -eq 0 ]; then
   crs=`tr -cd '\r' < "$W/tty" | wc -c`; lfs=`tr -cd '\n' < "$W/tty" | wc -c`
   [ "$crs" -gt "$lfs" ] && ok "the spinner animated ($crs CRs over $lfs lines)" || bad "the spinner animated ($crs CRs over $lfs lines)"
   grep -q '[0-9][0-9]:[0-9][0-9]:[0-9][0-9]> ' "$W/tty" && ok "finished lines keep the timestamp" || bad "finished lines keep the timestamp"
+  # colour on a terminal, and none with NO_COLOR set (no-color.org); the
+  # spinner's clear-line code is not colour, so only SGR codes count
+  ( cd "$W" && TERM=xterm script -qec "sh ./tigris -c tigerrc.t" /dev/null ) > "$W/tty2" 2>/dev/null
+  grep -q "${esc}\[[0-9;]*m" "$W/tty2" && ok "colour on a terminal" || bad "no colour on a terminal"
+  ( cd "$W" && NO_COLOR=1 TERM=xterm script -qec "sh ./tigris -c tigerrc.t" /dev/null ) > "$W/tty3" 2>/dev/null
+  grep -q "${esc}\[[0-9;]*m" "$W/tty3" && bad "colour despite NO_COLOR" || ok "NO_COLOR turns the colour off"
 else
   echo "SKIP: script(1) is needed for the terminal part"
 fi

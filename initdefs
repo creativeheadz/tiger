@@ -318,37 +318,35 @@ message()
 
   [ "$_level" = "INFO" -a "x$Tiger_Show_INFO_Msgs" = 'xN' ] && return
 
+  # "--LEVEL-- [id]" and the words after it, wrapped at the width (0: no
+  # wrapping), each line after the first indented under the id; the detail
+  # starts a line of its own. No line ends in a blank, and a word too long
+  # for the line still follows the tag rather than leaving it alone.
+  # (printf, not echo: dash's echo reads backslashes in file names.)
   {
-    echo "$_mesg"
-    [ -n "$_trail" ] && echo "$_trail"
+    printf '%s\n' "$_mesg"
+    [ -n "$_trail" ] && printf '%s\n' "$_trail"
   } |
-  $AWK '
+  $AWK -v lvl="$_level" -v id="$_msgid" -v width="$__len" '
   BEGIN {
-    printf("--%s-- [%s] ", "'"$_level"'", "'"$_msgid"'");
-    vl = length("'"$_level"'") + 5;
-    spaces="";
-    for(i=0;i<vl;i++)
-       spaces=spaces " ";
-    ll = vl + length("'"$_msgid"'") + 3;
+    printf("--%s-- [%s]", lvl, id)
+    vl = length(lvl) + 5
+    spaces = sprintf("%" vl "s", "")
+    ll = vl + length(id) + 2; wc = 0
   }
+  NR > 1 { pend = 1 }
   {
-    if(ll==0){
-      printf("%s", spaces);
-      ll=vl;
-    }
-    for(i=1;i<=NF;i++){
-      wl = length($i)+1;
-      if('$__len' != 0 && (wl + ll) > '$__len'){
-        printf("\n%s", spaces);
-        ll = vl;
+    for (i = 1; i <= NF; i++) {
+      wl = length($i)
+      if (pend || (wc > 0 && width != 0 && ll + 1 + wl > width)) {
+        printf("\n%s%s", spaces, $i); ll = vl + wl; wc = 1; pend = 0
+      } else {
+        printf(" %s", $i); ll += wl + 1; wc++
       }
-      printf("%s ", $i);
-      ll += wl;
     }
-    printf("\n");
-    ll=0;
+    if (NF == 0 && pend) printf("\n")
   }
-  '
+  END { printf("\n") }'
 }
  [ "$HTML" = "Y" ] && {
  [ "$_level" = "INFO" -a "x$Tiger_Show_INFO_Msgs" = 'xN' ] && return
@@ -931,6 +929,16 @@ skip_check()
   echo "# Skipped $__sname: $__text."
   [ -n "$Tiger_JSON_File" ] && printf '{"type":"skip","check":"%s","reason":"%s"}\n' "$__sname" "$__why" >> "$Tiger_JSON_File"
   return 0
+}
+
+#
+# use_colour: whether what goes to standard output may be coloured: it is
+# a terminal, NO_COLOR is unset or empty (no-color.org), and the terminal
+# is not a dumb one. Files, pipes and cron get plain text.
+#
+use_colour()
+{
+  [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ -n "${TERM:-}" ] && [ "$TERM" != dumb ]
 }
 
 #

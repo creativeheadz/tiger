@@ -183,7 +183,7 @@ parse_sshd_config_file()
 		message WARN ssh003w "" "The RhostsAuthentication directive in $1 is set to the unapproved default value: no."
 	}
 	[ $found_PasswordAuthentication = 0 ] && parse_directive "yes" "$Tiger_SSH_PasswordAuthentication" && {
-		message WARN ssh004w "" "The PasswordAuthentication directive in $1 is set to the unapproved defult value: yes."
+		message WARN ssh004w "" "The PasswordAuthentication directive in $1 is set to the unapproved default value: yes."
 	}
 }
 

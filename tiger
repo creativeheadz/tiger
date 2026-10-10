@@ -50,20 +50,8 @@ case "$1" in
   explain) shift; exec sh "`dirname "$0"`/tigexp" "$@" ;;
 esac
 
-# The banner comes before config reads the options, so -q is looked for here
-case " $* " in
-  *" -q "*) ;;
-  *)
-echo "Tigris security checking system"
-echo "   Based on Tiger, developed by Texas A&M University, 1993-1994"
-echo "   Updated by the Advanced Research Corporation, 1999-2002"
-echo "   Maintained by Javier Fernandez-Sanguino, 2001-2019"
-echo "   Contributions by Francisco Manuel Garcia Claramonte, 2009-2010"
-echo "   Continued as Tigris by Andrei Trimbitas, 2026"
-echo "   Covered by the GNU General Public License (GPL)"
-echo
-  ;;
-esac
+# The credits are in tigris -v and the man page; a run starts with one
+# line saying what it audits, once the options are read (below)
 TigerInstallDir="."
 #
 # Set default base directory.
@@ -206,23 +194,31 @@ since_file=
 
 version="$TIGERVERSION"
 
-echo "Tiger security scripts *** $version ***"
+# One line for what is audited: the version without its build stamp, the
+# host and its system, and the profile and the root when there are any
+sep=' - '
+case "$Tiger_Orig_Locale" in *UTF-8*|*UTF8*|*utf8*) sep=`printf ' \302\267 '`;; esac
+banner="Tigris ${version%%,*}$sep$HOSTNAME$sep$OS $REV $ARCH"
+[ -n "$PROFILE" ] && banner="$banner${sep}profile $PROFILE"
+[ -n "$TIGRIS_ROOT" ] && banner="$banner${sep}auditing $TIGRIS_ROOT"
+if use_colour; then printf '\033[1m%s\033[0m\n' "$banner"; else printf '%s\n' "$banner"; fi
 
 [ "$Tiger_TESTMODE" != 'Y' ] && {
   # Seconds in the stamp, so two runs started in the same minute get
   # different report names instead of overwriting each other.
   datestamp="`$DATECMD`-`$TIMECMD`"
 
-  logtmp="$LOGDIR/security.report.${HOSTNAME}.tmp.$$"
-  logfile="$LOGDIR/security.report.${HOSTNAME}.$datestamp"
-  expreport="$LOGDIR/explain.report.${HOSTNAME}.$datestamp"
+  # the default log directory is "log/": no doubled slash in the names
+  logtmp="${LOGDIR%/}/security.report.${HOSTNAME}.tmp.$$"
+  logfile="${LOGDIR%/}/security.report.${HOSTNAME}.$datestamp"
+  expreport="${LOGDIR%/}/explain.report.${HOSTNAME}.$datestamp"
 }
 
 > $logtmp
 
 [ "$Tiger_TESTMODE" != 'Y' ] && {
 
-  echo "Security scripts *** $version ***" >> $logtmp
+  echo "Tigris $version" >> $logtmp
   [ "$HTML" = "Y" ] && {
   	echo '<H2><CENTER>TIGER System Security Scanner</H2></Center>' > $logtmp
   	echo '<PRE>' >> $logtmp
@@ -238,11 +234,10 @@ echo "Tiger security scripts *** $version ***"
   echo "`$TIMECMD`> Beginning security report for ${HOSTNAME}."
   [ -n "$TIGRIS_ROOT" ] && {
     echo "# Auditing the system in $TIGRIS_ROOT, which is not running: its files are read from ${HOSTNAME}, with ${HOSTNAME}'s tools, and checks of a running system are skipped." >> $logtmp
-    echo "`$TIMECMD`> Auditing the system in $TIGRIS_ROOT, which is not running."
   }
   # The same findings as JSON Lines, next to the text report
   [ "$Tiger_Output_JSON" != 'N' ] && {
-    Tiger_JSON_File="$LOGDIR/security.report.${HOSTNAME}.$datestamp.jsonl"
+    Tiger_JSON_File="${LOGDIR%/}/security.report.${HOSTNAME}.$datestamp.jsonl"
     export Tiger_JSON_File
     # An id for this run, so its records can be told from another run's
     Tiger_Run_Id=`$CAT /proc/sys/kernel/random/uuid 2>/dev/null`
@@ -715,7 +710,6 @@ noroot=`$GREP -c '^# Skipped [^:]*: it needs root' $logtmp 2>/dev/null`
     # distinct ids, per-category counts and the score, after the counts
     summary_extra=`sh $BASEDIR/util/summary -j "$Tiger_JSON_File" 2>/dev/null`
     echo "{\"type\":\"summary\",\"id\":\"$Tiger_Run_Id\",\"end\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\",\"counts\":{$counts}$summary_extra,\"skipped\":${skipped:-0}}" >> $Tiger_JSON_File
-    echo "Findings as JSON Lines are in \`$Tiger_JSON_File'."
   }
 
   if [ -n "`echo $LOGDIR | $AWK -F\@ '{print $2}'`" ]; then
@@ -733,17 +727,26 @@ noroot=`$GREP -c '^# Skipped [^:]*: it needs root' $logtmp 2>/dev/null`
   fi
 
 
+  reportfile=$logfile
   [ "$HTML" = "Y" ] && {
-    htmlfile="$logfile.html"
-    $MV $logfile $htmlfile
-#    $CAT html/* >> $htmlfile
-    echo "Security report is in \`$htmlfile'."
+    reportfile="$logfile.html"
+    $MV $logfile $reportfile
   }
-  [ "$HTML" = "N" ] && {
-    echo "Security report is in \`$logfile'."
+  # The run on the terminal: the counts, the score and the ids it went to,
+  # coloured on a terminal (util/summary -c), then where the reports are
+  [ -n "$Tiger_JSON_File" ] && [ "$QUIET" != 'Y' ] && {
+    echo
+    if use_colour; then sh $BASEDIR/util/summary -c -C "$Tiger_JSON_File"
+    else sh $BASEDIR/util/summary -c "$Tiger_JSON_File"; fi
   }
-  [ "${noroot:-0}" -gt 0 ] && echo "$noroot checks need root and were skipped; run Tigris as root to include them."
-  [ -n "$TIGRIS_ROOT" ] && [ "$skipped" -gt "${noroot:-0}" ] && echo "`expr $skipped - ${noroot:-0}` checks cannot read an offline root and were skipped; the report lists them."
+  echo
+  echo "  Report  $reportfile"
+  [ -n "$Tiger_JSON_File" ] && echo "  JSON    $Tiger_JSON_File"
+  # what was skipped: in the summary above when there is one, else here
+  [ -z "$Tiger_JSON_File" ] && {
+    [ "${noroot:-0}" -gt 0 ] && echo "$noroot checks need root and were skipped; run Tigris as root to include them."
+    [ -n "$TIGRIS_ROOT" ] && [ "$skipped" -gt "${noroot:-0}" ] && echo "`expr $skipped - ${noroot:-0}` checks cannot read an offline root and were skipped; the report lists them."
+  }
 
   # --since: what changed since that run. The exit status then counts the
   # new findings only; with -q, nothing is printed unless something

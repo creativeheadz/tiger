@@ -184,11 +184,12 @@ params="$*"
 haveallcmds GREP SED SORT || exit 1
 haveallfiles BASEDIR || exit 1
 
-# explain ID [long]: the explanation of one finding id; "long" puts its
-# severity, category and checks first
+# explain ID [long [tight]]: the explanation of one finding id; "long"
+# puts its severity, category and checks first; "tight" leaves out the
+# blank lines around it, for tigris explain on the command line
 explain()
 {
-  echo
+  [ "$3" = tight ] || echo
   case "$1" in
     ''|*[!a-z0-9]*) meta= ;;     # an id is letters and digits, nothing else
     *) meta="$BASEDIR/meta/$1" ;;
@@ -202,7 +203,7 @@ explain()
   else
     echo "Can not find explanation for message-id $1"
   fi
-  echo
+  [ "$3" = tight ] || echo
 }
 
 explainfile()
@@ -212,8 +213,9 @@ explainfile()
     echo "Error: Cannot read file provided as argument: $file"
     exit 1
   fi
+  # the id is the first [...] after the level: a message may hold brackets
   $GREP '^--[A-Z]*-- \[.*\]' $file |
-  $SED -e 's/^.*\[\(.*\)\].*$/\1/' |
+  $SED -e 's/^--[A-Z]*-- \[\([a-z0-9]*\)\].*$/\1/' |
   $SORT -u |
   while read msgid
   do
@@ -236,7 +238,7 @@ explaininsert()
 	  explain "$msgid"
 	  msgid=
 	}
-	msgid="`echo \"$line\" | $SED -e 's/^.*\[\(.*\)\].*$/\1/' -e '/\-/d'`"
+	msgid="`printf '%s\n' \"$line\" | $SED -n -e 's/^--[A-Z]*-- \[\([a-z0-9]*\)\].*$/\1/p'`"
 	;;
 	\#*)
 	[ -n "$msgid" ] && {
@@ -268,11 +270,12 @@ elif [ $# -eq 0 ]; then
   echo "       tigexp -F REPORT   the report with each explanation after its finding"
   exit 1
 elif [ $# -eq 1 ]; then
-  explain "$1" long
+  explain "$1" long tight
 else
   for msg
   do
     echo "[$msg]"
-    explain $msg long
+    explain "$msg" long tight
+    echo
   done
 fi

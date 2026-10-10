@@ -128,7 +128,7 @@ binaries.
 Test mode: check the configuration, run nothing.
 .TP
 .B \-v
-Print the version.
+Print the version, and who wrote TIGER and Tigris.
 .TP
 .B \-h
 Print the usage.
@@ -140,6 +140,16 @@ report it, the compliance controls it is evidence about, and what to do
 about it. The same as
 .BR tigexp (8).
 .SH OUTPUT
+On the terminal a run starts with one line naming the version, the host
+and its system, and the profile and root when there are any, shows each
+check as it runs, and ends with the counts by level, what was left out
+and why, the score and the ids it went to, then where the reports are.
+That summary is in colour when standard output is a terminal, unless
+.B NO_COLOR
+is set; in a pipe, a file or cron it is plain text.
+.B \-q
+prints none of it.
+.LP
 The report is
 .IR logdir/security.report.HOST.DATE ;
 each finding is a line

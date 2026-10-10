@@ -154,7 +154,7 @@ then
 	found="Y"
 	# GRUB password checks
         if [ -z "`$EGREP '^[[:blank:]]*password' "$herefile"`" ] ; then
-                message WARN boot008w "" "The Grub bootloader configuation file ($file) does not have a password configured."
+                message WARN boot008w "" "The Grub bootloader configuration file ($file) does not have a password configured."
 	else 
 
         # If GRUB *does* have a password then we check its permissions. Otherwise, we 

@@ -125,7 +125,7 @@ do_usage()
 echo "Tigris, version $TIGERVERSION"
 echo "Usage: ./tigris [-vthqGSH] [-B dir] [-l dir|@host] [-w dir] [-b dir] [-e|-E] [-c config] [--since run] [-A arch] [-O os] [-R release]"
 echo ""
-echo "       -v     Show the Tiger version."
+echo "       -v     Show the version, and who wrote TIGER and Tigris."
 echo ""
 echo "       -t     Run in test mode."
 echo ""
@@ -344,6 +344,12 @@ checkfile()
 
   [ $doversion -eq 1 ] && {
     echo "Tigris, version $TIGERVERSION"
+    echo "   Based on Tiger, developed by Texas A&M University, 1993-1994"
+    echo "   Updated by the Advanced Research Corporation, 1999-2002"
+    echo "   Maintained by Javier Fernandez-Sanguino, 2001-2019"
+    echo "   Contributions by Francisco Manuel Garcia Claramonte, 2009-2010"
+    echo "   Continued as Tigris by Andrei Trimbitas, 2026"
+    echo "   Covered by the GNU General Public License, version 2 or later"
     exit 0
   }
 
@@ -387,7 +393,9 @@ checkfile()
   esac
 
 
-  [ "$QUIET" != "Y" ] && echo "Configuring..."
+  # Which configuration was picked is said in test mode (-t); a normal
+  # run's first line names the system instead (tiger's banner)
+  [ "$Tiger_TESTMODE" = Y ] && echo "Configuring..."
 
   set X `$BASEDIR/util/gethostinfo` unknown unknown unknown
   OS=${OS:=$2}
@@ -406,7 +414,7 @@ checkfile()
   SCRIPTDIR=$BASEDIR/scripts
   export SCRIPTDIR
 
-  [ "$QUIET" != "Y" ] &&  {
+  [ "$Tiger_TESTMODE" = Y ] &&  {
     echo " "
     echo "Will try to check using config for '$ARCH' running $OS $REV..."
   }
@@ -414,19 +422,19 @@ checkfile()
   CONFIG_LOC=${TIGERCONF:="$BASEDIR/systems"}
 
   if [ -f "$CONFIG_LOC/$OS/$REL/$REV/$ARCH/config" ]; then
-    [ "$QUIET" != "Y" ] && echo "--CONFIG-- [con004c] Using configuration files for $OS $REV $ARCH."
+    [ "$Tiger_TESTMODE" = Y ] && echo "--CONFIG-- [con004c] Using configuration files for $OS $REV $ARCH."
     CONFIG_DIR="$CONFIG_LOC/$OS/$REL/$REV/$ARCH"
   elif [ -f "$CONFIG_LOC/$OS/$REL/$REV/config" ]; then
-    [ "$QUIET" != "Y" ] && echo "--CONFIG-- [con004c] Using configuration files for $OS $REV."
+    [ "$Tiger_TESTMODE" = Y ] && echo "--CONFIG-- [con004c] Using configuration files for $OS $REV."
     CONFIG_DIR="$CONFIG_LOC/$OS/$REL/$REV"
   elif [ -f "$CONFIG_LOC/$OS/$REL/config" ]; then
-    [ "$QUIET" != "Y" ] &&  {
+    [ "$Tiger_TESTMODE" = Y ] &&  {
     echo "--CONFIG-- [con005c] Using configuration files for $OS $REV. Using"
     echo "           configuration files for generic $OS $REL."
     }
     CONFIG_DIR="$CONFIG_LOC/$OS/$REL"
   elif [ -f "$CONFIG_LOC/$OS/default/config" ]; then
-    [ "$QUIET" != "Y" ] &&  {
+    [ "$Tiger_TESTMODE" = Y ] &&  {
     echo "--CONFIG-- [con005c] Using default configuration files for $OS. Using"
     echo "           configuration files for generic $OS"
     }

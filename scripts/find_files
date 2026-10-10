@@ -464,6 +464,8 @@ fi
   # those are listed one by one. Elsewhere (help files, icon themes, home
   # directories) they are clutter, and get one line per directory.
   # sub/check_names applies the same split to unusual file names.
+  # A header first, so these do not read as the last check's findings.
+  [ -s $outfile.dangling ] && { echo; echo "# Checking for dangling symbolic links..."; }
   [ -s $outfile.dangling ] &&
   $AWK -v detail="${Tiger_FSScan_DetailDirs-/etc|/bin|/sbin|/lib|/usr/bin|/usr/sbin|/usr/lib|/usr/local|/opt|/boot|/root|/var/lib|/var/spool|/srv}" '
     BEGIN { n = split(detail, prefix, "|") }

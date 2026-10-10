@@ -122,11 +122,31 @@ From an offline audit of a Debian 12 container image (abridged):
          guessed for as long as it takes.
 ```
 
+A run ends on the terminal with the counts, the score and the ids it went
+to, in colour when the terminal takes it (`NO_COLOR` turns it off). From
+an offline audit of a Debian stable container image:
+
+```text
+  0 ALERT   4 FAIL   13 WARN   3 INFO   0 ERROR
+  12 checks need a running system and were skipped.
+  Score 72 of 100 (100 minus 10 per ALERT id, 4 per FAIL id, 1 per WARN id)
+  FAIL  dns001f dev002f logf004f logf007f
+  WARN  pass014w pass015w boot005w misc019w upd002w pam001w pam003w stor007w
+        lin001w dev003w misc026w misc021w
+  tigris explain dns001f says what a finding means and how to fix it.
+
+  Report  log/security.report.hera.261010-22:10:38
+  JSON    log/security.report.hera.261010-22:10:38.jsonl
+```
+
 ```text
 $ ./tigris explain upd003f
 Severity: FAIL
 Category: packages
 Check: check_updates
+Fix: Install them: apt-get upgrade, dnf upgrade --security, or zypper patch --category security.
+References: apt-get(8); dnf(8); zypper(8)
+Controls: CIS 7.3, 7.4; NIST SI-2; ISO 8.8; CE Security update management
 
 Security updates are available and not installed: the packages named
 in the detail have known holes that their new versions close, and the

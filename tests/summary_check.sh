@@ -33,6 +33,22 @@ cat > "$W/r.jsonl" <<'EOF'
 {"type":"skip","check":"check_x","reason":"live system"}
 EOF
 
+# -c, for the terminal: counts worst first, what was left out, the score,
+# the ids by level and how to read the worst up; -C adds colour, and
+# nothing else does
+sh "$S" -c "$W/r.jsonl" > "$W/con.txt"; st=$?
+[ $st -eq 0 ] && head -1 "$W/con.txt" | grep -q '^  2 ALERT   1 FAIL   3 WARN   1 INFO   1 ERROR$' &&
+  grep -q '^  1 accepted finding left out (tigris-accept -l lists it)\.$' "$W/con.txt" &&
+  grep -q '^  1 check needs root and was skipped: run Tigris as root to include it\.$' "$W/con.txt" &&
+  grep -q '^  1 check needs a running system and was skipped\.$' "$W/con.txt" &&
+  grep -q '^  Score 84 of 100 (100 minus 10 per ALERT id, 4 per FAIL id, 1 per WARN id)$' "$W/con.txt" &&
+  grep -q '^  ALERT lin001a$' "$W/con.txt" && grep -q '^  WARN  ssh003w ssh004w$' "$W/con.txt" &&
+  grep -q '^  tigris explain lin001a says' "$W/con.txt" &&
+  ok "-c: counts, left out, score, ids by level, the worst to explain" || { bad "-c"; cat "$W/con.txt"; }
+esc=`printf '\033'`
+grep -q "$esc" "$W/con.txt" && bad "-c without -C has escape codes" || ok "-c without -C is plain text"
+sh "$S" -c -C "$W/r.jsonl" | grep -q "${esc}\[1;31m2 ALERT${esc}\[0m" && ok "-C colours the levels" || bad "-C colours"
+
 sh "$S" "$W/r.jsonl" > "$W/text.txt"; st=$?
 [ $st -eq 0 ] && ok "text mode exits 0" || bad "text mode exits $st"
 grep -q '^# Summary: 2 ALERT, 1 FAIL, 3 WARN, 1 INFO, 1 ERROR (4 distinct finding ids at WARN or above); 1 accepted finding left out; 2 checks skipped\.$' "$W/text.txt" &&
