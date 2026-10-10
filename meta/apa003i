@@ -2,6 +2,7 @@ Id: apa003i
 Severity: INFO
 Category: services
 Check: check_apache
+References: Apache httpd core directives (Options)
 Controls: CIS 4.1; NIST CM-6, CM-7; ISO 8.9; CE Secure configuration
 
 A Directory block allows symbolic links to be followed only when the

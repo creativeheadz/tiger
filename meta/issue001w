@@ -2,6 +2,8 @@ Id: issue001w
 Severity: WARN
 Category: accounts
 Check: check_issue
+Fix: Put the approved banner in /etc/issue, matching the sample Tigris compares against.
+References: issue(5)
 Controls: NIST AC-8
 
 The /etc/issue file does not have the designated content.  This file

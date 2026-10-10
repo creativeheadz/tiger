@@ -2,6 +2,8 @@ Id: lin009i
 Severity: INFO
 Category: network
 Check: check_network_config
+Fix: Set net.ipv4.icmp_echo_ignore_all=1 in /etc/sysctl.d if the host should not answer pings.
+References: sysctl.d(5); Linux kernel ip-sysctl documentation
 Controls: CIS 4.1; NIST SC-5, SC-7; ISO 8.20; CE Secure configuration
 
 The kernel will answer (per configuration) to ICMP echo requests in any

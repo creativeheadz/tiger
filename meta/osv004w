@@ -2,6 +2,8 @@ Id: osv004w
 Severity: WARN
 Category: packages
 Check: check_release
+Fix: Move to the stable release, or accept the finding on a machine meant to run testing.
+References: os-release(5)
 Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
 
 The machine is running an unreleased version of Debian GNU/Linux.

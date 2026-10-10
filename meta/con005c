@@ -2,6 +2,8 @@ Id: con005c
 Severity: CONFIG
 Category: tigris
 Check: config
+Fix: Add the systems/OS/REL configuration for this platform.
+References: README.writemodules
 
 Configuration files, specific to the type of system that `tiger' is being
 run on, do not exist.  It may not be possible to perform all of the checks

@@ -2,6 +2,8 @@ Id: dev004w
 Severity: WARN
 Category: filesystem
 Check: check_devices
+Fix: Restrict it with a udev rule or group ownership if it need not be world readable.
+References: udev(7)
 Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 The device can be read by any user. For most devices that is harmless

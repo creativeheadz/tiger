@@ -2,6 +2,8 @@ Id: pass011f
 Severity: FAIL
 Category: accounts
 Check: check_passwd
+Fix: Set a password (passwd USER) or lock the account (passwd -l USER).
+References: passwd(1); shadow(5)
 Controls: CIS 5.2; NIST IA-5(1); ISO 5.17; CE User access control
 
 The listed username has an empty password string.  This will allow any user

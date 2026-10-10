@@ -2,6 +2,7 @@ Id: mac001w
 Severity: WARN
 Category: kernel
 Check: check_mac
+Fix: Enable AppArmor (apparmor, apparmor-profiles) or SELinux (SELINUX=enforcing), as the distribution ships.
 References: apparmor(7), selinux(8)
 Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 

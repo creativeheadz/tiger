@@ -2,6 +2,7 @@ Id: cmp001i
 Severity: INFO
 Category: packages
 Check: check_compilers
+Fix: Remove the toolchain where nothing is built (apt remove gcc; dnf remove gcc).
 References: gcc(1)
 Controls: CIS 4.8; NIST CM-7; ISO 8.9; CE Secure configuration
 

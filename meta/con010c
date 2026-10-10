@@ -2,6 +2,8 @@ Id: con010c
 Severity: CONFIG
 Category: tigris
 Check: gen_mounts
+Fix: Add the filesystem type to Tiger_FSScan_Local or Tiger_FSScan_NonLocal in tigerrc.
+References: tigerrc
 
 The filesystem is not recognised by Tiger as a valid filesystem
 for this operating system and will not be analysed. If this is a local

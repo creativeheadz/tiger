@@ -2,6 +2,8 @@ Id: lin004i
 Severity: INFO
 Category: network
 Check: check_listeningprocs
+Fix: Install iproute2.
+References: ss(8); netstat(8)
 Controls: CIS 4.8; NIST CM-7; ISO 8.20; CE Secure configuration
 
 Neither ss nor lsof was found, so the listening processes were read with

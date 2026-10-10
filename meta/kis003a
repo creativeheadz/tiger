@@ -2,6 +2,8 @@ Id: kis003a
 Severity: ALERT
 Category: intrusion
 Check: check_known
+Fix: Remove the foreign files from the window server directory and check for intrusion.
+References: Xserver(1)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 The indicated window server directory contains files other than UNIX

@@ -2,6 +2,8 @@ Id: con007c
 Severity: CONFIG
 Category: tigris
 Check: config
+Fix: Reinstall Tigris; the systems/default files are missing.
+References: tigris(8)
 
 Generic configuration files for this system do not exist.  The
 checking system will continue on, attempting to locate items it

@@ -2,6 +2,7 @@ Id: snmp003i
 Severity: INFO
 Category: services
 Check: check_snmp
+Fix: Replace public and private with an unguessable community, or move to SNMPv3.
 References: snmpd.conf(5)
 Controls: CIS 5.2; NIST IA-5(1), IA-5(7); ISO 5.17, 8.5; CE User access control
 

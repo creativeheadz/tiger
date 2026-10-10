@@ -2,6 +2,7 @@ Id: php003i
 Severity: INFO
 Category: services
 Check: check_php
+Fix: Set display_errors = Off and log_errors = On in php.ini.
 References: php.ini directives
 Controls: CIS 4.1; NIST SI-11; ISO 8.9; CE Secure configuration
 

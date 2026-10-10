@@ -2,6 +2,7 @@ Id: sudo003w
 Severity: WARN
 Category: accounts
 Check: check_sudo
+Fix: Remove Defaults !authenticate, or narrow it to the one account that needs it.
 References: sudoers(5)
 Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 

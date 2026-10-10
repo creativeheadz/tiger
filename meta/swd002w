@@ -2,6 +2,8 @@ Id: swd002w
 Severity: WARN
 Category: packages
 Check: check_software
+Fix: Turn automatic update checks on (softwareupdate --schedule on).
+References: softwareupdate(8)
 Controls: CIS 7.3; NIST SI-2; ISO 8.8; CE Security update management
 
 macOS is not checking for updates by itself: security updates

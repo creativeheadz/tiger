@@ -2,6 +2,8 @@ Id: pass007w
 Severity: WARN
 Category: accounts
 Check: check_passwd
+Fix: Set PASS_MAX_DAYS, PASS_MIN_DAYS and PASS_WARN_AGE in /etc/login.defs.
+References: login.defs(5)
 Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
 
 Some password controls or constraints are missing.  These should be be

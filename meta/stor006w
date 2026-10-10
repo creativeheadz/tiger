@@ -2,6 +2,7 @@ Id: stor006w
 Severity: WARN
 Category: filesystem
 Check: check_storage
+Fix: Move swap onto the encrypted volume, or encrypt it with a random key in crypttab.
 References: crypttab(5)
 Controls: CIS 3.11; NIST SC-28; ISO 8.24
 

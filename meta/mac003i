@@ -2,6 +2,7 @@ Id: mac003i
 Severity: INFO
 Category: kernel
 Check: check_mac
+References: aa-status(8); getenforce(8)
 Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 
 A mandatory access control system is enforcing: SELinux in enforcing

@@ -2,6 +2,8 @@ Id: fsys015w
 Severity: WARN
 Category: filesystem
 Check: check_nousrgrp
+Fix: chgrp the file to a live group, or remove it (find / -nogroup lists them).
+References: find(1); chgrp(1)
 Controls: CIS 3.3; NIST AC-3, CM-6; ISO 8.3; CE Secure configuration
 
 The file does not belong to any group. It is owned by a group UID which is

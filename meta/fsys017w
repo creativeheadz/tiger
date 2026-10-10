@@ -2,6 +2,8 @@ Id: fsys017w
 Severity: WARN
 Category: filesystem
 Check: check_names
+Fix: Inspect the directories; set Tiger_FSScan_DetailDirs to list the files.
+References: find(1); tigerrc
 Controls: NIST SI-4; ISO 8.16
 
 Files with unusual names (see fsys005a) were found in a directory where

@@ -2,6 +2,8 @@ Id: boot013e
 Severity: ERROR
 Category: boot
 Check: check_secureboot
+Fix: Mount efivarfs (mount -t efivarfs efivarfs /sys/firmware/efi/efivars) and install od.
+References: mokutil(1)
 
 The system booted with UEFI, but the firmware's variables could not be
 read, so whether Secure Boot is on is unknown. They are read from

@@ -2,6 +2,8 @@ Id: lin001w
 Severity: WARN
 Category: packages
 Check: deb_nopackfiles pkg_integrity
+Fix: Move administrator-installed programs to /usr/local, or package them.
+References: hier(7)
 Controls: CIS 2.3; NIST SI-7, CM-11; ISO 8.19
 
 A program installed in your system has probably been not installed

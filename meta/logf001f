@@ -2,6 +2,8 @@ Id: logf001f
 Severity: FAIL
 Category: logging
 Check: check_logfiles
+Fix: Recreate it (touch /var/log/wtmp; chmod 664; chgrp utmp) and find out why it was gone.
+References: wtmp(5)
 Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
 
 The log file "wtmp" should exist to show an audit trail of which user has

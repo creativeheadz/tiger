@@ -2,6 +2,8 @@ Id: init001e
 Severity: ERROR
 Category: tigris
 Check: check_symlink initdefs mksig
+Fix: Set the variable in a site file (AWK=/usr/bin/awk) or the environment.
+References: site-sample
 
 The indicated variable, which should specifies the pathname to a command,
 does not have a value. This message should not appear on platforms

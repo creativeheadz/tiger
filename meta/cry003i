@@ -2,6 +2,7 @@ Id: cry003i
 Severity: INFO
 Category: services
 Check: check_crypto
+References: random(4)
 
 The kernel's entropy pool level, live and without judgment: it
 moves every second.

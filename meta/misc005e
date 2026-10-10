@@ -2,6 +2,8 @@ Id: misc005e
 Severity: ERROR
 Category: tigris
 Check: check_system initdefs
+Fix: Remove the check.d entry, or install the script it names.
+References: README.writemodules
 
 The listed security check file from a check.d/ file does not
 exist.

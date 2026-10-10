@@ -2,6 +2,8 @@ Id: ips001w
 Severity: WARN
 Category: packages
 Check: check_pkg
+Fix: Read pkg verify, then pkg fix what it names.
+References: pkg(1) (Solaris IPS)
 Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 Installed files no longer match their IPS manifests:

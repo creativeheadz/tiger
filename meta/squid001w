@@ -2,6 +2,7 @@ Id: squid001w
 Severity: WARN
 Category: services
 Check: check_squid
+Fix: Define an acl for the local networks, http_access allow it, then http_access deny all.
 References: squid.conf.documented
 Controls: CIS 4.4, 4.8; NIST SC-7; ISO 8.20; CE Firewalls
 

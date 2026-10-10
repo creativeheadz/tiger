@@ -2,6 +2,8 @@ Id: cron011w
 Severity: WARN
 Category: cron
 Check: check_crontabs
+Fix: Take the user out of at.allow (or add them to at.deny) unless needed.
+References: at(1); at.allow(5)
 Controls: CIS 4.1; NIST AC-3, CM-5, CM-6; ISO 8.9; CE Secure configuration
 
 At is not restricted to a given user. Like cron, at lets a user have

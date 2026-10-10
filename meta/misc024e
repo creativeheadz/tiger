@@ -2,6 +2,8 @@ Id: misc024e
 Severity: ERROR
 Category: tigris
 Check: initdefs
+Fix: chown the script to the user running Tigris (root for an installed tree).
+References: chown(1)
 
 The script will not be run since it belongs to a different owner than the
 one running the Tiger program (or script). Since running this script might

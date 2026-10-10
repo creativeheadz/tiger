@@ -2,6 +2,8 @@ Id: ssh005w
 Severity: FAIL, WARN
 Category: ssh
 Check: check_ssh
+Fix: Set SSHD_CONFIG in the site configuration file.
+References: sshd_config(5); site-sample
 Controls: CIS 4.1, 5.4; NIST AC-17, IA-2; ISO 8.5, 8.20; CE Secure configuration, User access control
 
 The variable SSHD_CONFIG is not defined which means that you have

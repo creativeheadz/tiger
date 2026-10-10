@@ -2,6 +2,8 @@ Id: con013e
 Severity: ERROR
 Category: tigris
 Check: config
+Fix: Name an existing profile (quick, server, desktop, container, or one in profiles/).
+References: tigris(8)
 
 The profile given with --profile (or -p) does not exist, or its name is
 not letters, digits, - and _. Profiles are files read after the tigerrc,

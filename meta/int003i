@@ -2,6 +2,7 @@ Id: int003i
 Severity: INFO
 Category: integrity
 Check: check_integrity
+References: aide(1); afick(1)
 
 Names the file-integrity watcher in place: AIDE, AFICK, Samhain,
 or osquery. (OSSEC and Wazuh are named by check_ids instead.)

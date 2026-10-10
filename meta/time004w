@@ -2,6 +2,8 @@ Id: time004w
 Severity: WARN
 Category: services
 Check: check_timesync
+Fix: Keep one daemon; systemctl disable --now the others.
+References: chronyd(8); systemd-timesyncd(8)
 Controls: CIS 8.4; NIST AU-8, SC-45; ISO 8.17
 
 More than one time synchronisation daemon is running. Each corrects

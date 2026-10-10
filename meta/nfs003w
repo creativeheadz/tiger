@@ -2,6 +2,8 @@ Id: nfs003w
 Severity: WARN
 Category: network
 Check: check_exports
+Fix: Stop exporting /; export the directories clients need.
+References: exports(5)
 Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
 
 Exporting the root file-system allows remote machines to

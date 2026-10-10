@@ -2,6 +2,7 @@ Id: krb001w
 Severity: WARN
 Category: accounts
 Check: check_kerberos
+Fix: Remove the single-DES enctypes and allow_weak_crypto from [libdefaults], and re-key.
 References: krb5.conf(5)
 Controls: CIS 3.10; NIST SC-13; ISO 8.24; CE Secure configuration
 

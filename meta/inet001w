@@ -2,6 +2,8 @@ Id: inet001w
 Severity: WARN
 Category: network
 Check: check_inetd
+Fix: Disable the service in inetd.conf, and inetd with it if nothing else needs it.
+References: inetd.conf(5)
 Controls: CIS 4.8, 3.10; NIST CM-7, SC-8; ISO 8.21, 5.14; CE Secure configuration
 
 inetd serves an old cleartext or trust-based service: telnet,

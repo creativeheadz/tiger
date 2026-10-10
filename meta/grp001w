@@ -2,6 +2,8 @@ Id: grp001w
 Severity: WARN
 Category: accounts
 Check: check_group
+Fix: Remove the duplicate group line (vigr).
+References: group(5); vigr(8)
 Controls: CIS 5.1; NIST AC-2; ISO 5.16; CE User access control
 
 The indicated group name exists multiple times in the same group file.

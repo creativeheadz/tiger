@@ -2,6 +2,8 @@ Id: con009e
 Severity: ERROR
 Category: tigris
 Check: check_runprocs
+Fix: Define the variable in tigerrc (Tiger_Running_Procs).
+References: tigerrc
 
 There doesn't exist a configuration variable or it is not properly
 defined. Since the variable is needed for the module to run, it

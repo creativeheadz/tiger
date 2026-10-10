@@ -2,6 +2,8 @@ Id: pass021f
 Severity: FAIL
 Category: accounts
 Check: check_passwd
+Fix: Run visudo -c, then fix the file it names with visudo.
+References: visudo(8)
 Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 
 The sudoers files (/etc/sudoers and/or the contents of the /etc/sudoers.d/

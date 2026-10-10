@@ -2,6 +2,7 @@ Id: logf008w
 Severity: WARN
 Category: logging
 Check: check_audit
+Fix: Set Storage=persistent in journald.conf (or mkdir /var/log/journal) and restart journald.
 References: journald.conf(5)
 Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 

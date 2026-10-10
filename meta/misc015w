@@ -2,6 +2,8 @@ Id: misc015w
 Severity: WARN
 Category: services
 Check: check_suid
+Fix: Relink xload with absolute library paths, or chmod ug-s it.
+References: xload(1)
 Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 The `xload' utility, when built with the standard (unpatched) MIT

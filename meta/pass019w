@@ -2,6 +2,8 @@ Id: pass019w
 Severity: WARN
 Category: accounts
 Check: check_passwdspec
+Fix: Set PASS_MAX_DAYS and PASS_WARN_AGE in login.defs; chage -M for existing accounts.
+References: login.defs(5); chage(1)
 Controls: CIS 5.2; NIST IA-5(1); ISO 5.17; CE User access control
 
 The account has no password aging: the password never expires and

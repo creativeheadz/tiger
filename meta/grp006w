@@ -2,6 +2,8 @@ Id: grp006w
 Severity: WARN
 Category: accounts
 Check: check_group
+Fix: Run grpck and fix what it names.
+References: grpck(8)
 Controls: CIS 5.1; NIST AC-2; ISO 5.16; CE User access control
 
 The group files have integrity issues as found by 'grpck -r'.  This

@@ -2,6 +2,8 @@ Id: perm004c
 Severity: CONFIG
 Category: filesystem
 Check: check_perms
+Fix: Provide a file_access_list for this platform under systems/.
+References: README.writemodules
 
 No file permissions database can be found.  This will prevent the
 checks of file ownerships to be performed.  This likely indicates

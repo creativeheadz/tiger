@@ -2,6 +2,7 @@ Id: stor008w
 Severity: WARN
 Category: filesystem
 Check: check_storage
+Fix: Blacklist usb-storage and uas in /etc/modprobe.d and rebuild the initramfs.
 References: modprobe.d(5)
 Controls: NIST MP-7; ISO 7.10
 

@@ -2,6 +2,7 @@ Id: sudo001w
 Severity: WARN
 Category: accounts
 Check: check_sudo
+Fix: Remove NOPASSWD with visudo, or limit it to the commands that run unattended.
 References: sudoers(5)
 Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 

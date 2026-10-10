@@ -2,6 +2,8 @@ Id: kis009w
 Severity: WARN
 Category: intrusion
 Check: check_exrc
+Fix: Remove the .exrc, or make sure no user sets the exrc option in vi.
+References: ex(1)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 There is an .exrc file outside of any user's home directory. This file can

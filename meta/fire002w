@@ -2,6 +2,8 @@ Id: fire002w
 Severity: WARN
 Category: firewall
 Check: check_firewall
+Fix: Use an nftables table of family inet, or set the ip6tables policy too.
+References: nft(8); ip6tables(8)
 Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 As fire001w, for IPv6. A host can deny IPv4 by default and leave IPv6

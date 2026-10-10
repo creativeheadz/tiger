@@ -215,7 +215,7 @@ frameworks, free and in the open: CIS Controls v8 safeguards, NIST SP
 800-53 Rev. 5, ISO/IEC 27001:2022 Annex A and UK Cyber Essentials. The
 map is one reviewable file, [doc/controls.map](doc/controls.map), by
 check, with overrides by finding id; `tigris explain ID` shows a
-finding's controls and the JSON carries them:
+finding's fix, references and controls, and the JSON carries the controls:
 
 ```json
 {"type":"finding","level":"WARN","id":"root001w","check":"check_root","message":"Remote root login allowed in /etc/securetty","category":"accounts","controls":{"cis_v8":["5.4"],"nist_800_53":["AC-6","AC-17"],"iso_27001_2022":["8.2","8.5"],"cyber_essentials":["User access control"]}}

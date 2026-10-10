@@ -2,6 +2,8 @@ Id: kis011f
 Severity: FAIL
 Category: intrusion
 Check: check_finddeleted
+Fix: Restart the service so it uses the new libraries; if its program is gone from disk, treat it as an intrusion.
+References: lsof(8)
 Controls: CIS 10.1; NIST SI-4; ISO 8.16; CE Malware protection
 
 A server in the system (that is, a process with a listening socket towards

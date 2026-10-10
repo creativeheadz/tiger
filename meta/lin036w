@@ -2,6 +2,8 @@ Id: lin036w
 Severity: WARN
 Category: kernel
 Check: check_sysctl
+Fix: Update the microcode package, remove mitigations=off and the like from the boot line, and reboot.
+References: Linux kernel hardware vulnerabilities documentation (admin-guide/hw-vuln)
 Controls: CIS 7.3; NIST SI-2, SI-16; ISO 8.8; CE Security update management
 
 The kernel reports that a hardware speculation flaw (Spectre, Meltdown,

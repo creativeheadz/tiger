@@ -2,6 +2,8 @@ Id: post001e
 Severity: ERROR
 Category: tigris
 Check: initdefs
+Fix: Report it as a bug: a file outside the scratch directory was scheduled for deletion.
+References: CONTRIBUTING.md
 
 The listed file was not deleted because it was not in the scratch
 directory.  This indicates an internal error.

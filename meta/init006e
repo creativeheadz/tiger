@@ -2,6 +2,8 @@ Id: init006e
 Severity: ERROR
 Category: tigris
 Check: initdefs
+Fix: Install the input file for this platform.
+References: README.writemodules
 
 An input file required for performing a test is not available.  This
 indicates that there is a configuration error.

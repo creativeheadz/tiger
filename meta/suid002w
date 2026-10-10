@@ -2,6 +2,8 @@ Id: suid002w
 Severity: WARN
 Category: filesystem
 Check: check_suid
+Fix: chmod go-w the file, or take the setuid bit off.
+References: chmod(1)
 Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 A setuid file can be written by its group or by any user. Whoever can

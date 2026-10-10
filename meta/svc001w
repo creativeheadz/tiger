@@ -2,6 +2,8 @@ Id: svc001w
 Severity: WARN
 Category: services
 Check: check_services
+Fix: svcadm disable the service.
+References: svcadm(8)
 Controls: CIS 4.8; NIST CM-7; ISO 8.21; CE Secure configuration
 
 SMF runs a service that speaks cleartext or trusts the

@@ -2,6 +2,7 @@ Id: pam003w
 Severity: WARN
 Category: accounts
 Check: check_pam
+Fix: Add pam_faillock preauth and authfail to the auth stack (authselect enable-feature with-faillock).
 References: pam_faillock(8), faillock.conf(5)
 Controls: CIS 4.1; NIST AC-7; ISO 8.5; CE User access control
 

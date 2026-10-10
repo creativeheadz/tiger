@@ -2,6 +2,8 @@ Id: dev001f
 Severity: FAIL
 Category: filesystem
 Check: check_devices
+Fix: chmod o-rw the tape device; give it to a backup group.
+References: chmod(1); st(4)
 Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 Tape devices used for backups should not have world permissions.

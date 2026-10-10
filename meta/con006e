@@ -2,6 +2,8 @@ Id: con006e
 Severity: ERROR
 Category: tigris
 Check: config
+Fix: Run tigris -h for the options.
+References: tigris(8)
 
 The indicated option was not recognized.  The valid options are:
 

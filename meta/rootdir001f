@@ -2,6 +2,8 @@ Id: rootdir001f
 Severity: FAIL
 Category: filesystem
 Check: check_rootdir
+Fix: Run Tigris on the real root, not inside a chroot.
+References: chroot(8)
 Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 The root directory is not at the beginning of a filesystems.

@@ -2,6 +2,8 @@ Id: upd005w
 Severity: WARN
 Category: packages
 Check: check_updates
+Fix: Set gpgcheck=1 for the repository, and in [main].
+References: dnf.conf(5); yum.conf(5)
 Controls: CIS 7.3, 7.4; NIST SI-2; ISO 8.8; CE Security update management
 
 A package repository installs unsigned packages: gpgcheck is off for

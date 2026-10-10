@@ -2,6 +2,8 @@ Id: apa006w
 Severity: WARN
 Category: services
 Check: check_apache
+Fix: Remove Indexes, or add an index file where browsing is wanted.
+References: Apache httpd core directives (Options); mod_autoindex
 Controls: CIS 4.1; NIST CM-6, CM-7; ISO 8.9; CE Secure configuration
 
 A Directory block sets Indexes, so a visitor who asks for a directory

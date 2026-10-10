@@ -2,6 +2,8 @@ Id: mac005w
 Severity: WARN
 Category: kernel
 Check: check_mac
+Fix: Turn PaX softmode off (kernel.pax.softmode=0).
+References: paxctl(1)
 Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 
 PaX is in softmode: the exploit mitigation is compiled in and

@@ -2,6 +2,8 @@ Id: kis001a
 Severity: ALERT
 Category: intrusion
 Check: check_known
+Fix: Inspect the directory; treat the system as compromised until it is explained.
+References: chkrootkit(8); rkhunter(8)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 The indicated file is a directory.  The file is a known location used

@@ -2,6 +2,8 @@ Id: lin037e
 Severity: ERROR
 Category: packages
 Check: deb_nopackfiles
+Fix: Check dirlist in deb_nopackfiles; the standard directories should exist.
+References: hier(7)
 
 None of the directories the package check looks at (/bin, /usr/bin,
 /sbin, /usr/sbin, /lib) is a plain directory on this system, so there is

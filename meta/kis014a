@@ -2,6 +2,8 @@ Id: kis014a
 Severity: ALERT
 Category: intrusion
 Check: check_known
+Fix: Remove the shell entry from inetd.conf, restart inetd, and check for trojaned programs.
+References: inetd.conf(5)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 A shell entry (/bin/sh or /bin/csh) has been defined in inetd.conf, this is

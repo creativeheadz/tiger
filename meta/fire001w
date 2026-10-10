@@ -2,6 +2,8 @@ Id: fire001w
 Severity: WARN
 Category: firewall
 Check: check_firewall
+Fix: Enable the distribution's firewall (ufw enable; firewalld), or an nftables input chain with policy drop.
+References: nft(8); ufw(8); firewalld(1)
 Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 Nothing in the kernel's packet filter drops incoming IPv4 traffic that no

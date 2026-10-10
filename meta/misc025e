@@ -2,6 +2,8 @@ Id: misc025e
 Severity: ERROR
 Category: tigris
 Check: initdefs
+Fix: chmod +x the script.
+References: chmod(1)
 
 The script will not be run since it is not executable. This might be a problem
 with the installation of Tiger so you should recheck the script's file owner

@@ -2,6 +2,8 @@ Id: sig005e
 Severity: ERROR
 Category: integrity
 Check: check_signatures
+Fix: Run Tigris as root.
+References: README.signatures
 
 Something prevented the system from reading the indicated file.  This
 should not occur if the security system is run from the root account

@@ -2,6 +2,8 @@ Id: kis010w
 Severity: WARN
 Category: intrusion
 Check: check_known
+Fix: Remove the orphaned mailbox, or recreate the account.
+References: mbox(5)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 The indicated file in the system mail spool does not belong to any user

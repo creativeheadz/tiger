@@ -2,6 +2,7 @@ Id: lin039w
 Severity: WARN
 Category: packages
 Check: deb_statoverride
+Fix: chown and chmod as the detail gives, or change the override with dpkg-statoverride.
 References: dpkg-statoverride(1)
 Controls: CIS 3.3; NIST AC-3, CM-6; ISO 8.3; CE Secure configuration
 

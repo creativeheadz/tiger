@@ -2,6 +2,7 @@ Id: ids001w
 Severity: WARN
 Category: intrusion
 Check: check_ids
+Fix: Enable the jails this host needs in jail.local, or remove fail2ban.
 References: jail.conf(5)
 Controls: CIS 13.2; NIST SI-4, AC-7; ISO 8.16
 

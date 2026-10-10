@@ -2,6 +2,8 @@ Id: sysd002i
 Severity: INFO
 Category: services
 Check: check_systemd
+Fix: Tighten the unit in a drop-in as sysd001w describes; check with systemd-analyze security.
+References: systemd.exec(5); systemd-analyze(1)
 Controls: CIS 4.1; NIST CM-7, SC-39; ISO 8.9; CE Secure configuration
 
 The service listens on the network and systemd rates its sandboxing

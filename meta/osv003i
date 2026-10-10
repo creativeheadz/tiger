@@ -2,6 +2,7 @@ Id: osv003i
 Severity: INFO
 Category: packages
 Check: check_release
+References: systemd-detect-virt(1)
 Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
 
 This machine runs as a virtual guest. The findings describe the

@@ -2,6 +2,8 @@ Id: cont010e
 Severity: ERROR
 Category: containers
 Check: check_containers
+Fix: Run Tigris as root.
+References: docker-ps(1)
 
 Docker or Podman is installed and running, but the running containers
 could not be listed ('docker ps' or 'podman ps' failed), so whether any

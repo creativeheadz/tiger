@@ -2,6 +2,8 @@ Id: dos001w
 Severity: WARN
 Category: accounts
 Check: check_doas
+Fix: Remove nopass, or name the exact commands.
+References: doas.conf(5)
 Controls: CIS 5.4; NIST AC-6, IA-2; ISO 8.2, 8.5; CE User access control
 
 doas lets someone run any command as root without a password.

@@ -2,6 +2,7 @@ Id: cont001w
 Severity: WARN
 Category: containers
 Check: check_containers
+Fix: gpasswd -d USER docker for all but those who would be given root, or go rootless.
 References: https://docs.docker.com/engine/security/#docker-daemon-attack-surface
 Controls: CIS 4.1, 5.4; NIST AC-6, CM-7; ISO 8.2, 8.9; CE Secure configuration, User access control
 

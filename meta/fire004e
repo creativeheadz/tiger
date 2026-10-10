@@ -2,6 +2,8 @@ Id: fire004e
 Severity: ERROR
 Category: firewall
 Check: check_firewall
+Fix: Run Tigris as root, with nft or iptables installed.
+References: nft(8)
 
 The packet filter rules could not be read, so the check cannot say
 whether incoming traffic is filtered. Reading them needs root ('nft list

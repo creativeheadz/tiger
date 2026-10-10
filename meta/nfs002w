@@ -2,6 +2,8 @@ Id: nfs002w
 Severity: WARN
 Category: network
 Check: check_exports
+Fix: Remove anonuid=0 (and anongid=0) from the export.
+References: exports(5)
 Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
 
 The anonymous ID defines the 'uid' to be used for authenticating

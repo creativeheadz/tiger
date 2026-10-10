@@ -2,6 +2,7 @@ Id: init003c
 Severity: CONFIG
 Category: tigris
 Check: any
+References: tigris(8)
 
 Output when run in `self-test' mode indicating that everything appears
 to be OK as far as having all commands and files.

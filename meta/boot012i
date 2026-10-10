@@ -2,6 +2,7 @@ Id: boot012i
 Severity: INFO
 Category: boot
 Check: check_secureboot
+References: mokutil(1)
 Controls: CIS 4.1; NIST CM-14, SI-7(9); ISO 8.9; CE Secure configuration
 
 Secure Boot is on: the firmware verified the boot loader, and the boot

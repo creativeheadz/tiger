@@ -2,6 +2,8 @@ Id: pass013w
 Severity: WARN
 Category: accounts
 Check: check_passwd
+Fix: Set ENCRYPT_METHOD SHA512 (or YESCRYPT) in login.defs and have the password reset.
+References: login.defs(5); crypt(5)
 Controls: CIS 5.2; NIST IA-5(1), SC-13; ISO 5.17, 8.24; CE User access control
 
 The listed username is not using an acceptable, cryptographic method for the

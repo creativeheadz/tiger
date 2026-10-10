@@ -2,6 +2,8 @@ Id: root002w
 Severity: WARN
 Category: accounts
 Check: check_root
+Fix: Add root to /etc/ftpusers.
+References: ftpusers(5)
 Controls: CIS 5.4; NIST AC-6, AC-17; ISO 8.2, 8.5; CE User access control
 
 The indicated /etc/ftpusers file allows remote root ftp logins.  The entry

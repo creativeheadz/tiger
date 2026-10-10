@@ -2,6 +2,8 @@ Id: fsys001f
 Severity: FAIL
 Category: filesystem
 Check: check_suid
+Fix: chmod u-s the script; wrap it in a C program if it must run as another user.
+References: chmod(1)
 Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 The listed file is a setuid script.  On most UNIX machines, it is not

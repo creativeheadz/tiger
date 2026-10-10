@@ -2,6 +2,7 @@ Id: krb002i
 Severity: INFO
 Category: accounts
 Check: check_kerberos
+Fix: Move to AES enctypes once the old servers are gone.
 References: krb5.conf(5)
 Controls: CIS 3.10; NIST SC-13; ISO 8.24; CE Secure configuration
 

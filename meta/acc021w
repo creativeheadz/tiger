@@ -2,6 +2,8 @@ Id: acc021w
 Severity: WARN
 Category: accounts
 Check: check_accounts
+Fix: Lock the account (usermod -L) until its owner asks, or remove it.
+References: usermod(8)
 Controls: CIS 5.3; NIST AC-2(3); ISO 5.18; CE User access control
 
 The listed login ID appears to be dormant.  Files in the home

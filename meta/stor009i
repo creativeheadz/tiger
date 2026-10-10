@@ -2,6 +2,7 @@ Id: stor009i
 Severity: INFO
 Category: filesystem
 Check: check_storage
+Fix: Reinstall onto LUKS, or convert in place with cryptsetup reencrypt.
 References: crypttab(5), cryptsetup(8)
 Controls: CIS 3.11; NIST SC-28; ISO 8.24
 

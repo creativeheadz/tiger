@@ -2,6 +2,8 @@ Id: upd006w
 Severity: WARN
 Category: packages
 Check: check_pkg
+Fix: Read pkg updating and upgrade the packages it names (pkg upgrade).
+References: pkg-updating(8); pkg-upgrade(8)
 Controls: CIS 7.3; NIST SI-2; ISO 8.8; CE Security update management
 
 Package update notices touch installed packages. Some entries

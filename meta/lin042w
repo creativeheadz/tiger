@@ -2,6 +2,8 @@ Id: lin042w
 Severity: WARN
 Category: packages
 Check: deb_nopackfiles
+Fix: Purge the removed packages (apt purge; dpkg -P).
+References: apt(8); dpkg(1)
 Controls: CIS 2.3; NIST SI-7, CM-11; ISO 8.19
 
 Packages are removed but not purged: their configuration files remain

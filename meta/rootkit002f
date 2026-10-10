@@ -2,6 +2,8 @@ Id: rootkit002f
 Severity: FAIL
 Category: intrusion
 Check: check_rootkit
+Fix: Reinstall find from the package (findutils) and check for a rootkit.
+References: chkrootkit(8)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 A test was run on the 'find' command to determine if it 'sees'

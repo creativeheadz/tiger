@@ -2,6 +2,8 @@ Id: acc007a
 Severity: ALERT
 Category: accounts
 Check: check_accounts
+Fix: Read the file; if it holds captured passwords, treat the system as compromised.
+References: login(1)
 Controls: CIS 3.3, 5.1; NIST AC-2, AC-3; ISO 5.16, 5.18, 8.3; CE User access control
 
 The listed login ID has a '.hushlogin' file which is not zero-length.

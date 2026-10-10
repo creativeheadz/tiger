@@ -2,6 +2,8 @@ Id: sum001f
 Severity: FAIL
 Category: boot
 Check: check_single
+Fix: Set a boot loader password, or add ~~:S:wait:/sbin/sulogin to /etc/inittab.
+References: sulogin(8); inittab(5)
 Controls: CIS 4.1; NIST AC-3, IA-2; ISO 8.5, 8.9; CE Secure configuration
 
 The system does not appear to require a password during single-user

@@ -2,6 +2,8 @@ Id: pass012w
 Severity: WARN
 Category: accounts
 Check: check_passwd
+Fix: Give each account a home directory of its own (usermod -d).
+References: usermod(8)
 Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
 
 The listed home directory is specified for multiple users. This can lead to

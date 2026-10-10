@@ -250,5 +250,18 @@ done`
 [ -z "$unmapped" ] && ok "every finding that can show a gap is mapped or declared unmapped" ||
   { bad "findings with no compliance mapping and no id: rule in doc/controls.map:"; echo "$unmapped" | sed 's/^/     /'; }
 
+# Every finding has References, and every one that asks for something to be
+# done (ALERT, FAIL, WARN, ERROR) has a one-line Fix. INFO and CONFIG ids
+# that only confirm an arrangement may have none.
+nofix=`for f in "$TIGER"/meta/*; do
+  grep -qE '^Severity: .*(ALERT|FAIL|WARN|ERROR)' "$f" || continue
+  grep -q '^Fix: ' "$f" || echo "${f##*/}"
+done`
+[ -z "$nofix" ] && ok "every ALERT, FAIL, WARN and ERROR id has a Fix line" ||
+  { bad "ids with no Fix:"; echo "$nofix" | sed 's/^/     /'; }
+noref=`grep -L '^References: ' "$TIGER"/meta/* | sed 's,.*/,,'`
+[ -z "$noref" ] && ok "every id has References" ||
+  { bad "ids with no References:"; echo "$noref" | sed 's/^/     /'; }
+
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

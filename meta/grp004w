@@ -2,6 +2,8 @@ Id: grp004w
 Severity: WARN
 Category: accounts
 Check: check_group
+Fix: Give the group the same gid in every source, or rename one.
+References: group(5); nsswitch.conf(5)
 Controls: CIS 5.1; NIST AC-2; ISO 5.16; CE User access control
 
 The indicated group name exists in separate group files, but the group

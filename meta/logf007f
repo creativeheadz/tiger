@@ -2,6 +2,8 @@ Id: logf007f
 Severity: FAIL
 Category: logging
 Check: check_logfiles
+Fix: Make the syslog daemon write /var/log/messages (or syslog), or keep the journal persistent.
+References: rsyslog.conf(5); journald.conf(5)
 Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
 
 The log file "messages" should exist to show a trace of the system logs

@@ -2,6 +2,8 @@ Id: apa002w
 Severity: WARN
 Category: services
 Check: check_apache
+Fix: Deny the root first: <Directory /> Require all denied, Options None.
+References: Apache httpd core directives (Directory, Options, Require)
 Controls: CIS 4.1; NIST CM-6, CM-7; ISO 8.9; CE Secure configuration
 
 The Directory block for the filesystem root ('/') places no limit on

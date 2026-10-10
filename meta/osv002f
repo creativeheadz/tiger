@@ -2,6 +2,8 @@ Id: osv002f
 Severity: FAIL
 Category: packages
 Check: check_release
+Fix: Upgrade to a supported Debian release.
+References: os-release(5)
 Controls: CIS 2.2; NIST SA-22; ISO 8.8; CE Security update management
 
 The operating system version appears to be less than Debian 3.0

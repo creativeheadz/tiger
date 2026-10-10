@@ -2,6 +2,8 @@ Id: trip001f
 Severity: FAIL
 Category: integrity
 Check: tripwire_run
+Fix: Update the database if the change was expected (tripwire --update); otherwise investigate.
+References: tripwire(8)
 Controls: NIST SI-7; ISO 8.16
 
 Tripwire reports that a file it is watching has been modified since the

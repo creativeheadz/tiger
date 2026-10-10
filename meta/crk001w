@@ -2,6 +2,8 @@ Id: crk001w
 Severity: WARN
 Category: accounts
 Check: crack_run
+Fix: Have each account set a strong password; add pam_pwquality so weak ones cannot return.
+References: pam_pwquality(8)
 Controls: CIS 5.2; NIST IA-5(1); ISO 5.17; CE User access control
 
 The Crack password guesser ran against the password file and guessed

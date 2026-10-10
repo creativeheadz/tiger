@@ -2,6 +2,8 @@ Id: swd001w
 Severity: WARN
 Category: packages
 Check: check_software
+Fix: chown root:admin and chmod go-w the application (or brew's Cellar entry).
+References: chmod(1); brew(1)
 Controls: CIS 3.3, 4.1; NIST AC-3, CM-5; ISO 8.3, 8.9; CE Secure configuration
 
 An application or a brew Cellar entry is writable past root.

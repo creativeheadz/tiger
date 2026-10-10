@@ -2,6 +2,8 @@ Id: rootdir003f
 Severity: FAIL
 Category: filesystem
 Check: check_rootdir
+Fix: chown root:root /.
+References: chown(1)
 Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 The ownership of the root directory is not secure.

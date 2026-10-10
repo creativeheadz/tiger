@@ -2,6 +2,8 @@ Id: lin006f
 Severity: FAIL
 Category: packages
 Check: deb_checkmd5sums pkg_integrity
+Fix: Reinstall the package that provided the file.
+References: dpkg(1); rpm(8); apk(8); pacman(8)
 Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 A file installed by a package no longer exists in the system, so it

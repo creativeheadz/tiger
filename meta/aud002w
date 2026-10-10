@@ -2,6 +2,7 @@ Id: aud002w
 Severity: WARN
 Category: logging
 Check: check_audit
+Fix: Put rules in /etc/audit/rules.d and load them with augenrules --load.
 References: audit.rules(7), augenrules(8)
 Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 

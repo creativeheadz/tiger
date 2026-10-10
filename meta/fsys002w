@@ -2,6 +2,8 @@ Id: fsys002w
 Severity: WARN
 Category: filesystem
 Check: check_suid
+Fix: Rebuild the program with absolute paths, or take the setuid bit off.
+References: strings(1); system(3)
 Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 The listed program is a setuid executable, and it appears to contain

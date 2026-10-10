@@ -2,6 +2,8 @@ Id: fde001w
 Severity: WARN
 Category: filesystem
 Check: check_filevault
+Fix: Turn FileVault on (fdesetup enable).
+References: fdesetup(8)
 Controls: CIS 3.6; NIST SC-28; ISO 7.9, 8.24
 
 FileVault is off: the disk reads in any other machine,

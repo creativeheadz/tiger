@@ -2,6 +2,7 @@ Id: php001w
 Severity: WARN
 Category: services
 Check: check_php
+Fix: Set allow_url_include = Off in php.ini.
 References: php.ini directives
 Controls: CIS 4.1; NIST CM-6, SI-10; ISO 8.9, 8.28; CE Secure configuration
 

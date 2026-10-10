@@ -2,6 +2,7 @@ Id: mac006i
 Severity: INFO
 Category: kernel
 Check: check_mac
+References: paxctl(1)
 Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 
 PaX is enforcing: its exploit mitigation is on by default.

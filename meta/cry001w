@@ -2,6 +2,7 @@ Id: cry001w
 Severity: WARN
 Category: services
 Check: check_crypto
+Fix: Point rngd at the hardware RNG (rngd -r /dev/hwrng), or stop it.
 References: rngd(8)
 Controls: NIST SC-12, SC-13; ISO 8.24
 

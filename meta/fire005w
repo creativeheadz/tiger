@@ -2,6 +2,8 @@ Id: fire005w
 Severity: WARN
 Category: firewall
 Check: check_firewall
+Fix: Publish the port on the address that should serve it (127.0.0.1 for the host alone), or filter it in DOCKER-USER.
+References: https://docs.docker.com/engine/network/packet-filtering-firewalls/
 Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 A port that Docker publishes is open to the network, and nothing in the

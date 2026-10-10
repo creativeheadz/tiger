@@ -2,6 +2,7 @@ Id: dbs011f
 Severity: FAIL
 Category: services
 Check: check_databases
+Fix: Set security.authorization: enabled, and bind to localhost where the network need not reach it.
 References: mongod.conf(5)
 Controls: CIS 4.4, 5.2; NIST SC-7, IA-2; ISO 8.5, 8.20; CE Firewalls, User access control
 

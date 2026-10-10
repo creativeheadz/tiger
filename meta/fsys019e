@@ -2,6 +2,8 @@ Id: fsys019e
 Severity: ERROR
 Category: filesystem
 Check: find_files
+Fix: Install GNU findutils on the host doing the audit.
+References: find(1)
 
 Auditing a system that is not running (tigris --root), its files are
 scanned with this host's find, and that scan needs GNU find: its

@@ -2,6 +2,7 @@ Id: int001w
 Severity: WARN
 Category: integrity
 Check: check_integrity
+Fix: Build the database (aide --init) and move it into place.
 References: aide.conf(5)
 Controls: NIST SI-7; ISO 8.16
 

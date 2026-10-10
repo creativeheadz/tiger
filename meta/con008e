@@ -2,6 +2,8 @@ Id: con008e
 Severity: ERROR
 Category: tigris
 Check: config
+Fix: Point -B at the Tigris directory, or reinstall.
+References: tigris(8)
 
 Generic configuration files for this system do not exist.  The
 checking system attempted to continue on, but could not locate

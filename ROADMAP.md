@@ -592,8 +592,9 @@ what scripts and cron see.
   `--since` for a diff-aware run of the main command.
 - [x] **One metadata file per finding id** (`meta/ID`, format in
   `doc/metadata.md`): severity, category, the checks that report it,
-  references, the explanation; `Fix` and `Controls` are defined and wait
-  for content. `tigris explain ID`, the `category` of each JSON finding
+  references, the explanation; every id has `References` and every one
+  that asks for action has a one-line `Fix` (since October 2026), and
+  `Controls` carries the compliance mapping. `tigris explain ID`, the `category` of each JSON finding
   and the HTML reference are read from it, and
   `tests/explain_check.sh` holds the files and the code to each other
   both ways. On master since 3.3.0.

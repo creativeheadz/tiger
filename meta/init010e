@@ -2,6 +2,8 @@ Id: init010e
 Severity: ERROR
 Category: tigris
 Check: tiger tigris
+Fix: chown -R root:root the Tigris tree, or run an installed copy.
+References: tigris(8)
 
 Tiger is running as root but the directory holding its check scripts is
 owned by another user. Tiger never runs a check script owned by someone

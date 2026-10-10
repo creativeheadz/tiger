@@ -2,6 +2,8 @@ Id: kis008w
 Severity: WARN
 Category: intrusion
 Check: check_known
+Fix: Remove or rename the mailbox so it matches its owner.
+References: mbox(5)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 The indicated file in the system mail spool does not have a name which

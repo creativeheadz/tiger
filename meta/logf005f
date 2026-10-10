@@ -2,6 +2,8 @@ Id: logf005f
 Severity: FAIL
 Category: logging
 Check: check_logfiles
+Fix: Set the mode the message gives (chmod).
+References: chmod(1)
 Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
 
 The log file does not have proper permissions set. It is recommended that

@@ -2,6 +2,7 @@ Id: ids002w
 Severity: WARN
 Category: intrusion
 Check: check_ids
+Fix: Point the engine at its rule files, or remove it.
 References: snort(8), suricata.yaml(5)
 Controls: CIS 13.3; NIST SI-4; ISO 8.16
 

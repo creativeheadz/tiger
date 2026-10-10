@@ -2,6 +2,8 @@ Id: tig001e
 Severity: ERROR
 Category: tigris
 Check: tigercron
+Fix: Restore cronrc, readable by root and writable by nobody else.
+References: tigercron(8)
 
 Tigercron, the cron driver, cannot read its control file (cronrc), so no
 scheduled check can run. The file is missing, or its permissions keep

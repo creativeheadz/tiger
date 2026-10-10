@@ -2,6 +2,8 @@ Id: acpt001w
 Severity: WARN
 Category: tigris
 Check: tiger tigris
+Fix: Fix the condition, or renew the acceptance: tigris-accept ID -r REASON -u DATE.
+References: tigris-accept(8)
 
 A finding was accepted with tigris-accept until a date that has now
 passed, so it is reported again. Either the condition was meant to be

@@ -2,6 +2,8 @@ Id: lin038w
 Severity: WARN
 Category: packages
 Check: pkg_integrity
+Fix: rpm --setperms PACKAGE, apk fix PACKAGE, or pacman -S PACKAGE.
+References: rpm(8); apk(8); pacman(8)
 Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 A file installed by a package has a different mode or owner than the

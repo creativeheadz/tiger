@@ -2,6 +2,8 @@ Id: misc013w
 Severity: WARN
 Category: services
 Check: check_suid
+Fix: Patch or upgrade xterm (X11R5 patch 26 or later).
+References: xterm(1); CERT advisory CA-93:17
 Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 CERT Advisory CA-93:17

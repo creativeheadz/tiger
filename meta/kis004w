@@ -2,6 +2,8 @@ Id: kis004w
 Severity: WARN
 Category: intrusion
 Check: check_known
+Fix: Check the files in lost+found, then clean it out.
+References: fsck(8)
 Controls: CIS 10.1; NIST SI-3, SI-4; ISO 8.7, 8.16; CE Malware protection
 
 The 'lost+found' directory (one exists for each file system) is used

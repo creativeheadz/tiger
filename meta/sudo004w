@@ -2,6 +2,7 @@ Id: sudo004w
 Severity: WARN
 Category: accounts
 Check: check_sudo
+Fix: List the exact commands and arguments instead of a wildcard.
 References: sudoers(5)
 Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 

@@ -2,6 +2,8 @@ Id: lin005f
 Severity: FAIL
 Category: packages
 Check: deb_checkmd5sums pkg_integrity
+Fix: Reinstall the package (apt install --reinstall, dnf reinstall, apk fix, pacman -S) and compare again.
+References: dpkg(1); rpm(8); apk(8); pacman(8)
 Controls: CIS 2.3; NIST SI-7; ISO 8.19
 
 An installed file differs from what the package that provided it

@@ -2,6 +2,8 @@ Id: con001c
 Severity: CONFIG
 Category: tigris
 Check: config
+Fix: Give the configuration file's path, not its directory's.
+References: tigris(8)
 
 The configuration file listed was not read because it was
 a directory.

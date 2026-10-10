@@ -2,6 +2,7 @@ Id: aud003i
 Severity: INFO
 Category: logging
 Check: check_audit
+References: auditctl(8)
 Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 
 auditd is running and the message gives how many audit rules are

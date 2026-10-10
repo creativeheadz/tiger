@@ -2,6 +2,8 @@ Id: dev003w
 Severity: WARN
 Category: filesystem
 Check: check_devices
+Fix: Move the file out of /dev unless the system's documentation puts it there.
+References: hier(7)
 Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 There is a file in the devices directory which is a common file. Devices

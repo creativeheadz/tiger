@@ -2,6 +2,8 @@ Id: sig004w
 Severity: WARN
 Category: integrity
 Check: check_signatures
+Fix: Compare the file with the distribution's and reinstall it from its package.
+References: README.signatures
 Controls: NIST SI-7; ISO 8.16
 
 No match was found for the signature of the indicated file.  This

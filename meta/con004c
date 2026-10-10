@@ -2,6 +2,7 @@ Id: con004c
 Severity: CONFIG
 Category: tigris
 Check: config
+References: tigris(8)
 
 Informational message describing which configuration files are
 being used during the checks.

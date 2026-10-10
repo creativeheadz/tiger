@@ -2,6 +2,8 @@ Id: act001w
 Severity: WARN
 Category: logging
 Check: check_accounting
+Fix: Turn process accounting on (accton with its file in place; svcadm enable acct).
+References: accton(8)
 Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 
 Process accounting is not on, or its file is missing: who ran

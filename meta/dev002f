@@ -2,6 +2,8 @@ Id: dev002f
 Severity: FAIL
 Category: filesystem
 Check: check_devices
+Fix: chmod o-rw the device; grant access through a group.
+References: chmod(1); udev(7)
 Controls: CIS 3.3; NIST AC-3; ISO 8.3; CE Secure configuration
 
 Devices that have improper (world) permissions might be accessed by

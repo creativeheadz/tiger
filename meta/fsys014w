@@ -2,6 +2,8 @@ Id: fsys014w
 Severity: WARN
 Category: filesystem
 Check: check_nousrgrp
+Fix: chown the file to a live account, or remove it (find / -nouser lists them).
+References: find(1); chown(1)
 Controls: CIS 3.3; NIST AC-3, CM-6; ISO 8.3; CE Secure configuration
 
 The file does not belong to any user. It is owned by a numeric UID which is

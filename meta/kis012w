@@ -2,6 +2,8 @@ Id: kis012w
 Severity: WARN
 Category: intrusion
 Check: check_finddeleted
+Fix: Restart the process; if its program is gone from disk, investigate.
+References: lsof(8)
 Controls: CIS 10.1; NIST SI-4; ISO 8.16; CE Malware protection
 
 An application in the system is using a deleted file. This might be an

@@ -2,6 +2,7 @@ Id: stor004w
 Severity: WARN
 Category: filesystem
 Check: check_storage
+Fix: Encrypt the file systems with LUKS (cryptsetup reencrypt, after a backup).
 References: cryptsetup(8)
 Controls: CIS 3.6, 3.11; NIST SC-28; ISO 8.24
 

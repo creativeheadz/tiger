@@ -2,6 +2,8 @@ Id: fsys010w
 Severity: WARN
 Category: filesystem
 Check: check_sgid
+Fix: chmod g-s the script; wrap it in a C program if it must run as the group.
+References: chmod(1)
 Controls: CIS 4.1; NIST AC-6, CM-7; ISO 8.2, 8.18; CE Secure configuration
 
 The listed file is a setgid script.  On most UNIX machines, it is not

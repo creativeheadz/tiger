@@ -57,6 +57,7 @@ BEGIN {
   print "<dt id=\"" v["Id"] "\">" v["Id"] "</dt><dd>"
   m = "Severity: " v["Severity"] ". Reported by: " v["Check"] "."
   print "<p class=\"meta\">" esc(m) "</p>"
+  if (v["Fix"] != "") print "<p class=\"meta\">Fix: " esc(v["Fix"]) "</p>"
   if (v["References"] != "") print "<p class=\"meta\">References: " esc(v["References"]) "</p>"
   if (v["Controls"] != "") print "<p class=\"meta\">Controls: " esc(v["Controls"]) "</p>"
   printf "<pre>%s</pre></dd>\n", esc(text)

@@ -2,6 +2,8 @@ Id: acc025w
 Severity: WARN
 Category: accounts
 Check: check_accounts
+Fix: Bring the file server back or unmount the share, then run again.
+References: mount(8); nfs(5)
 Controls: CIS 3.3, 5.1; NIST AC-2, AC-3; ISO 5.16, 5.18, 8.3; CE User access control
 
 The user's home directory is on a filesystem that did not answer

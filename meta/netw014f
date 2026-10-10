@@ -2,6 +2,8 @@ Id: netw014f
 Severity: FAIL
 Category: network
 Check: check_ntp
+Fix: chmod 600 /etc/securetty, owned by root.
+References: securetty(5)
 Controls: CIS 8.4; NIST AU-8, SC-45; ISO 8.17
 
 /etc/securetty has world write permissions.

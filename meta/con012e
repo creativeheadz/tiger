@@ -2,6 +2,8 @@ Id: con012e
 Severity: ERROR
 Category: tigris
 Check: config
+Fix: Name the earlier report, or last: tigris --since last.
+References: tigris(8)
 
 --since was given without the run to compare with. Name the JSON Lines
 report of an earlier run (a security.report.*.jsonl file), or 'last' for

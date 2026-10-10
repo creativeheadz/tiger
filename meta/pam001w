@@ -2,6 +2,7 @@ Id: pam001w
 Severity: WARN
 Category: accounts
 Check: check_pam
+Fix: Install libpam-pwquality (libpwquality) and set minlen = 14 in pwquality.conf.
 References: pam_pwquality(8), pwquality.conf(5)
 Controls: CIS 5.2; NIST IA-5(1); ISO 5.17, 8.5; CE User access control
 

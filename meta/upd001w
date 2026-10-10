@@ -2,6 +2,8 @@ Id: upd001w
 Severity: WARN
 Category: packages
 Check: check_updates
+Fix: Reboot; needrestart (needs-restarting -r) names the services to restart meanwhile.
+References: needrestart(1); needs-restarting(1)
 Controls: CIS 7.3, 7.4; NIST SI-2; ISO 8.8; CE Security update management
 
 Updates were installed that only take effect after a reboot: a new

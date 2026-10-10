@@ -2,6 +2,8 @@ Id: fire007w
 Severity: WARN
 Category: firewall
 Check: check_firewall
+Fix: Add a log rule before the drop in each input chain (or ufw logging on).
+References: nft(8); ufw(8)
 Controls: CIS 4.4, 4.5; NIST SC-7; ISO 8.20, 8.22; CE Firewalls
 
 Nothing on the input path logs what the packet filter does with

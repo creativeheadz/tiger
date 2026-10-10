@@ -2,6 +2,8 @@ Id: sip001w
 Severity: WARN
 Category: kernel
 Check: check_sip
+Fix: Boot into Recovery and run csrutil enable.
+References: csrutil(8)
 Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 
 System Integrity Protection is off, in whole or in the named

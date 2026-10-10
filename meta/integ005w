@@ -2,6 +2,8 @@ Id: integ005w
 Severity: WARN
 Category: integrity
 Check: integrit_run
+Fix: Confirm the file is yours, then update the database (integrit -u).
+References: integrit(1)
 Controls: NIST SI-7; ISO 8.16
 
 Integrit detected, by checking file against the database, the file was

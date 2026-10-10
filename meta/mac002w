@@ -2,6 +2,7 @@ Id: mac002w
 Severity: WARN
 Category: kernel
 Check: check_mac
+Fix: setenforce 1, and SELINUX=enforcing in /etc/selinux/config.
 References: selinux(8), setenforce(8)
 Controls: CIS 4.1; NIST AC-3(3); ISO 8.9; CE Secure configuration
 

@@ -2,6 +2,8 @@ Id: lin034w
 Severity: WARN
 Category: network
 Check: check_sysctl
+Fix: Set net.ipv6.conf.all.accept_redirects=0 and .default.accept_redirects=0 in /etc/sysctl.d.
+References: sysctl.d(5); Linux kernel ip-sysctl documentation
 Controls: CIS 4.1; NIST CM-6, SC-7; ISO 8.20; CE Secure configuration
 
 net.ipv6.conf.*.accept_redirects is 1, so the host accepts IPv6 ICMP

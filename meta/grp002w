@@ -2,6 +2,8 @@ Id: grp002w
 Severity: WARN
 Category: accounts
 Check: check_group
+Fix: Give one of the groups a new gid (groupmod -g).
+References: group(5); groupmod(8)
 Controls: CIS 5.1; NIST AC-2; ISO 5.16; CE User access control
 
 The indicated group id (gid) exists multiple times in the same group file.

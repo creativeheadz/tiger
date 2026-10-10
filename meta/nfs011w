@@ -2,6 +2,8 @@ Id: nfs011w
 Severity: WARN
 Category: network
 Check: check_exports
+Fix: chmod 700 the exported directory on the server.
+References: exports(5)
 Controls: CIS 3.3, 4.8; NIST AC-3, CM-7; ISO 8.3, 8.21; CE Secure configuration
 
 The listed directory is exported with root access to a

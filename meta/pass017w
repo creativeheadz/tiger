@@ -2,6 +2,8 @@ Id: pass017w
 Severity: WARN
 Category: accounts
 Check: check_passwd
+Fix: Remove the account, or give it a non-zero uid; administrators use sudo.
+References: passwd(5); sudo(8)
 Controls: CIS 5.4; NIST AC-6(5); ISO 8.2; CE User access control
 
 The listed login ID has a user ID of zero (0) and is not the 'root'

@@ -2,6 +2,8 @@ Id: root001w
 Severity: WARN
 Category: accounts
 Check: check_root
+Fix: Remove the pseudo-terminal entries from /etc/securetty (CONSOLE=/dev/console in default/login).
+References: securetty(5)
 Controls: CIS 5.4; NIST AC-6, AC-17; ISO 8.2, 8.5; CE User access control
 
 The indicated file allows remote (i.e., other than system console).

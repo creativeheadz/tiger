@@ -2,6 +2,7 @@ Id: cmp002w
 Severity: WARN
 Category: packages
 Check: check_compilers
+Fix: chown root:root and chmod go-w the compiler.
 References: gcc(1)
 Controls: CIS 3.3, 4.1; NIST AC-3, CM-5; ISO 8.3, 8.9; CE Secure configuration
 

@@ -2,6 +2,8 @@ Id: init005e
 Severity: ERROR
 Category: tigris
 Check: initdefs
+Fix: Set the variable in a site file.
+References: site-sample
 
 The indicated variable, which should contain the pathname to an
 input file or work directory does not have a value.  This indicates

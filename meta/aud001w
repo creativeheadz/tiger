@@ -2,6 +2,7 @@ Id: aud001w
 Severity: WARN
 Category: logging
 Check: check_audit
+Fix: Install auditd, systemctl enable --now auditd, and load rules (aud002w).
 References: auditd(8), audit.rules(7)
 Controls: CIS 8.2, 8.5; NIST AU-2, AU-12; ISO 8.15
 

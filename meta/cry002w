@@ -2,6 +2,8 @@ Id: cry002w
 Severity: WARN
 Category: services
 Check: check_crypto
+Fix: chmod 600 the key, owned by root (or group ssl-cert).
+References: openssl(1)
 Controls: CIS 3.3; NIST AC-3, SC-12; ISO 8.3, 8.24; CE User access control
 
 A private key is readable by strangers: whoever copies it

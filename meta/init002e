@@ -2,6 +2,8 @@ Id: init002e
 Severity: ERROR
 Category: tigris
 Check: any
+Fix: Run it from the Tigris directory, or give -B the directory holding config.
+References: tigris(8)
 
 The required configuration script was not found in the listed directory.
 The programs can not run without this script.  The '-B' switch can

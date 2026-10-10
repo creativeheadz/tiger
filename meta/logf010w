@@ -2,6 +2,8 @@ Id: logf010w
 Severity: WARN
 Category: logging
 Check: check_logfiles
+Fix: Tighten the mode in newsyslog.conf (644 or 640).
+References: newsyslog.conf(5)
 Controls: CIS 8.2, 8.3; NIST AU-9; ISO 8.15
 
 newsyslog will create the next rotation of the log

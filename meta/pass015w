@@ -2,6 +2,8 @@ Id: pass015w
 Severity: WARN
 Category: accounts
 Check: check_passwd
+Fix: Set a shell from /etc/shells, or /usr/sbin/nologin for an account that never logs in.
+References: shells(5); usermod(8)
 Controls: CIS 5.1, 5.2; NIST AC-2, IA-5(1); ISO 5.16, 5.17; CE User access control
 
 The listed login ID does not have a valid login program or shell.

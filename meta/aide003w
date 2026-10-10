@@ -2,6 +2,8 @@ Id: aide003w
 Severity: WARN
 Category: integrity
 Check: aide_run
+Fix: Confirm the change is yours, then update the database (aide --update).
+References: aide(1); aide.conf(5)
 Controls: NIST SI-7; ISO 8.16
 
 Aide detected, by checking against the files' the attributes in the database,

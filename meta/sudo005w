@@ -2,6 +2,7 @@ Id: sudo005w
 Severity: WARN
 Category: accounts
 Check: check_sudo
+Fix: chown root:root and chmod 0440 the file (0755 the directory).
 References: sudoers(5)
 Controls: CIS 5.4; NIST AC-6; ISO 8.2; CE User access control
 

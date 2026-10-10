@@ -2,6 +2,8 @@ Id: lin008e
 Severity: ERROR
 Category: network
 Check: check_network_config check_sysctl
+Fix: Mount /proc (mount -t proc proc /proc).
+References: proc(5)
 
 The /proc pseudo-filesystem is needed to check the network configuration
 settings in the kernel and determine insecure setups. /proc is available

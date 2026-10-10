@@ -2,6 +2,8 @@ Id: con014e
 Severity: ERROR
 Category: tigris
 Check: config
+Fix: Give --root the mounted image's top directory, the one with etc in it.
+References: tigris(8)
 
 The directory given with --root is not the root of a system Tigris can
 audit: it does not exist, has no etc directory, or its path has

@@ -2,6 +2,8 @@ Id: lin002i
 Severity: WARN, INFO
 Category: network
 Check: check_listeningprocs
+Fix: Bind each service to the address it serves, and stop the ones not needed.
+References: ss(8)
 Controls: CIS 4.8; NIST CM-7; ISO 8.20; CE Secure configuration
 
 Installed processes listening on Internet interfaces must be

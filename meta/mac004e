@@ -2,6 +2,8 @@ Id: mac004e
 Severity: ERROR
 Category: kernel
 Check: check_mac
+Fix: Run Tigris as root, where securityfs is mounted.
+References: aa-status(8)
 
 AppArmor is active, but the list of its loaded profiles could not be
 read, so whether any is enforced is unknown. The list is in

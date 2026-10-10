@@ -2,6 +2,8 @@ Id: root004w
 Severity: WARN
 Category: accounts
 Check: check_root
+Fix: Set AllowRoot=false (allowRootLogin false) in the display manager's configuration.
+References: xdm(1)
 Controls: CIS 5.4; NIST AC-6, AC-17; ISO 8.2, 8.5; CE User access control
 
 The graphical login manager, xdm or an old gdm, is configured to let

@@ -2,6 +2,8 @@ Id: con011c
 Severity: CONFIG
 Category: tigris
 Check: gen_mounts
+Fix: Unmount the hung filesystem or make it answer; raise Tiger_Mount_Timeout if it is merely slow.
+References: mount(8); tigerrc
 
 The filesystem is of a local type but did not answer a df request
 within Tiger_Mount_Timeout seconds, so the filesystem scan leaves it out
