@@ -244,7 +244,7 @@ unmapped=`for f in "$TIGER"/meta/*; do
   id=${f##*/}
   grep -qE '^Severity: .*(ALERT|FAIL|WARN|INFO)' "$f" || continue
   grep -q '^Controls: ' "$f" && continue
-  grep -qE "^id:$id[ 	]*\|" "$TIGER/doc/controls.map" && continue
+  grep -qE "^id:${id}[ 	]*\|" "$TIGER/doc/controls.map" && continue
   echo "$id"
 done`
 [ -z "$unmapped" ] && ok "every finding that can show a gap is mapped or declared unmapped" ||
