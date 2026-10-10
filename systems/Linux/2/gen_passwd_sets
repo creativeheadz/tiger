@@ -125,6 +125,17 @@ zappasswd()
 	   ;;
       " ") passwd=""
 	   ;;
+# Other crypt(5) hashes by their prefix: yescrypt is the default of
+# Debian 11, Ubuntu 22.04 and Fedora 35 on. Anything else, ! and * among
+# it, is locked (they were all taken for locked, so every yescrypt
+# password made its account "disabled").
+      \$y\$*) passwd="yescrypt" ;;
+      \$gy\$*) passwd="gost-yescrypt" ;;
+      \$7\$*) passwd="scrypt" ;;
+      \$2[aby]\$*) passwd="bcrypt" ;;
+      \$5\$*) passwd="sha256" ;;
+      \$6\$*) passwd="sha512" ;;
+      \$1\$*) passwd="md5" ;;
 	*|!!)
 	     passwd="*"
 	   ;;

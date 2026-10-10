@@ -207,6 +207,15 @@ if [ -n "$TIGRIS_ROOT" ]; then
 else
 	userlist=`$LASTLOG | $AWK '/Never logged in/ {print$1}'`
 fi
+# Nobody on record at all (an empty or missing lastlog: Ubuntu 24.04
+# records no SSH login in it) says nothing about who never logged in, so
+# then only accounts with no password are reported, which needs no
+# history. Every passworded account was a FAIL there until October 2026.
+nusers=`$CAT $WORKDIR/pass.list.$$ | while read __set; do $AWK -F: '{print $1}' "$__set"; done | $AWK '!seen[$0]++ { n++ } END { print n + 0 }'`
+nnever=`echo $userlist | $AWK '{ print NF }'`
+nohistory=
+[ "${nnever:-0}" -ge "${nusers:-0}" ] && nohistory=Y
+[ -n "$nohistory" ] && echo "# No login is on record in /var/log/lastlog (Ubuntu 24.04 records none for SSH logins), so accounts that never logged in cannot be told from the rest; only accounts with no password are reported."
 for user in $userlist; do
   result=0
   $CAT $WORKDIR/pass.list.$$  |
@@ -224,7 +233,7 @@ for user in $userlist; do
 
 	# Only add for debugging:
 	#echo "Checking $user $SHELL $result"
-	$TEST "$result" = 2 && \
+	$TEST "$result" = 2 && [ -z "$nohistory" ] && \
 		message FAIL acc024f "" "User $user has got a password and a valid shell ($SHELL) but never logged in."
 	$TEST "$result" = 3  && \
 		message FAIL acc024f "" "User $user has got NO password and a valid shell ($SHELL)."

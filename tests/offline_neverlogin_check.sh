@@ -7,8 +7,10 @@
 # never-users must be reported, the logged-in control and the locked
 # and shell-less accounts must stay silent. The second root's lastlog
 # is exactly the size both record layouts divide, so the believable
-# timestamps must pick the layout. The third has no lastlog at all,
-# so every passworded user is new. check_neverlogin needs root (its
+# timestamps must pick the layout. The third has an empty lastlog, as
+# Ubuntu 24.04 leaves it (no SSH login is written there): nobody is on
+# record, so nobody can be said never to have logged in, and only the
+# account with no password is reported. check_neverlogin needs root (its
 # hash test reads the shadow file): as a user it must be skipped as
 # such, and as root its findings are checked too. CI runs this both
 # ways.
@@ -82,11 +84,14 @@ mkdir -p "$E/etc" "$E/var/log"
 cat > "$E/etc/passwd" <<'EOF'
 root:x:0:0:root:/root:/bin/bash
 alice:x:4444:4444:Alice:/home/alice:/bin/bash
+carol:x:4446:4446:Carol:/home/carol:/bin/bash
 EOF
 cat > "$E/etc/shadow" <<'EOF'
 root:$6$saltsalt$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefgh:19000:0:99999:7:::
 alice:$6$saltsalt$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefgh:19000:0:99999:7:::
+carol::19000:0:99999:7:::
 EOF
+: > "$E/var/log/lastlog"
 printf '/bin/sh\n/bin/bash\n' > "$E/etc/shells"
 printf 'root:x:0:\n' > "$E/etc/group"
 
@@ -145,9 +150,9 @@ if [ "$uid" = 0 ]; then
   ( cd "$W" && sh ./tigris -q --profile never --root "$E" ) > "$W/out3" 2>&1
   json3=`ls -t "$W"/log/*.jsonl 2>/dev/null | head -1`
   [ -n "$json3" ] && [ "$json3" != "$json2" ] || { echo "FAIL no third report:"; cat "$W/out3"; exit 1; }
-  grep -q '"id":"acc024f".*User alice has got a password' "$json3" &&
-    grep -q '"id":"acc024f".*User root has got a password' "$json3" &&
-    ok "with no database every passworded user is new: acc024f" || bad "acc024f empty"
+  grep -q '"id":"acc024f".*User carol has got NO password' "$json3" &&
+    ! grep -q '"id":"acc024f".*has got a password' "$json3" &&
+    ok "with an empty lastlog only the passwordless account is reported" || bad "acc024f empty: `grep acc024f "$json3" | cut -c1-160`"
   grep '"type":"finding"' "$json3" | grep -q "$E" && bad "a finding names the third root's directory on this host" ||
     ok "the third report names the root's own paths too"
   sh "$W/tests/schema_check.sh" "$json3" > "$W/schema3.out" 2>&1 && ok "the third report validates" ||

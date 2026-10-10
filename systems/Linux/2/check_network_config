@@ -142,7 +142,7 @@ read_if_exist /proc/sys/net/ipv4/tcp_syncookies
 tcp_syncookies=$?
 read_if_exist /proc/sys/net/ipv4/conf/all/rp_filter
 rp_filter_all=$?
-read_if_exist /proc/sys/net/ipv4/default/all/rp_filter
+read_if_exist /proc/sys/net/ipv4/conf/default/rp_filter
 rp_filter_def=$?
 read_if_exist /proc/sys/net/ipv4/ip_forward
 ip_fwd=$?
@@ -185,13 +185,30 @@ secure_redirects=$?
 [ $tcp_syncookies -eq 0 ] && \
 	message FAIL lin013f "" "The system is not protected against Syn flooding attacks"
 
-[ $rp_filter_all -eq 0 -o $rp_filter_def -eq 0 ] && \
+# An interface filters by the higher of conf/all and its own rp_filter
+# (ip-sysctl.rst), so only both at 0 leaves new interfaces unfiltered.
+# (The default's path read default/all until October 2026, so this half
+# never counted.)
+[ $rp_filter_all -eq 0 ] && [ $rp_filter_def -eq 0 ] && \
 	message FAIL lin014f "" "The system permits the transmission of IP packets with invalid addresses"
 
 [ $ip_fwd -eq 1 ]  && \
 	message WARN lin015w "" "The system has IP forwarding enabled"
 
-[ $ip_source_route_all -eq 1 -o $ip_source_route_def -eq 1 ] && \
+# An interface accepts source-routed packets only when conf/all and its own
+# accept_source_route are both on (ip-sysctl.rst): conf/all at 0, as
+# distributions set it, turns it off however the default reads. Either
+# one on was a FAIL on every stock Ubuntu until October 2026.
+srcroute=
+if [ $ip_source_route_all -eq 1 ]; then
+	[ $ip_source_route_def -eq 1 ] && srcroute=Y
+	[ -z "$TIGRIS_ROOT" ] && for f in /proc/sys/net/ipv4/conf/*/accept_source_route
+	do
+		case "$f" in */all/*|*/default/*|*/lo/*) continue ;; esac
+		[ "`$CAT "$f" 2>/dev/null`" = 1 ] && srcroute=Y
+	done
+fi
+[ -n "$srcroute" ] && \
 	message FAIL lin016f "" "The system permits source routing from incoming packets"
 
 [ $log_martian_all -eq 0 -o $log_martian_def -eq 0 ] && \

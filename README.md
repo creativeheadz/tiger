@@ -15,7 +15,7 @@
   <br>
   <img src="https://img.shields.io/badge/finding%20ids-514-e8833a?style=flat-square&labelColor=0f1822" alt="514 finding ids">
   <img src="https://img.shields.io/badge/categories-15-e8833a?style=flat-square&labelColor=0f1822" alt="15 categories">
-  <img src="https://img.shields.io/badge/test%20suites-94-e8833a?style=flat-square&labelColor=0f1822" alt="94 test suites">
+  <img src="https://img.shields.io/badge/test%20suites-96-e8833a?style=flat-square&labelColor=0f1822" alt="96 test suites">
   <img src="https://img.shields.io/badge/CI-Debian%20%C2%B7%20Ubuntu%20%C2%B7%20Fedora%20%C2%B7%20Rocky%20%C2%B7%20openSUSE%20%C2%B7%20Alpine%20%C2%B7%20Arch-c6d6e2?style=flat-square&labelColor=0f1822" alt="Tested on Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch">
 </p>
 

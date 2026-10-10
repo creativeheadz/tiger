@@ -86,7 +86,6 @@ done
 # elements are set.
 #
 [ "$Tiger_TESTMODE" = 'Y' ] && {
-  haveallcmds CAT GREP RM SGREP STRINGS || exit 1
   haveallfiles BASEDIR WORKDIR || exit 1
   
   echo "--CONFIG-- [init003c] $0: Configuration ok..."
@@ -95,7 +94,9 @@ done
 
 #------------------------------------------------------------------------
 
-haveallcmds CAT GREP RM SGREP STRINGS || exit 1
+# No commands required here: each check names what it needs. This once
+# required strings (binutils), which minimal server images leave out, and
+# without it every Linux check below was skipped behind one ERROR line.
 haveallfiles BASEDIR WORKDIR || exit 1
 
 SYSTEMDIR=$BASEDIR/systems/Linux/2
