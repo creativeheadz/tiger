@@ -48,6 +48,12 @@ grep -q '^  new (3):' "$W/all.txt" && grep -q 'lin002i' "$W/all.txt" && grep -q 
 
 sh "$D" "$B" "$B" > "$W/same.txt"; st=$?
 [ $st -eq 0 ] && grep -q 'new (0)' "$W/same.txt" && ok "a run against itself: nothing new, exit 0" || bad "self diff"
+# an empty old report (a run that died before writing anything): every
+# finding of the new run is new, none resolved
+: > "$W/empty.jsonl"
+sh "$D" "$W/empty.jsonl" "$B" > "$W/empty.txt"; st=$?
+[ $st -eq 1 ] && grep -q '^  new (3):' "$W/empty.txt" && grep -q '^  resolved (0):' "$W/empty.txt" &&
+  ok "an empty old report: the new run's findings are new" || { bad "empty old report (exit $st)"; cat "$W/empty.txt"; }
 
 ( cd "$W" && sh "$D" ) > "$W/auto.txt"
 grep -q 'dev004w' "$W/auto.txt" && grep -q 'ssh004w' "$W/auto.txt" && ok "no arguments: the two newest runs in ./log" || bad "auto lookup"

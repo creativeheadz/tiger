@@ -152,14 +152,17 @@ expand_ng()
 
 have_syslog=
 # rsyslog: @host and @@host actions (quoted strings first removed, so a
-# template's "@" is not one), and omfwd actions with their target
+# template's "@" is not one, then comments, so the commented example
+# "#*.* @@remote-host:514" that RHEL ships is not one either), and omfwd
+# actions with their target
 if [ -f "`rootfile /etc/rsyslog.conf`" ]; then
   have_syslog=Y
   main=/etc/rsyslog.conf
-  expand_rs $main 0 | $SED 's/"[^"]*"//g' | $AWK '
+  expand_rs $main 0 | $SED 's/"[^"]*"//g; s/#.*//' | $AWK '
     { for (i = 1; i <= NF; i++)
         if ($i ~ /^@@?./) { sub(/;$/, "", $i); print "rsyslog " $i } }' >> $found
   expand_rs $main 0 |
+    $GREP -v '^[ 	]*#' |
     $GREP 'action[ 	]*(.*type[ 	]*=[ 	]*"omfwd"' |
     $SED 's/^.*target[ 	]*=[ 	]*"\([^"]*\)".*/\1/; t; d' |
     while IFS= read -r t

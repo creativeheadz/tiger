@@ -63,5 +63,14 @@ run false 0
 
 grep -q "$W" "$W/out" 2>/dev/null && bad "a finding names where a fixture is on this host" || ok "findings name no fixture paths"
 
+# Without Tiger_RPCInfo_Cmd the check looks for rpcinfo itself. It once
+# called a helper it did not define, so on a live system it never ran;
+# the "not found" went to /dev/null. The lookup must work now.
+cp "$W/tigerrc.base" "$W/tigerrc"
+{ echo "Tiger_Sysctl_Root='$W/root'"; echo "Tiger_ProcDir='$W/proc'"; } >> "$W/tigerrc"
+( cd "$W" && TIGERHOMEDIR=$W sh ./scripts/check_nfsd ) > /dev/null 2> "$W/err"
+grep -q 'not found' "$W/err" && { bad "check_nfsd's own rpcinfo lookup fails:"; cat "$W/err"; } ||
+  ok "check_nfsd looks for rpcinfo itself without an error"
+
 [ $fail -eq 0 ] && echo "PASS"
 exit $fail

@@ -192,11 +192,11 @@ storage_second()
     aclpaths="/etc/shadow /etc/gshadow /etc/sudoers"
     for s in `rootls /etc/sudoers.d 2>/dev/null`
     do
-      case "${s##*/}" in .*|*~) ;; *) aclfiles="$aclpaths $s" ;; esac
+      case "${s##*/}" in .*|*~) ;; *) aclpaths="$aclpaths $s" ;; esac
     done
     for k in `rootls /etc/ssh 2>/dev/null`
     do
-      case "${k##*/}" in *_key) aclfiles="$aclpaths $k" ;; esac
+      case "${k##*/}" in *_key) aclpaths="$aclpaths $k" ;; esac
     done
     for a in $aclpaths
     do

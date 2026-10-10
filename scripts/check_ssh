@@ -325,7 +325,8 @@ if [ -n "$effective" ]; then
 		echo "# Checking the effective sshd configuration (sshd -T)..."
 	fi
 	# keyword, test, wanted, level, code, what the wrong value means.
-	# 'is' takes a case pattern; 'le' a number the value must not exceed.
+	# 'is' takes a case pattern; 'le' a number the value must not exceed;
+	# 'max' the same, where 0 means no limit (LoginGraceTime 0).
 	while read key test want level code text
 	do
 		case "$key" in ''|\#*) continue ;; esac
@@ -334,7 +335,9 @@ if [ -n "$effective" ]; then
 		ok=N
 		case "$test" in
 			is) matchlist "$value" "$want" && ok=Y ;;
-			le) case "$value" in *[!0-9]*) ok=Y ;; *) [ "$value" -le "$want" ] && ok=Y ;; esac ;;
+			le|max) case "$value" in *[!0-9]*) ok=Y ;; *) [ "$value" -le "$want" ] && ok=Y ;; esac
+				# max: 0 is no limit at all, the worst value, not the best
+				[ "$test" = max ] && [ "$value" = 0 ] && ok=N ;;
 		esac
 		[ "$ok" = N ] && message $level $code "" "sshd: $key is $value: $text"
 	done <<EOF
@@ -345,7 +348,7 @@ x11forwarding                is no                                              
 maxauthtries                 le 4                                                            WARN ssh009w more than four authentication attempts are allowed per connection
 usepam                       is yes                                                          WARN ssh010w PAM is bypassed, so its account and session rules do not apply
 kbdinteractiveauthentication is no                                                           WARN ssh011w keyboard-interactive login is open, which PAM can turn into a password prompt
-logingracetime               le 60                                                           WARN ssh012w an unauthenticated connection may be held open for more than 60 seconds
+logingracetime               max 60                                                          WARN ssh012w an unauthenticated connection may be held open for more than 60 seconds
 hostbasedauthentication      is no                                                           WARN ssh013w hosts are trusted on the strength of their host key alone
 ignorerhosts                 is yes                                                          WARN ssh014w .rhosts and .shosts files are consulted
 permituserenvironment        is no                                                           WARN ssh015w users may set LD_PRELOAD and the like through authorized_keys

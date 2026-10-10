@@ -50,6 +50,17 @@ has "--INFO-- [snmp002i] SNMP answers a write community ('\`monsecret')" "$W/out
 has "--INFO-- [snmp003i] SNMP uses a default community string ('\`public')" "$W/out" &&
   ok "a narrowed write community: only snmp002i, com2sec default found" || { bad "narrow"; cat "$W/out"; }
 
+# "default" and 0.0.0.0/0 as the source are the whole network, and
+# rwcommunity6 is a write community as much as rwcommunity
+A=$W/anysrc; mkdir -p "$A/etc/snmp"
+printf 'rwcommunity s3cret default\nrwcommunity w1de 0.0.0.0/0\nrwcommunity6 six ::/0\n' > "$A/etc/snmp/snmpd.conf"
+run "$A" "$W/out"
+has "--WARN-- [snmp001w] SNMP answers a write community ('\`s3cret')" "$W/out" &&
+has "--WARN-- [snmp001w] SNMP answers a write community ('\`w1de')" "$W/out" &&
+has "--WARN-- [snmp001w] SNMP answers a write community ('\`six')" "$W/out" &&
+! grep -q 'snmp002i' "$W/out" &&
+  ok "a source of default, 0.0.0.0/0 or ::/0, and rwcommunity6: snmp001w" || { bad "any source"; cat "$W/out"; }
+
 V=$W/v3; mkdir -p "$V/etc/snmp"
 cat > "$V/etc/snmp/snmpd.conf" <<'EOF'
 rouser monitor auth

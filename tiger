@@ -246,7 +246,7 @@ echo "Tiger security scripts *** $version ***"
     export Tiger_JSON_File
     # An id for this run, so its records can be told from another run's
     Tiger_Run_Id=`$CAT /proc/sys/kernel/random/uuid 2>/dev/null`
-    [ -n "$Tiger_Run_Id" ] || Tiger_Run_Id="${HOSTNAME}-${datestamp}-$$"
+    [ -n "$Tiger_Run_Id" ] || Tiger_Run_Id=`printf '%s' "${HOSTNAME}-${datestamp}-$$" | json_escape`
     export Tiger_Run_Id
     # Whether the filesystem scan runs: a run without it has no fsys*
     # findings, which tigris-diff must not read as "resolved"
@@ -257,7 +257,15 @@ echo "Tiger security scripts *** $version ***"
     [ -n "$PROFILE" ] && profile=",\"profile\":\"$PROFILE\""
     # the directory audited instead of the running system (--root)
     [ -n "$TIGRIS_ROOT" ] && profile="$profile,\"root\":\"`printf '%s' "$TIGRIS_ROOT" | json_escape`\""
-    echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$version\",\"host\":\"$HOSTNAME\",\"os\":\"$OS\",\"release\":\"$REV\",\"arch\":\"$ARCH\",\"config\":\"$RCFILE\"$profile,\"filesystem_scan\":$fsscan,\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
+    # every string escaped: -c, -O, -R and -A take whatever they are given
+    # (a config path with a quote made the first line invalid JSON)
+    jversion=`printf '%s' "$version" | json_escape`
+    jhost=`printf '%s' "$HOSTNAME" | json_escape`
+    jos=`printf '%s' "$OS" | json_escape`
+    jrel=`printf '%s' "$REV" | json_escape`
+    jarch=`printf '%s' "$ARCH" | json_escape`
+    jconfig=`printf '%s' "$RCFILE" | json_escape`
+    echo "{\"type\":\"run\",\"schema\":1,\"id\":\"$Tiger_Run_Id\",\"tool\":\"tigris\",\"version\":\"$jversion\",\"host\":\"$jhost\",\"os\":\"$jos\",\"release\":\"$jrel\",\"arch\":\"$jarch\",\"config\":\"$jconfig\"$profile,\"filesystem_scan\":$fsscan,\"start\":\"`$DATE -u +%Y-%m-%dT%H:%M:%SZ`\"}" > $Tiger_JSON_File
   }
 }
 

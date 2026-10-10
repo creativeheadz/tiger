@@ -82,6 +82,22 @@ run "$D" "$W/out"
 has '--WARN-- [krb001w] Kerberos permits single-DES encryption' "$W/out" &&
   ok "weak crypto in a drop-in: krb001w" || { bad "dropin"; cat "$W/out"; }
 
+# default_tkt_enctypes (the regex once read "default_t(k|gs)", which
+# never matched it), and a drop-in with no suffix, as RHEL's
+# crypto-policies link is
+T=$W/tkt; mkdir -p "$T/etc/krb5.conf.d"
+printf '[libdefaults]\n\tdefault_tkt_enctypes = des-cbc-crc aes256-cts\n' > "$T/etc/krb5.conf"
+run "$T" "$W/out"
+has '--WARN-- [krb001w] Kerberos permits single-DES encryption' "$W/out" &&
+  ok "single DES in default_tkt_enctypes: krb001w" || { bad "tkt"; cat "$W/out"; }
+P=$W/policies; mkdir -p "$P/etc/krb5.conf.d"
+printf '[libdefaults]\n\tpermitted_enctypes = aes256-cts\n' > "$P/etc/krb5.conf"
+printf '[libdefaults]\n\tpermitted_enctypes = aes256-cts rc4-hmac\n' > "$P/etc/krb5.conf.d/crypto-policies"
+printf '[libdefaults]\n\tallow_weak_crypto = true\n' > "$P/etc/krb5.conf.d/.hidden"
+run "$P" "$W/out"
+has '--INFO-- [krb002i] rc4-hmac is among the permitted enctypes' "$W/out" && ! grep -q 'krb001w' "$W/out" &&
+  ok "a suffix-less drop-in is read, a dot file is not" || { bad "dropin names"; cat "$W/out"; }
+
 O=$W/keytabonly; mkdir -p "$O/etc"
 printf 'keytab-bytes' > "$O/etc/krb5.keytab"
 chmod 644 "$O/etc/krb5.keytab"

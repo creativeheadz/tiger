@@ -145,6 +145,7 @@ CONFIGFILES=./tigerrc \
 	./cronrc
 
 MISCFILES=./initdefs \
+	./version.h \
 	./syslist \
 	./check.d/README \
 	./util/buildbins \

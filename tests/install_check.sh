@@ -51,6 +51,11 @@ expect "[ -x $STAGEHOME/tigris-diff ]" "tigris-diff is where BASEDIR expects it"
 $SBIN/tigris explain lin002i >"$W/explain.out" 2>&1
 expect "grep -q 'Severity:' $W/explain.out" "sbin/tigris explain finds tigexp"
 
+# version.h is installed: a package once said "version undetermined"
+ver=`cat "$W/src/version.h"`
+$SBIN/tigris -v >"$W/v.out" 2>&1
+expect "grep -qF \"Tigris, version \$ver\" $W/v.out" "the installed tigris knows its version"
+
 mkdir -p "$W/root/etc" "$W/root/bin"
 printf 'root:x:0:0:root:/root:/bin/sh\n' > "$W/root/etc/passwd"
 printf 'root:x:0:\n' > "$W/root/etc/group"

@@ -136,8 +136,10 @@ function who(which,    r) {
   if (r == "") return (which == 1 ? oldfile : newfile)
   return jtext(r, "host") " " jtext(r, "start")
 }
-FNR == NR { take($0, 1); next }
-          { take($0, 2) }
+# which run a line belongs to is set between the two files on the command
+# line (which=2); FNR == NR took every line of the second run for the
+# first when the first was empty, and --since then reported nothing new
+{ take($0, which) }
 END {
   # A run that did not scan the file system has no fsys* findings because
   # it did not look; comparing them would report those of the other run as new or
@@ -197,4 +199,4 @@ END {
     printf "  unchanged: %d%s\n", same, (all == "Y" ? "" : " (INFO not compared; -a includes it)")
   }
   exit (nopen > 0 ? 1 : 0)
-}' "$old" "$new"
+}' which=1 "$old" which=2 "$new"

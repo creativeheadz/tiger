@@ -284,12 +284,17 @@ checkfile()
   # --root, or tigris run with TIGRIS_ROOT set (the tests run checks so)
   TIGRIS_ROOT=${TIGRIS_ROOT:-}
   doversion=0
-  
+
+  # the version first: the usage text below names it
+  TIGERVERSION="`/bin/cat $TIGERHOMEDIR/version.h 2>/dev/null`"
+  [ ! -n "$TIGERVERSION" ] && TIGERVERSION="undetermined"
+  export TIGERVERSION
+
   while [ $# != 0 ]
   do
     case $1 in
      -v) doversion=1;;
-     -h) do_usage; exit 0;;
+     -h|--help) do_usage; exit 0;;
      -B) BASEDIR=$2; shift;;
      -l) LOGDIR=$2; shift;;
      -w) WORKDIR=$2; shift;;
@@ -337,12 +342,8 @@ checkfile()
   }
   export TIGRIS_ROOT
 
-  TIGERVERSION="`/bin/cat $TIGERHOMEDIR/version.h 2>/dev/null`"
-  [ ! -n "$TIGERVERSION" ] && TIGERVERSION="undetermined"
-  export TIGERVERSION
-  
   [ $doversion -eq 1 ] && {
-    echo "tiger, version $TIGERVERSION"
+    echo "Tigris, version $TIGERVERSION"
     exit 0
   }
 
@@ -481,18 +482,20 @@ checkfile()
     done
   }
 
-  [ -n "$RCFILE" -a ! -r "$RCFILE" ] && {
-    echo "Control file "$RCFILE" not defined or not readable... exiting..."
+  [ -n "$RCFILE" ] && [ ! -r "$RCFILE" ] && {
+    echo "Control file $RCFILE not defined or not readable... exiting..."
     exit 1
   }
 
   #
-  # Preprocess the RC file, to export variables to environment
+  # Preprocess the RC file, to export variables to environment (quoted
+  # throughout: a path with a space failed the test unquoted, and the
+  # tigerrc was then silently not read, so every check ran)
   #
 
-  [ -n "$RCFILE" -a -r $RCFILE ] && {
+  [ -n "$RCFILE" ] && [ -r "$RCFILE" ] && {
     tempfile=`mktemp "$WORKDIR/rcfile.XXXXXX" 2>/dev/null` || tempfile=$WORKDIR/rcfile.$$
-    $GREP -v '^#' $RCFILE |
+    $GREP -v '^#' "$RCFILE" |
     $SED -e 's/^\(.*\)=/export \1; \1=/' > $tempfile
     . $tempfile
     $RM -f $tempfile

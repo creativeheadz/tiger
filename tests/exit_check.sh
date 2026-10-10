@@ -122,5 +122,35 @@ grep -q 'con012e' "$W/out" && ok "it says so (con012e)" || bad "con012e: `cat "$
 ( cd "$W" && sh ./tigris -c tigerrc.n --since last ) > "$W/out" 2>&1; st=$?
 [ "$st" = 1 ] && grep -q 'init011e' "$W/out" && ok "--since with the JSON report off: exit 1 (init011e)" || bad "--since without JSON: exit $st"
 
+# -c with a path holding a space and a double quote: the tigerrc is read
+# (unquoted, the test failed and every check ran, the file system scan
+# included), and the run record carries the path as valid JSON
+RCD="$W/rc dir \"q\""
+mkdir -p "$RCD"; cp "$W/tigerrc.t" "$RCD/tigerrc"; chmod 755 "$RCD"; chmod 600 "$RCD/tigerrc"
+rm -f "$W"/log/*.jsonl
+( cd "$W" && sh ./tigris -q -c "$RCD/tigerrc" ) > "$W/out" 2>&1
+j=`ls "$W"/log/*.jsonl 2>/dev/null | tail -1`
+if [ -z "$j" ]; then
+  bad "-c with a space and a quote: no JSON report"
+elif command -v python3 >/dev/null 2>&1; then
+  python3 -I - "$j" "$RCD/tigerrc" <<'EOF' && ok "-c with a space and a quote: read, and the run record is valid JSON naming it" || bad "-c with a space and a quote: `head -1 "$j"`"
+import json, sys
+run = json.loads(open(sys.argv[1]).readline())
+assert run["config"] == sys.argv[2], run["config"]
+assert run["filesystem_scan"] is False, run
+EOF
+else
+  grep -q '"filesystem_scan":false' "$j" && ok "-c with a space and a quote: read (python3 absent, JSON not parsed)" || bad "-c with a space and a quote"
+fi
+
+# the usage and -v name the version (the usage once came before it was read)
+v=`cat "$W/version.h"`
+( cd "$W" && sh ./tigris -h ) > "$W/out" 2>&1; st=$?
+[ "$st" = 0 ] && grep -qF "Tigris, version $v" "$W/out" && ok "-h names the version" || bad "-h: exit $st, `grep 'version' "$W/out" | head -1`"
+( cd "$W" && sh ./tigris --help ) > "$W/out" 2>&1; st=$?
+[ "$st" = 0 ] && grep -qF "Tigris, version $v" "$W/out" && ! grep -q con006e "$W/out" && ok "--help is -h" || bad "--help: exit $st"
+( cd "$W" && sh ./tigris -v ) > "$W/out" 2>&1
+grep -qF "Tigris, version $v" "$W/out" && ok "-v names the version" || bad "-v: `tail -1 "$W/out"`"
+
 [ $fail -eq 0 ] && echo "PASS" || { echo "--- last stdout"; cat "$W/out"; echo "--- last stderr"; cat "$W/err"; }
 exit $fail

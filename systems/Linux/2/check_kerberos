@@ -98,7 +98,7 @@ libdefaults_facts()
   {
     line = tolower($0)
     if (line ~ /allow_weak_crypto[ \t]*=[ \t]*true/) { print "weak"; next }
-    if (line ~ /(permitted_enctypes|default_t(k|gs)_enctypes)[ \t]*=/) {
+    if (line ~ /(permitted_enctypes|default_(tkt|tgs)_enctypes)[ \t]*=/) {
       if (line ~ /des-cbc-[a-z0-9]*/) print "weak"
       if (line ~ /(rc4-hmac|arcfour-hmac)([^a-z]|$)/) print "rc4"
       next
@@ -126,7 +126,10 @@ main=`rootfile /etc/krb5.conf`
 confs=
 [ -f "$main" ] && confs="$main"
 # shellcheck disable=SC2046
-[ -n "`rootls /etc/krb5.conf.d 2>/dev/null`" ] && confs="$confs `rootls /etc/krb5.conf.d 2>/dev/null | $GREP '\.conf$' | rootpaths`"
+# the files an includedir reads (krb5.conf(5)): names of letters, digits,
+# - and _ only (RHEL's crypto-policies link has no suffix), and since
+# MIT 1.15 names ending in .conf, never a name starting with a dot
+[ -n "`rootls /etc/krb5.conf.d 2>/dev/null`" ] && confs="$confs `rootls /etc/krb5.conf.d 2>/dev/null | $AWK -F/ '$NF !~ /^[.]/ && ($NF ~ /^[A-Za-z0-9_-]+$/ || $NF ~ /[.]conf$/)' | rootpaths`"
 
 keytabs='/etc/krb5.keytab'
 weak= rc4=

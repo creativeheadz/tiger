@@ -78,6 +78,12 @@ if grep -q -- '--\(WARN\|FAIL\|ALERT\)--' "$W/good.out"; then
 else
   echo "ok   nothing reported for the good fixture"
 fi
+
+# LoginGraceTime 0 is no limit at all: it must not pass as "under 60"
+sed 's/^logingracetime .*/logingracetime 0/' "$W/good.txt" > "$W/zero.txt"
+run "$W/zero.txt" > "$W/zero.out"
+grep -q 'ssh012w' "$W/zero.out" && grep -q 'logingracetime is 0:' "$W/zero.out" &&
+  echo "ok   LoginGraceTime 0 (no limit) is ssh012w" || { echo "FAIL LoginGraceTime 0 passed"; cat "$W/zero.out"; fail=1; }
 # An offline root
 R=$W/img
 mkdir -p "$R/etc/ssh/sshd_config.d" "$R/usr/share/ssh"

@@ -188,6 +188,9 @@ vg0 {
 EOF
 printf 'root:!:1:0:::::\n' > "$L/etc/shadow"
 chmod 600 "$L/etc/shadow"
+mkdir -p "$L/etc/sudoers.d" "$L/etc/ssh"
+printf 'ops ALL=(ALL) ALL\n' > "$L/etc/sudoers.d/90-ops"; chmod 440 "$L/etc/sudoers.d/90-ops"
+printf 'key\n' > "$L/etc/ssh/ssh_host_ed25519_key"; chmod 600 "$L/etc/ssh/ssh_host_ed25519_key"
 printf 'mlocate-bytes' > "$L/var/lib/mlocate/mlocate.db"
 chmod 644 "$L/var/lib/mlocate/mlocate.db"
 offline "$L"
@@ -203,7 +206,7 @@ cat > "$W/fakebin/getfacl" <<'EOF'
 #!/bin/sh
 eval "f=\${$#}"
 case "$f" in
-  *shadow) printf '# file: shadow\n# owner: root\n# group: shadow\nuser::r--\nuser:adm:r--\ngroup::r--\nmask::r--\nother::---\n' ;;
+  *shadow|*/sudoers.d/90-ops|*/ssh_host_ed25519_key) printf '# file: x\n# owner: root\n# group: root\nuser::r--\nuser:adm:r--\ngroup::r--\nmask::r--\nother::---\n' ;;
   *) printf '# file: other\n# owner: root\n# group: root\nuser::rw-\ngroup::r--\nother::r--\n' ;;
 esac
 EOF
@@ -215,6 +218,11 @@ cp "$W/tigerrc.base" "$W/tigerrc"
   tr -s ' ' | grep '^--' | grep -v '^--CONFIG--' > "$W/out"
 has '[stor012w]' && has '`/etc/shadow'"'"' grants user:adm:r-- beyond its mode' "$W/out" &&
   ok "an ACL past the mode: stor012w names file and entry" || { bad "acl"; cat "$W/out"; }
+# sudoers.d and the SSH host keys are looked at too (a typo once kept
+# them out of the list)
+has '`/etc/sudoers.d/90-ops'"'"' grants user:adm:r--' "$W/out" &&
+has '`/etc/ssh/ssh_host_ed25519_key'"'"' grants user:adm:r--' "$W/out" &&
+  ok "sudoers.d files and SSH host keys: stor012w" || { bad "acl sudoers.d and host keys"; cat "$W/out"; }
 
 T=$W/tight2
 mkdir -p "$T/etc" "$T/var/lib/mlocate"

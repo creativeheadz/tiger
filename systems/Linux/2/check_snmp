@@ -92,15 +92,16 @@ snmp_facts()
   /^[ \t]*#/ { next }
   {
     d = tolower($1)
-    if (d == "rwcommunity" && NF >= 2) {
+    if ((d == "rwcommunity" || d == "rwcommunity6") && NF >= 2) {
       s = $2
       # a third token starting an OID (.1.3.6, iso, ...) is a MIB
-      # view, not a source: still the whole network
-      if (NF == 2 || $3 ~ /^(\.|iso|system|snmp)/) tag = "rw:" s
+      # view, not a source: still the whole network. So are the sources
+      # that mean any address: "default", 0.0.0.0/0, ::/0
+      if (NF == 2 || $3 ~ /^(\.|iso|system|snmp)/ || $3 == "default" || $3 == "0.0.0.0/0" || $3 == "::/0" || $3 == "0/0") tag = "rw:" s
       else tag = "rwr:" s
       if (!(tag in seen)) { seen[tag] = 1; print tag }
       checkdef(s)
-    } else if (d == "rocommunity" && NF >= 2) {
+    } else if ((d == "rocommunity" || d == "rocommunity6") && NF >= 2) {
       checkdef($2)
     } else if (d == "com2sec" && NF >= 4) {
       checkdef($4)

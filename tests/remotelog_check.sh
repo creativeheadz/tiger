@@ -50,13 +50,15 @@ grep -q "$r" "$W/out" && bad "a finding names where the root is on this host" ||
 # local logging only, then no syslog at all: rlog002i either way
 L=$W/local
 mkdir -p "$L/etc" "$L/etc/rsyslog.d"
-printf '$IncludeConfig /etc/rsyslog.d/*.conf\n*.* /var/log/messages\n' > "$L/etc/rsyslog.conf"
+# with the commented forwarding example RHEL 7 ships, which forwards nothing
+printf '$IncludeConfig /etc/rsyslog.d/*.conf\n*.* /var/log/messages\n#*.* @@remote-host:514\n# *.* action(type="omfwd" target="example.com" port="514")\n' > "$L/etc/rsyslog.conf"
 cp "$W/tigerrc.base" "$W/tigerrc"
 { echo "Tiger_Sysctl_Root='$L'"; echo "Tiger_Show_INFO_Msgs=Y"; } >> "$W/tigerrc"
 ( cd "$W" && TIGERHOMEDIR=$W sh ./systems/Linux/2/check_remotelog ) 2>&1 | join > "$W/local.out"
 grep -F -q '[rlog002i] No remote logging is configured: rsyslog and syslog-ng keep every log on this host.' "$W/local.out" &&
   [ "`grep -F -c 'rlog002i' "$W/local.out"`" = 1 ] &&
-  ok "local logging only: rlog002i, once" || { bad "local"; cat "$W/local.out"; }
+  ! grep -q 'rlog001i' "$W/local.out" &&
+  ok "local logging only, a commented forwarding example: rlog002i, once" || { bad "local"; cat "$W/local.out"; }
 
 mkdir -p "$W/none/etc"
 cp "$W/tigerrc.base" "$W/tigerrc"
