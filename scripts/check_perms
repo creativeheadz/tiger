@@ -191,17 +191,24 @@ check_file()
     fi
     
     # A wildcard entry names the audited system's files: expand it there,
-    # not on this host. Only its first match is checked, as getpermit has
-    # always given live (the wildcard entries' columns are misaligned in
-    # the database, so they have never been a full check).
+    # not on this host, and check every match against the row's modes
+    # (directories included: the X columns of a wildcard row are for files
+    # and directories alike, so a row that must not allow them says '.').
     case "$file" in
       *'*'*|*'?'*|*'['*)
-        if [ -n "$TIGRIS_ROOT" ]; then set -- `rootglob "$file"`; else set -- $file; fi
-        [ $# -gt 0 ] || continue
-        target=$1;;
-      *) target=$file;;
+        if [ -n "$TIGRIS_ROOT" ]; then
+          # a link in the root is skipped, as live (-h below): rootfile would
+          # follow it to its target, so the link's own entry is tested here
+          __ms=
+          for __m in `rootglob "$file"`
+          do [ -h "$TIGRIS_ROOT$__m" ] || __ms="$__ms $__m"
+          done
+          set -- $__ms; [ $# -gt 0 ] || continue
+        else set -- $file; { [ -e "$1" ] || [ -L "$1" ]; } || continue
+        fi;;
+      *) set -- "$file";;
     esac
-    getpermit "$target" |
+    getpermit "$@" |
     while read filename rowner rgroup rur ruw rux rgr rgw rgx ror row rox rsuid rsgid rstk
     do
       __hereto herename "$filename"

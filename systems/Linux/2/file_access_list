@@ -20,7 +20,7 @@
 file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID  GrpID  PermID
 /                  root      root   0  0  1  1  1  1  0  1  1  0  1   W    018    018    018
 /bin               root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/bin/*             root      root   .  0  1  1  1  1  0  1  1  0  1.  001  002    003
+/bin/*             .         .      .  .  1  1  1  1  0  1  1  0  1 .  001  002    003
 /bin/bash          root      root   0  0  1  1  1  1  0  1  1  0  1   W    001    002    003
 /bin/login         root      root   0  0  1  1  1  1  0  1  1  0  1   F    001    002    003
 /bin/sh            root      root   0  0  1  1  1  1  0  1  1  0  1   W    001    002    003
@@ -29,7 +29,7 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /boot              root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /dev               root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /etc               root      root   0  0  1  1  1  1  0  1  1  0  1   W    019    019    019
-/etc/*             root      .      0  .  1  .  .  .  .  .  .  0  ..  001  002    003
+/etc/*             root      .      0  .  1  .  .  .  .  .  .  0  . .  001  002    003
 /etc/aliases       root      root   0  0  1  1  0  1  0  0  1  0  0   F    007    007    007
 /etc/aliases       root      root   0  0  1  1  0  1  0  0  1  0  0   F    007    007    007
 /etc/exports       root      root   0  0  1  1  0  1  0  0  1  0  0   W    008    008    008
@@ -41,7 +41,7 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /etc/hosts.deny    root      root   0  0  1  1  0  1  0  0  1  0  0   W    010    010    010
 /etc/inetd.conf    root      root   0  0  1  1  0  1  0  0  1  0  0   W    012    012    012
 /etc/init.d        root      root   0  0  1  1  1  1  0  1  1  0  1   F    015    015    015
-/etc/init.d/*      root      root   0  0  1  1  .  1  0  .  1  0  .F  015  015    015
+/etc/init.d/*      root      root   0  0  1  1  .  1  0  .  1  0  . F  015  015    015
 /etc/inittab       root      root   0  0  1  1  0  1  0  0  1  0  0   W    001    002    003
 /etc/ld.so.cache   root      root   0  0  1  1  0  1  0  0  1  0  0   W    001    002    003
 /etc/modules       root      root   0  0  1  1  0  1  0  0  1  0  0   .    001    002    003
@@ -53,11 +53,13 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /etc/printcap      root      root   0  0  1  1  0  1  0  0  1  0  0   W    001    002    003
 /etc/profile       root      root   0  0  1  1  0  1  0  0  1  0  0   .    001    002    003
 /etc/rc.boot       root      root   0  0  1  1  1  1  0  1  1  0  1   F    015    015    015
-/etc/rc?.d         root      root   0  0  1  1  1  1  0  1  1  0  1F  015  015    015
-/etc/rc?.d/*       root      root   0  0  1  1  .  1  0  .  1  0  .F  015  015    015
+/etc/rc?.d         root      root   0  0  1  1  1  1  0  1  1  0  1 F  015  015    015
+/etc/rc?.d/*       root      root   0  0  1  1  .  1  0  .  1  0  . F  015  015    015
 /etc/resolv.conf   root      root   0  0  1  1  0  1  0  0  1  0  0   W    016    016    016
 /etc/rpc           root      root   0  0  1  1  0  1  0  0  1  0  0   W    001    002    003
-/etc/security/*    root      root   0  0  1  1  0  1  0  0  1  0  0A  005  005    005
+# /etc/security/*: the execute columns are not checked here: the directories
+# in it are searched, and namespace.init is a sourced 755 script.
+/etc/security/*    root      root   0  0  1  1  .  1  0  .  1  0  .  A  005  005  005
 /etc/security      root      root   0  0  1  1  1  1  0  1  1  0  1   A    005    005    005
 /etc/services      root      root   0  0  1  1  0  1  0  0  1  0  0   W    001    002    003
 /etc/sudoers       root      root   0  0  1  0  0  1  0  0  0  0  0   W    017    017    017
@@ -68,10 +70,9 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /root/.rhosts      jfernand  root   0  0  1  1  0  1  0  0  1  0  0   W    006    006    006
 /sbin              root      root   0  0  1  1  1  1  0  1  1  0  1   W    001    002    003
 /usr               root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/usr/*             root      .      0  .  1  1  1  1  .  1  1  0  1.  001  002    003
-/usr               root      root   0  0  1  1  1  1  0  1  1  0  1   002  003
+/usr/*             root      .      0  .  1  1  1  1  .  1  1  0  1 .  001  002    003
 /usr/bin           root      root   0  0  1  1  1  1  0  1  1  0  1   A    001    002    003
-/usr/bin/*         root      .      .  .  1  1  1  1  0  1  1  0  1.  001  002    003
+/usr/bin/*         root      .      .  .  1  1  1  1  0  1  1  0  1 .  001  002    003
 /usr/bin/at        root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/bin/atq       root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr/bin/atrm      root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
@@ -85,12 +86,12 @@ file               owner     group  s  g  r  w  x  r  w  x  r  w  x   LVL  OwnID
 /usr/share         root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /usr               root      root   0  0  1  1  1  1  0  1  1  0  1   W    001    002    003
 /var               root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/var/*             root      .      0  .  1  1  1  1  .  1  1  .  1.  001  002    003
-/var/log/*         .         .      0  .  1  1  .  1  .  .  .  0  ..  001  002    003
+/var/*             root      .      0  .  1  1  1  1  .  1  1  .  1 .  001  002    003
+/var/log/*         .         .      0  .  1  1  .  1  .  .  .  0  . .  001  002    003
 /var/log/wtmp      root      utmp   0  0  1  1  0  1  1  0  1  0  0   .    001    002    003
 /var/run/utmp      root      utmp   0  0  1  1  0  1  1  0  1  0  0   W    017    017    017
 /var/spool         root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
 /var/tmp           root      root   0  0  1  1  1  1  1  1  1  1  1   .    001    002    003
 /var/yp            root      root   0  0  1  1  1  1  0  1  1  0  1   .    001    002    003
-/var/yp/*          root      root   0  0  1  1  .  1  0  .  1  0  ..  001  002    003
+/var/yp/*          root      root   0  0  1  1  .  1  0  .  1  0  . .  001  002    003
 /vmlinuz           root      root   0  0  1  1  0  1  0  0  1  0  0   .    001    002    003

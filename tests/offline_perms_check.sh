@@ -38,6 +38,9 @@ printf 'root:x:0:\ncrew:x:%s:\nutmp:x:4243:\n' "$G" > "$R/etc/group"
 printf '#!/bin/sh\n:\n' > "$R/bin/login"; chmod 4755 "$R/bin/login"
 printf '#!/bin/sh\n:\n' > "$R/bin/su"; chmod 4755 "$R/bin/su"
 : > "$R/bin/aaa"; chmod 775 "$R/bin/aaa"
+: > "$R/bin/bbb"; chmod 775 "$R/bin/bbb"
+ln -s aaa "$R/bin/lnk"
+mkdir -p "$R/usr" "$R/var/tmp"; chmod 1777 "$R/var/tmp"; ln -s ../var/tmp "$R/usr/tmp"
 echo sneaky > "$R/dev/sneaky"
 echo hidden > "$R/dev/hidedir/cache"
 ln -s ../sneaky "$R/dev/byfoo/alias"
@@ -82,6 +85,12 @@ has '"id":"perm023a".*/bin/su is setuid' &&
   bad "the setuid the database expects of /bin/su was reported" || ok "a setuid the database expects (/bin/su) stays silent"
 has '"id":"perm001w".*/bin/aaa should not have group write' &&
   ok "the /bin/* entry expands inside the root: perm001w for /bin/aaa" || bad "/bin/* was not expanded inside the root"
+has '"id":"perm001w".*/bin/bbb should not have group write' &&
+  ok "every match of /bin/* is checked, not only the first: perm001w for /bin/bbb" || bad "/bin/bbb: only the first match was checked"
+has '"message":"/bin/lnk ' &&
+  bad "a symlink in /bin was checked as what it points to" || ok "a symlink match (/bin/lnk) is skipped, as live"
+has '"message":"/usr/tmp ' &&
+  bad "/usr/tmp, a link to a sticky /var/tmp, was reported" || ok "a link to a sticky directory (/usr/tmp) stays silent"
 has '"id":"dev003w".*File /dev/sneaky is a regular file in a device directory' &&
   ok "a regular file in /dev: dev003w" || bad "dev003w file"
 has '"id":"dev003w".*The directory /dev/hidedir resides in a device directory' &&
