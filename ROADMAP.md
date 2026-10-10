@@ -74,7 +74,7 @@ Settled, so they do not have to be argued again:
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: every check reads an image except the ten that need the running system, nothing in it is run; a container image with every distribution's package tools | None |
-| Tests                | 93 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 94 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
 | Lynis parity         | Linux groups covered in Phase A (see below); macOS, BSD, Solaris-AIX ride the platform phases | 43 test groups across Linux, macOS, BSD, Solaris |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris
@@ -762,8 +762,12 @@ stable, so it is built against a fixed contract.
   once the AUR registers new accounts again: it had stopped doing so
   in October 2026). Debian packaging of the fork is for later and
   would be its own package.
-- **Docs:** man pages (done), `doc/json-format.md` (done), and a GitHub Pages
-  site generated from the check metadata once it exists.
+- **Docs:** man pages (done), `doc/json-format.md` (done), and a website
+  (done, October 2026: https://creativeheadz.github.io/tigris/, built by
+  `util/mksite` with sh and awk from the README, the docs and `meta/`, a
+  page per finding id and per compliance framework, published with every
+  release by `.github/workflows/pages.yml`; `tests/site_check.sh` follows
+  every link).
 
 ## Not planned
 

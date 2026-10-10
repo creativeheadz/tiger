@@ -44,6 +44,8 @@ jobs:
         run: sh tests/report_text_check.sh
       - name: README and ROADMAP give the tree's numbers
         run: sh tests/readme_check.sh
+      - name: The website builds and its links hold
+        run: sh tests/site_check.sh
       - name: Certificates
         run: sh tests/certs_check.sh
       - name: Databases

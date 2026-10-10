@@ -1,0 +1,453 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# mksite OUTDIR: the Tigris website, a directory of static pages built
+#                 from the tree with sh and awk alone, for GitHub Pages
+#                 (.github/workflows/pages.yml publishes it on a release):
+#
+#   index.html          README.md
+#   json-format.html    doc/json-format.md, the JSON report's contract
+#   metadata.html       doc/metadata.md, the finding metadata format
+#   findings/           every finding id, by category, with a filter, and
+#                       a page per id: severity, category, the checks that
+#                       report it, the fix, references, controls, the text
+#   compliance/         a page per framework: each control, and the ids
+#                       that are evidence about it
+#   schema/, art/       the JSON Schema and the artwork, as they are
+#
+#   The markdown is a subset, the one the README and docs use: headings
+#   with GitHub's anchors, fenced code, tables, lists, raw HTML blocks,
+#   paragraphs; code spans, bold, italics, links, images. A link to a file
+#   the site does not carry goes to it on GitHub. tests/site_check.sh
+#   builds it and follows every link.
+#
+#-----------------------------------------------------------------------------
+#
+out=${1:-}
+[ -n "$out" ] || { echo "usage: mksite OUTDIR" >&2; exit 2; }
+case "$out" in /*) ;; *) out=`pwd`/$out ;; esac
+T=`cd "\`dirname "$0"\`/.." && pwd`
+cd "$T" || exit 2
+AWK=${AWK:-awk}
+REPO=https://github.com/creativeheadz/tigris
+SITE=https://creativeheadz.github.io/tigris/
+ver=`sed 's/,.*//' version.h 2>/dev/null`
+
+mkdir -p "$out/findings" "$out/compliance" "$out/schema" "$out/art" || exit 2
+cp art/banner.png art/tiger.png art/tiger-full.png art/social.png "$out/art/" || exit 2
+cp doc/tigris-report.schema.json "$out/schema/" || exit 2
+
+# The look: the banner's palette, dark navy, amber to orange, blue-grey
+cat > "$out/style.css" <<'CSS'
+:root{--bg:#0a0f15;--panel:#101a24;--deep:#0d141c;--line:#223040;--text:#c6d6e2;--muted:#7d90a2;--head:#eaf2f8;--amber:#ffb02e;--orange:#e8833a;--blue:#52c7e8;--green:#4fd67f;--mono:ui-monospace,"SFMono-Regular","JetBrains Mono",Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+html{background:var(--bg);scroll-padding-top:4.5rem}
+body{margin:0;color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif}
+a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}
+header.nav{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;padding:.55rem 1.5rem;border-bottom:1px solid var(--line);background:rgba(13,20,28,.94);backdrop-filter:blur(6px);position:sticky;top:0;z-index:2}
+header.nav .brand{display:flex;align-items:center;gap:.6rem;font:700 1.1rem/1 var(--mono);letter-spacing:.18em;color:var(--amber)}
+header.nav .brand img{width:30px;height:30px;image-rendering:pixelated;border-radius:4px}
+header.nav nav{display:flex;gap:1.3rem;flex-wrap:wrap;font-size:.95rem}
+header.nav nav a{color:var(--text)}header.nav nav a:hover{color:var(--amber);text-decoration:none}
+main{max-width:62rem;margin:0 auto;padding:1.5rem 1.5rem 2rem}
+h1,h2,h3,h4{color:var(--head);font-family:var(--mono);font-weight:700;line-height:1.3;letter-spacing:.01em}
+h1{font-size:1.9rem;margin:.6em 0 .5em}
+h2{font-size:1.35rem;margin:2.4em 0 .8em;padding-bottom:.35em;border-bottom:1px solid var(--line)}
+h2::before{content:"# ";color:var(--orange)}
+h3{font-size:1.1rem;margin:1.8em 0 .6em;color:#ffd38a}
+code{font:.88em var(--mono);background:#16222e;padding:.12em .38em;border-radius:4px;color:#ffd38a}
+pre{background:var(--deep);border:1px solid var(--line);border-left:3px solid var(--orange);padding:.95rem 1.1rem;overflow-x:auto;border-radius:6px;font:.86rem/1.55 var(--mono)}
+pre code{background:none;padding:0;color:var(--text);font-size:1em}
+.table{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.9em;text-transform:uppercase;letter-spacing:.06em}
+td.r,th.r,.r{text-align:right}td.c,th.c,.c{text-align:center}
+tbody tr:hover{background:rgba(255,176,46,.04)}
+img{max-width:100%;height:auto}
+hr{border:0;border-top:1px solid var(--line);margin:2.2em 0}
+p[align=center]{text-align:center}
+p[align=center] img[src*="shields.io"]{margin:.15em .1em}
+main>p:first-child img{border-radius:8px;box-shadow:0 0 0 1px var(--line),0 12px 40px rgba(0,0,0,.45)}
+main table:not(.ids):not(.ctl) td[width]{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.4em 1em}
+main table:not(.ids):not(.ctl){border-collapse:separate;border-spacing:.7em}
+.badge{display:inline-block;font:700 .7rem/1.5 var(--mono);padding:.08em .5em;border-radius:3px;margin-right:.3em;vertical-align:middle;letter-spacing:.06em}
+.ALERT{background:#ff5f56;color:#1a0505}.FAIL{background:var(--orange);color:#1a0d02}.WARN{background:var(--amber);color:#1a1202}.INFO{background:var(--blue);color:#021318}.ERROR{background:#c678dd;color:#14051a}.CONFIG{background:#7d90a2;color:#0a0f15}
+h1 .badge{font-size:.8rem;vertical-align:.35em}
+dl.meta{display:grid;grid-template-columns:minmax(7rem,max-content) 1fr;gap:.45em 1.2em;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:1em 1.2em;margin:1.2em 0}
+dl.meta dt{color:var(--muted)}dl.meta dd{margin:0}
+.crumbs{color:var(--muted);font-size:.9rem;margin-bottom:0}
+.cmd{color:var(--muted);font-size:.92rem;margin-top:2em}
+.cats{line-height:2.1}.cats a{margin-right:.15em}
+.n{color:var(--muted);font:.8em var(--mono);margin-right:.9em}
+h2 .n{font-size:.7em;margin-left:.3em}
+td.id{white-space:nowrap;width:1%}td.sev{white-space:nowrap;width:1%}
+table.ctl td a{margin-right:.2em}
+input[type=search]{width:100%;margin:.6em 0 1em;padding:.75em 1em;background:var(--deep);border:1px solid var(--line);border-radius:6px;color:var(--text);font:1rem var(--mono)}
+input[type=search]:focus{outline:2px solid var(--amber);outline-offset:1px}
+footer{max-width:62rem;margin:2rem auto 3rem;padding:1.2rem 1.5rem 0;color:var(--muted);font-size:.88rem;border-top:1px solid var(--line)}
+[hidden]{display:none!important}
+@media (max-width:40rem){main{padding:1rem}h1{font-size:1.5rem}dl.meta{grid-template-columns:1fr}header.nav{padding:.5rem 1rem}}
+CSS
+
+# What every page shares: escaping, the head and the foot. Pages one
+# level down pass root="../", the others "./".
+LIB='
+function esc(s) { gsub(/&/, "\\&amp;", s); gsub(/</, "\\&lt;", s); gsub(/>/, "\\&gt;", s); gsub(/"/, "\\&quot;", s); return s }
+# one line of a page, to dest when it is set, else to standard output
+function o(l) { if (dest == "") print l; else print l > dest }
+function head(title, root, desc) {
+  o("<!DOCTYPE html>")
+  o("<html lang=\"en\"><head><meta charset=\"utf-8\">")
+  o("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+  o("<title>" esc(title) "</title>")
+  o("<meta name=\"description\" content=\"" esc(desc) "\">")
+  o("<meta property=\"og:title\" content=\"" esc(title) "\">")
+  o("<meta property=\"og:description\" content=\"" esc(desc) "\">")
+  o("<meta property=\"og:image\" content=\"" site "art/social.png\">")
+  o("<link rel=\"stylesheet\" href=\"" root "style.css\">")
+  o("<link rel=\"icon\" href=\"" root "art/tiger.png\">")
+  o("</head><body>")
+  o("<header class=\"nav\"><a class=\"brand\" href=\"" root "\"><img src=\"" root "art/tiger.png\" alt=\"\">TIGRIS</a>")
+  o("<nav><a href=\"" root "findings/\">Findings</a><a href=\"" root "compliance/\">Compliance</a><a href=\"" root "json-format.html\">JSON</a><a href=\"" repo "/releases/latest\">Download</a><a href=\"" repo "\">GitHub</a></nav></header>")
+  o("<main>")
+}
+function foot(root) {
+  o("</main>")
+  o("<footer>Tigris " esc(ver) " &middot; GPL-2.0-or-later &middot; descended from <a href=\"https://savannah.nongnu.org/projects/tiger/\">TIGER</a> (Texas A&amp;M, 1993) &middot; <a href=\"" repo "\">source</a> &middot; <a href=\"" root "findings/\">findings</a></footer>")
+  o("</body></html>")
+}
+'
+
+# The markdown pages
+MD='
+function slug(s) { s = tolower(s); gsub(/`/, "", s); gsub(/[^a-z0-9 _-]/, "", s); gsub(/ /, "-", s); return s }
+# where a link points from the page: anchors and URLs as they are, the
+# documents the site renders to their pages, anything else to GitHub
+function href(u,   p) {
+  if (u ~ /^(https?:|mailto:|#)/) return u
+  p = (dir == "" ? u : dir "/" u)
+  sub(/\/$/, "", p)
+  if (p == "doc/json-format.md") return "json-format.html"
+  if (p == "doc/metadata.md") return "metadata.html"
+  if (p == "doc/tigris-report.schema.json") return "schema/tigris-report.schema.json"
+  if (p == "meta") return "findings/"
+  if (p ~ /^art\/[a-z-]+\.png$/) return p
+  return repo "/blob/master/" p
+}
+# bold, italics and <url>s in a run of plain text
+function fmt(s,   u) {
+  s = esc(s)
+  while (match(s, /[*][*][^*]+[*][*]/)) s = substr(s, 1, RSTART - 1) "<b>" substr(s, RSTART + 2, RLENGTH - 4) "</b>" substr(s, RSTART + RLENGTH)
+  while (match(s, /[*][^* ][^*]*[*]/)) s = substr(s, 1, RSTART - 1) "<em>" substr(s, RSTART + 1, RLENGTH - 2) "</em>" substr(s, RSTART + RLENGTH)
+  while (match(s, /&lt;https?:[^ &]*&gt;/)) { u = substr(s, RSTART + 4, RLENGTH - 8); s = substr(s, 1, RSTART - 1) "<a href=\"" u "\">" u "</a>" substr(s, RSTART + RLENGTH) }
+  return s
+}
+# a line of text: code spans as they are, links and images, the rest fmt
+function inline(s,   out, j, k, t, rest, u, url, img, r) {
+  out = ""
+  while (s != "") {
+    if (!match(s, /`|\[|!\[/)) { out = out fmt(s); break }
+    # fmt() calls match() too: keep where this one matched
+    r = RSTART
+    out = out fmt(substr(s, 1, r - 1)); s = substr(s, r)
+    if (substr(s, 1, 1) == "`") {
+      j = index(substr(s, 2), "`")
+      if (j) { out = out "<code>" esc(substr(s, 2, j - 1)) "</code>"; s = substr(s, j + 2); continue }
+      out = out "`"; s = substr(s, 2); continue
+    }
+    img = (substr(s, 1, 1) == "!"); k = (img ? 2 : 1)
+    j = index(substr(s, k + 1), "](")
+    if (j) {
+      t = substr(s, k + 1, j - 1); rest = substr(s, k + j + 2); u = index(rest, ")")
+      if (u) {
+        url = substr(rest, 1, u - 1)
+        if (img) out = out "<img src=\"" href(url) "\" alt=\"" esc(t) "\">"
+        else out = out "<a href=\"" href(url) "\">" inline(t) "</a>"
+        s = substr(rest, u + 1); continue
+      }
+    }
+    out = out esc(substr(s, 1, k)); s = substr(s, k + 1)
+  }
+  return out
+}
+# the cells of a table row, split on | outside code spans
+function cells(line, c,   n, i, ch, code, cur) {
+  sub(/^[ \t]*[|]/, "", line); sub(/[|][ \t]*$/, "", line)
+  n = 0; cur = ""; code = 0
+  for (i = 1; i <= length(line); i++) {
+    ch = substr(line, i, 1)
+    if (ch == "`") code = !code
+    if (ch == "|" && !code) { c[++n] = cur; cur = ""; continue }
+    cur = cur ch
+  }
+  c[++n] = cur
+  for (i = 1; i <= n; i++) { sub(/^[ \t]+/, "", c[i]); sub(/[ \t]+$/, "", c[i]) }
+  return n
+}
+function flushpara() { if (para != "") { print "<p>" inline(para) "</p>"; para = "" } }
+function flushitem() { if (item != "") { print "<li>" inline(item) "</li>"; item = "" } }
+function closelist() { flushitem(); if (list != "") { print "</" list ">"; list = "" } }
+function closetable() { if (trows) { print "</tbody></table></div>"; trows = 0 } }
+function flushall() { flushpara(); closelist(); closetable() }
+# raw HTML: relative links pointed where href() says
+function raw(l,   out, u, r, n) {
+  out = ""
+  while (match(l, /href="[^"#][^"]*"/)) {
+    r = RSTART; n = RLENGTH
+    u = substr(l, r + 6, n - 7)
+    out = out substr(l, 1, r - 1) "href=\"" href(u) "\""
+    l = substr(l, r + n)
+  }
+  return out l
+}
+BEGIN { head(title, "./", desc) }
+infence {
+  if ($0 ~ /^```/) { print "</code></pre>"; infence = 0 } else print esc($0)
+  next
+}
+/^```/ { flushall(); printf "<pre><code>"; infence = 1; first = 1; next }
+inraw {
+  if ($0 ~ /^[ \t]*$/) { inraw = 0; next }
+  print raw($0); next
+}
+/^[ \t]*$/ { flushpara(); closelist(); closetable(); next }
+/^#+ / {
+  flushall()
+  n = index($0, " ") - 1; t = substr($0, n + 2)
+  print "<h" n " id=\"" slug(t) "\">" inline(t) "</h" n ">"; next
+}
+/^---+[ \t]*$/ { flushall(); print "<hr>"; next }
+/^[ \t]*[|]/ {
+  flushpara(); closelist()
+  n = cells($0, c)
+  if (!trows) {
+    for (i = 1; i <= n; i++) hdr[i] = c[i]
+    nh = n; trows = -1; next
+  }
+  if (trows == -1) {
+    printf "<div class=\"table\"><table><thead><tr>"
+    for (i = 1; i <= nh; i++) {
+      al[i] = (c[i] ~ /^:.*:$/ ? " class=\"c\"" : (c[i] ~ /:$/ ? " class=\"r\"" : ""))
+      printf "<th%s>%s</th>", al[i], inline(hdr[i])
+    }
+    print "</tr></thead><tbody>"; trows = 1; next
+  }
+  printf "<tr>"
+  for (i = 1; i <= nh; i++) printf "<td%s>%s</td>", al[i], inline(c[i])
+  print "</tr>"; next
+}
+/^[ \t]*</ && para == "" && item == "" { flushall(); inraw = 1; print raw($0); next }
+/^([-*]|[0-9]+[.]) / {
+  flushpara(); closetable()
+  t = ($0 ~ /^[-*] / ? "ul" : "ol")
+  if (list != t) { closelist(); print "<" t ">"; list = t }
+  flushitem()
+  item = $0; sub(/^([-*]|[0-9]+[.]) /, "", item); next
+}
+list != "" && /^[ \t]+[^ \t]/ { t = $0; sub(/^[ \t]+/, "", t); item = item " " t; next }
+{ closelist(); closetable(); para = para (para == "" ? "" : " ") $0 }
+END { if (infence) print "</code></pre>"; flushall(); foot("./") }
+'
+
+mdpage()   # mdpage SOURCE OUT TITLE DESCRIPTION
+{
+  d=`dirname "$1"`; [ "$d" = . ] && d=
+  $AWK -v dir="$d" -v title="$3" -v desc="$4" -v repo="$REPO" -v site="$SITE" -v ver="$ver" "$LIB$MD" "$1" > "$out/$2"
+}
+mdpage README.md index.html "Tigris: a security auditor in plain POSIX shell" \
+  "Tigris audits Linux, macOS and the BSDs in POSIX shell: offline images, JSON Lines with a schema, compliance mapping, drift."
+mdpage doc/json-format.md json-format.html "The Tigris JSON report" \
+  "The JSON Lines report Tigris writes beside every run: its records, fields and schema."
+mdpage doc/metadata.md metadata.html "Tigris finding metadata" \
+  "The format of meta/ID, one file per Tigris finding id."
+
+# The findings and the compliance pages, from meta/
+ls meta/* | $AWK -v out="$out" -v repo="$REPO" -v site="$SITE" -v ver="$ver" "$LIB"'
+# a key that sorts numbers as numbers: 4.10 after 4.9, AC-12 after AC-2
+function natkey(s,   k) {
+  k = ""
+  while (match(s, /[0-9]+/)) { k = k substr(s, 1, RSTART - 1) sprintf("%06d", substr(s, RSTART, RLENGTH) + 0); s = substr(s, RSTART + RLENGTH) }
+  return k s
+}
+# a[1..n] sorted by the keys in k[1..n] (insertion sort: lists are short)
+function sortby(a, k, n,   i, j, ta, tk) {
+  for (i = 2; i <= n; i++) {
+    ta = a[i]; tk = k[i]
+    for (j = i - 1; j >= 1 && k[j] > tk; j--) { a[j + 1] = a[j]; k[j + 1] = k[j] }
+    a[j + 1] = ta; k[j + 1] = tk
+  }
+}
+function anchor(s) { s = tolower(s); gsub(/[^a-z0-9]+/, "-", s); sub(/^-/, "", s); sub(/-$/, "", s); return "c-" s }
+function badges(s,   n, l, i, o) {
+  n = split(s, l, /, */); o = ""
+  for (i = 1; i <= n; i++) if (l[i] != "") o = o "<span class=\"badge " l[i] "\">" l[i] "</span>"
+  return o
+}
+# ids named in a text, linked to their pages
+function linkids(s, pre,   out, m, b, a) {
+  out = ""
+  while (match(s, /[a-z][a-z]*[0-9][0-9][0-9][acefiw]/)) {
+    m = substr(s, RSTART, RLENGTH)
+    b = (RSTART > 1 ? substr(s, RSTART - 1, 1) : " "); a = substr(s, RSTART + RLENGTH, 1)
+    if ((m in sev) && b !~ /[A-Za-z0-9_\/.-]/ && a !~ /[A-Za-z0-9_]/) out = out substr(s, 1, RSTART - 1) "<a href=\"" pre m ".html\">" m "</a>"
+    else out = out substr(s, 1, RSTART + RLENGTH - 1)
+    s = substr(s, RSTART + RLENGTH)
+  }
+  return out s
+}
+# the explanation: paragraphs, and indented lines as they are
+function body(t,   n, l, i, o, mode, buf, m) {
+  n = split(t, l, "\n"); o = ""; mode = ""; buf = ""
+  for (i = 1; i <= n; i++) {
+    if (l[i] ~ /^[ \t]*$/) { o = o emit(mode, buf); mode = ""; buf = ""; continue }
+    m = (l[i] ~ /^[ \t]/ ? "pre" : "p")
+    if (m != mode) { o = o emit(mode, buf); mode = m; buf = "" }
+    buf = buf (buf == "" ? "" : (m == "pre" ? "\n" : " ")) l[i]
+  }
+  return o emit(mode, buf)
+}
+function emit(mode, buf) {
+  if (mode == "p") return "<p>" linkids(esc(buf), "") "</p>\n"
+  if (mode == "pre") return "<pre>" esc(buf) "</pre>\n"
+  return ""
+}
+# the first sentence of the explanation, for titles and descriptions
+function first(t,   s, i) {
+  s = t; gsub(/\n/, " ", s); sub(/^ +/, "", s); gsub(/  +/, " ", s)
+  if (match(s, /[.] /)) s = substr(s, 1, RSTART)
+  if (length(s) > 120) { s = substr(s, 1, 120); i = 120; while (i > 60 && substr(s, i, 1) != " ") i--; s = substr(s, 1, i - 1) "..." }
+  sub(/[:;,]$/, "", s)
+  return s
+}
+{
+  file = $0; id = file; sub(/.*\//, "", id); hd = 1; txt = ""
+  while ((getline line < file) > 0) {
+    if (hd && line == "") { hd = 0; continue }
+    if (hd) { k = line; sub(/:.*/, "", k); v = line; sub(/^[^:]*: ?/, "", v); f[k] = v; continue }
+    txt = txt line "\n"
+  }
+  close(file)
+  ids[++nid] = id; sev[id] = f["Severity"]; cat[id] = f["Category"]; chk[id] = f["Check"]
+  fix[id] = f["Fix"]; ref[id] = f["References"]; ctl[id] = f["Controls"]; text[id] = txt
+  split("", f)
+  if (!(cat[id] in ncat)) cats[++nc] = cat[id]
+  ncat[cat[id]]++
+  # the controls: "CIS 4.1, 4.2; NIST AC-3; ISO 8.9; CE Secure configuration"
+  n = split(ctl[id], g, /; */)
+  for (i = 1; i <= n; i++) {
+    fw = g[i]; sub(/ .*/, "", fw); items = substr(g[i], length(fw) + 2)
+    m = split(items, it, /, */)
+    for (j = 1; j <= m; j++) {
+      if (!((fw, it[j]) in cids)) { cl[fw, ++ncl[fw]] = it[j] }
+      cids[fw, it[j]] = cids[fw, it[j]] " " id
+    }
+  }
+}
+END {
+  fwname["CIS"] = "CIS Controls v8"; fwfile["CIS"] = "cis"
+  fwname["NIST"] = "NIST SP 800-53 Rev. 5"; fwfile["NIST"] = "nist"
+  fwname["ISO"] = "ISO/IEC 27001:2022 Annex A"; fwfile["ISO"] = "iso"
+  fwname["CE"] = "UK Cyber Essentials"; fwfile["CE"] = "ce"
+  split("CIS NIST ISO CE", fws, " ")
+  # categories by size, then name
+  for (i = 1; i <= nc; i++) ck[i] = sprintf("%06d", 999999 - ncat[cats[i]]) cats[i]
+  sortby(cats, ck, nc)
+  for (i = 1; i <= nid; i++) ik[i] = natkey(ids[i])
+  sortby(ids, ik, nid)
+
+  # a page per id
+  for (i = 1; i <= nid; i++) {
+    id = ids[i]; p = out "/findings/" id ".html"
+    cl1 = ""
+    n = split(ctl[id], g, /; */)
+    for (a = 1; a <= n; a++) {
+      fw = g[a]; sub(/ .*/, "", fw); items = substr(g[a], length(fw) + 2)
+      m = split(items, it, /, */); s = ""
+      for (b = 1; b <= m; b++) s = s (b > 1 ? ", " : "") "<a href=\"../compliance/" fwfile[fw] ".html#" anchor(it[b]) "\">" esc(it[b]) "</a>"
+      cl1 = cl1 "<dt>" esc(fwname[fw]) "</dt><dd>" s "</dd>"
+    }
+    dest = p
+    head(id ": " first(text[id]), "../", first(text[id]) " " fix[id])
+    print "<p class=\"crumbs\"><a href=\"./\">Findings</a> &rsaquo; <a href=\"./#" cat[id] "\">" esc(cat[id]) "</a></p>" > p
+    print "<h1><code>" id "</code> " badges(sev[id]) "</h1>" > p
+    print "<dl class=\"meta\"><dt>Category</dt><dd><a href=\"./#" cat[id] "\">" esc(cat[id]) "</a></dd>" > p
+    print "<dt>Reported by</dt><dd><code>" esc(chk[id]) "</code></dd>" > p
+    if (fix[id] != "") print "<dt>Fix</dt><dd>" esc(fix[id]) "</dd>" > p
+    if (ref[id] != "") print "<dt>References</dt><dd>" esc(ref[id]) "</dd>" > p
+    print "</dl>" > p
+    if (cl1 != "") print "<h2>Compliance controls</h2><dl class=\"meta\">" cl1 "</dl>" > p
+    print "<h2>What it means</h2>" > p
+    printf "%s", body(text[id]) > p
+    print "<p class=\"cmd\"><code>tigris explain " id "</code> shows this on the command line.</p>" > p
+    foot("../")
+    close(p)
+  }
+
+  # the findings index, by category, with a filter
+  p = out "/findings/index.html"; dest = p
+  head("Tigris findings", "../", "Every finding id Tigris reports: what it means, how to fix it, and the compliance controls it is evidence about.")
+  print "<h1>Findings</h1>" > p
+  printf "<p>%d finding ids in %d categories. Each says what was found, why it matters, what to do about it and which compliance controls it is evidence about; <code>tigris explain ID</code> shows the same.</p>\n", nid, nc > p
+  print "<input id=\"q\" type=\"search\" placeholder=\"Filter by id, word, level or control\" aria-label=\"Filter the findings\" autofocus>" > p
+  printf "<p class=\"cats\">" > p
+  for (i = 1; i <= nc; i++) printf "<a href=\"#%s\">%s</a> <span class=\"n\">%d</span> ", cats[i], esc(cats[i]), ncat[cats[i]] > p
+  print "</p>" > p
+  for (i = 1; i <= nc; i++) {
+    c = cats[i]
+    print "<section class=\"cat\"><h2 id=\"" c "\">" esc(c) " <span class=\"n\">" ncat[c] "</span></h2><div class=\"table\"><table class=\"ids\"><tbody>" > p
+    for (j = 1; j <= nid; j++) {
+      id = ids[j]; if (cat[id] != c) continue
+      d = (fix[id] != "" ? fix[id] : first(text[id]))
+      sk = tolower(id " " sev[id] " " c " " d " " ctl[id] " " first(text[id])); gsub(/"/, "", sk)
+      print "<tr data-s=\"" esc(sk) "\"><td class=\"id\"><a href=\"" id ".html\"><code>" id "</code></a></td><td class=\"sev\">" badges(sev[id]) "</td><td>" esc(d) "</td></tr>" > p
+    }
+    print "</tbody></table></div></section>" > p
+  }
+  print "<script>var q=document.getElementById(\"q\");q.addEventListener(\"input\",function(){var v=q.value.toLowerCase().trim();document.querySelectorAll(\"tr[data-s]\").forEach(function(r){r.hidden=v!==\"\"&&r.getAttribute(\"data-s\").indexOf(v)<0});document.querySelectorAll(\"section.cat\").forEach(function(s){s.hidden=!s.querySelector(\"tr[data-s]:not([hidden])\")})});</script>" > p
+  foot("../")
+  close(p)
+
+  # a page per framework, and their index
+  for (a = 1; a <= 4; a++) {
+    fw = fws[a]; p = out "/compliance/" fwfile[fw] ".html"; n = ncl[fw]; dest = p
+    for (i = 1; i <= n; i++) { cc[i] = cl[fw, i]; kk[i] = natkey(cc[i]) }
+    sortby(cc, kk, n)
+    head("Tigris and " fwname[fw], "../", "Which Tigris findings are evidence about each " fwname[fw] " control.")
+    print "<p class=\"crumbs\"><a href=\"./\">Compliance</a></p>" > p
+    print "<h1>" esc(fwname[fw]) "</h1>" > p
+    printf "<p>%d controls with Tigris findings that are evidence about them. A finding is evidence for an assessment, not a verdict on a control: most controls ask for things no tool on one host can see.</p>\n", n > p
+    print "<div class=\"table\"><table class=\"ctl\"><thead><tr><th>Control</th><th>Findings</th></tr></thead><tbody>" > p
+    for (i = 1; i <= n; i++) {
+      m = split(substr(cids[fw, cc[i]], 2), it, " "); s = ""
+      for (b = 1; b <= m; b++) s = s "<a href=\"../findings/" it[b] ".html\"><code>" it[b] "</code></a> "
+      print "<tr id=\"" anchor(cc[i]) "\"><td class=\"id\">" esc(cc[i]) "</td><td>" s "</td></tr>" > p
+    }
+    print "</tbody></table></div>" > p
+    foot("../"); close(p)
+    nctl[fw] = n
+  }
+  p = out "/compliance/index.html"; dest = p
+  head("Tigris compliance mapping", "../", "Tigris maps every finding to CIS Controls v8, NIST SP 800-53, ISO/IEC 27001:2022 and UK Cyber Essentials, free and in the open.")
+  print "<h1>Compliance mapping</h1>" > p
+  print "<p>Every finding maps to the controls it is evidence about in four frameworks, free and in the open; the JSON report carries them with each finding. The map is one reviewable file, <a href=\"" repo "/blob/master/doc/controls.map\"><code>doc/controls.map</code></a>.</p>" > p
+  print "<div class=\"table\"><table><thead><tr><th>Framework</th><th class=\"r\">Controls</th></tr></thead><tbody>" > p
+  for (a = 1; a <= 4; a++) print "<tr><td><a href=\"" fwfile[fws[a]] ".html\">" esc(fwname[fws[a]]) "</a></td><td class=\"r\">" nctl[fws[a]] "</td></tr>" > p
+  print "</tbody></table></div>" > p
+  foot("../"); close(p)
+}' || exit 2
+exit 0

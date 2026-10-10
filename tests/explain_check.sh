@@ -47,11 +47,13 @@ bad() { echo "FAIL $1"; fail=1; }
 cd "$TIGER" || exit 1
 ls meta | sort > "$W/explained.txt"
 [ -s "$W/explained.txt" ] || { bad "no meta files"; exit 1; }
+# util/mksite builds the website: its CSS colours have the shape of ids
 CODE="tiger tigris tigercron tigris-accept tigris-diff config initdefs util scripts systems/Linux/2 systems/MacOSX/default systems/FreeBSD/default systems/SunOS/default"
 # shellcheck disable=SC2086
 grep -r "" $CODE 2>/dev/null \
   | grep -v "^[^:]*:[ 	]*#" \
   | grep -v "^scripts/check_network:" \
+  | grep -v "^util/mksite:" \
   | grep -v "systems/Linux/2/\(embedlist\|facl.strict\|file_access_list\|rel_file_exp_list\|rh7.3.baseline\|services\|services.save\|sgid_list\|signatures\|suid_list\):" \
   | grep -oE "[a-z]+[0-9]{3}[a-z]" | sort -u > "$W/shape_ids.txt"
 
@@ -94,6 +96,7 @@ fi
 # owner id, f, w or i to its access id)
 # shellcheck disable=SC2086
 grep -r "" $CODE 2>/dev/null | grep -v "^[^:]*:[ 	]*#" | grep -v "^scripts/check_network:" \
+  | grep -v "^util/mksite:" \
   | grep -v "systems/Linux/2/\(embedlist\|facl.strict\|file_access_list\|rel_file_exp_list\|rh7.3.baseline\|services\|services.save\|sgid_list\|signatures\|suid_list\):" \
   | awk '{
       file = $0; sub(/:.*/, "", file); n = split(file, p, "/"); base = p[n]

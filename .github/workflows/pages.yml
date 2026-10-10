@@ -1,0 +1,42 @@
+name: Pages
+
+# The website, https://creativeheadz.github.io/tigris/: util/mksite builds
+# it from the tree with sh and awk (the README, the JSON contract, a page
+# per finding id and per compliance framework), tests/site_check.sh
+# follows its links, and GitHub Pages serves it. Published with every
+# release tag, or by hand from the Actions tab. Only on GitHub: the Gitea
+# mirror has no Pages.
+on:
+  push:
+    tags: ['version_*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the site and check its links
+        run: |
+          sh util/mksite _site
+          sh tests/site_check.sh
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

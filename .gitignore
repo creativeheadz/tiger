@@ -3,3 +3,4 @@ run/
 bin/
 doc/explanations.html
 __pycache__/
+_site/

@@ -15,7 +15,7 @@
   <br>
   <img src="https://img.shields.io/badge/finding%20ids-514-e8833a?style=flat-square&labelColor=0f1822" alt="514 finding ids">
   <img src="https://img.shields.io/badge/categories-15-e8833a?style=flat-square&labelColor=0f1822" alt="15 categories">
-  <img src="https://img.shields.io/badge/test%20suites-93-e8833a?style=flat-square&labelColor=0f1822" alt="93 test suites">
+  <img src="https://img.shields.io/badge/test%20suites-94-e8833a?style=flat-square&labelColor=0f1822" alt="94 test suites">
   <img src="https://img.shields.io/badge/CI-Debian%20%C2%B7%20Ubuntu%20%C2%B7%20Fedora%20%C2%B7%20Rocky%20%C2%B7%20openSUSE%20%C2%B7%20Alpine%20%C2%B7%20Arch-c6d6e2?style=flat-square&labelColor=0f1822" alt="Tested on Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch">
 </p>
 
@@ -26,7 +26,8 @@
   <a href="#compliance-mapping">Compliance</a> ·
   <a href="#reports-drift-and-exit-status">Reports and drift</a> ·
   <a href="#install">Install</a> ·
-  <a href="ROADMAP.md">Roadmap</a>
+  <a href="ROADMAP.md">Roadmap</a> ·
+  <a href="https://creativeheadz.github.io/tigris/findings/">Every finding</a>
 </p>
 
 ---
@@ -156,8 +157,10 @@ holes are public. ...
 ## What it checks
 
 Every finding id has an explanation in [`meta/`](meta), a severity and one
-of fifteen categories, which the JSON carries. `make` builds them all into
-`doc/explanations.html`.
+of fifteen categories, which the JSON carries. The website has
+[a page for each](https://creativeheadz.github.io/tigris/findings/), with
+its fix and the controls it is evidence about, and `make` builds them
+all into `doc/explanations.html`.
 
 | Category | Ids | What is looked at |
 |---|---:|---|
