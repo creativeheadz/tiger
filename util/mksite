@@ -83,8 +83,8 @@ hr{border:0;border-top:1px solid var(--line);margin:2.2em 0}
 p[align=center]{text-align:center}
 p[align=center] img[src*="shields.io"]{margin:.15em .1em}
 main>p:first-child img{border-radius:8px;box-shadow:0 0 0 1px var(--line),0 12px 40px rgba(0,0,0,.45)}
-main table:not(.ids):not(.ctl) td[width]{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.4em 1em}
-main table:not(.ids):not(.ctl){border-collapse:separate;border-spacing:.7em}
+main>table{border-collapse:separate;border-spacing:.7em}
+main>table td{width:50%;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.4em 1em}
 .badge{display:inline-block;font:700 .7rem/1.5 var(--mono);padding:.08em .5em;border-radius:3px;margin-right:.3em;vertical-align:middle;letter-spacing:.06em}
 .ALERT{background:#ff5f56;color:#1a0505}.FAIL{background:var(--orange);color:#1a0d02}.WARN{background:var(--amber);color:#1a1202}.INFO{background:var(--blue);color:#021318}.ERROR{background:#c678dd;color:#14051a}.CONFIG{background:#7d90a2;color:#0a0f15}
 h1 .badge{font-size:.8rem;vertical-align:.35em}
