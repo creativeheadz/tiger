@@ -94,5 +94,13 @@ real tests. Phase A finished 2026-10-09: first-phase checks for
 the ten gap groups (Kerberos, LDAP, PHP, SNMP, Squid, CUPS, IDS
 presence, compilers, FireWire, guest detection), second phases
 for databases, mail, MAC frameworks, crypto, file integrity, and
-filesystems, and the verify-marked items above. What remains is
-Phase B and beyond.
+filesystems, and the verify-marked items above. Phases B (macOS) and
+C (BSDs) finished 2026-10-09 and shipped in 3.8.0. What remains is
+Phase D (Solaris and AIX, each only with a maintainer and a CI runner),
+the verify-marked items and the depth gaps in the tables above, and
+the groups the deliberate exceptions name.
+
+Every finding that can show a gap maps to its compliance controls, or
+is declared unmapped in doc/controls.map with a reason, and
+tests/explain_check.sh enforces it. check_perms checks every match of
+its wildcard entries, offline and live.
