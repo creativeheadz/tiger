@@ -39,7 +39,9 @@ report=`ls "$W"/log/security.report.* 2>/dev/null | grep -v jsonl | head -1`
 json=`ls "$W"/log/*.jsonl 2>/dev/null | head -1`
 [ -n "$report" ] && [ -n "$json" ] || { echo "FAIL no report:"; cat "$W/out"; exit 1; }
 
-grep -q '^# Checking OS release' "$report" && grep -q '^# Checking kernel and network hardening' "$report" &&
+# the sysctl check runs on every distribution (the release check only on
+# those systems/Linux/2/check knows)
+grep -q '^# Checking kernel and network hardening' "$report" &&
   ok "the Linux checks run without strings" || { bad "the Linux checks did not run:"; grep -n 'init001e\|^# ' "$report" | head; }
 grep -q '^--ERROR-- \[init001e\] .*required command STRINGS' "$report" &&
   ok "the check that needs strings says so in the report" || bad "no init001e in the report"
