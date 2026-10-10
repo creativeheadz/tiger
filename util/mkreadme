@@ -1,0 +1,146 @@
+#!/bin/sh
+#
+#     tiger - A UN*X security checking system
+#     Copyright (C) 2026 Andrei Trimbitas
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#     Please see the file `COPYING' for the complete copyright notice.
+#
+# mkreadme [-c] [TREE]: the numbers README.md and ROADMAP.md give, from
+#                 the tree itself, so they cannot drift again (in October
+#                 2026 the README said 434 finding ids and 47 test suites
+#                 when there were 514 and 91):
+#
+#   README.md   the finding ids, categories and test suites badges, "any
+#               of the N finding ids", "one of N categories" (in words),
+#               and the Ids column of the category table, its rows sorted
+#               by that count
+#   ROADMAP.md  the Tigris column of "Where things stand": the version
+#               and month (from version.h), check scripts, finding ids,
+#               categories and fixture suites
+#
+#   finding ids     the files in meta/
+#   categories      the distinct Category: values in meta/
+#   test suites     tests/*_check.sh
+#   check scripts   scripts/check_*, systems/Linux/2/check_* and the
+#                   macOS, FreeBSD and Solaris systems/*/default/check_*
+#
+#   Without -c the two files are rewritten in place. With -c nothing is
+#   written: the exit status is 1 when either file differs from what it
+#   would be (tests/readme_check.sh), and the differing lines are shown.
+#   A category in meta/ with no row in the table is an error (exit 2): a
+#   row's description is written by hand.
+#
+#-----------------------------------------------------------------------------
+#
+check=N
+[ "$1" = -c ] && { check=Y; shift; }
+T=${1:-`cd "\`dirname "$0"\`/.." && pwd`}
+AWK=${AWK:-awk}
+cd "$T" || exit 2
+
+nids=`ls meta | grep -c '^[a-z][a-z]*[0-9][0-9][0-9][acefiw]$'`
+nsuites=`ls tests/*_check.sh 2>/dev/null | wc -l | tr -d ' '`
+nchecks=`ls scripts/check_* systems/Linux/2/check_* systems/MacOSX/default/check_* \
+  systems/FreeBSD/default/check_* systems/SunOS/default/check_* 2>/dev/null | wc -l | tr -d ' '`
+# category counts, "name count" a line, from each file's header (it ends
+# at the first blank line)
+cats=`$AWK 'FNR == 1 { head = 1 } /^$/ { head = 0 } head && /^Category: / { c[$2]++ }
+  END { for (k in c) print k, c[k] }' meta/*`
+ncats=`printf '%s\n' "$cats" | grep -c .`
+# version and month from version.h ("3.8.1, 2026.10.10.21.51")
+vh=`cat version.h 2>/dev/null`
+ver=${vh%%,*}
+stamp=${vh#*, }; year=${stamp%%.*}; mon=${stamp#*.}; mon=${mon%%.*}
+month=`$AWK -v m="$mon" -v y="$year" 'BEGIN {
+  split("January February March April May June July August September October November December", n, " ")
+  print n[m + 0], y }'`
+
+# README.md through the numbers
+readme()
+{
+  $AWK -v nids="$nids" -v ncats="$ncats" -v nsuites="$nsuites" -v cats="$cats" '
+    function word(n,   w) {
+      split("one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty", w, " ")
+      return (n >= 1 && n <= 20 ? w[n] : n)
+    }
+    BEGIN {
+      n = split(cats, l, "\n")
+      for (i = 1; i <= n; i++) { split(l[i], p, " "); cnt[p[1]] = p[2] }
+    }
+    # the table: rows are held, given their counts, and put out sorted
+    /^[|] [*][*][a-z]+[*][*] [|] [0-9]+ [|]/ {
+      name = $0; sub(/^[|] [*][*]/, "", name); sub(/[*][*].*/, "", name)
+      if (!(name in cnt)) { print "mkreadme: README has a row for " name ", which no finding has" > "/dev/stderr"; bad = 1 }
+      row = $0; sub(/^[|] [*][*][a-z]+[*][*] [|] [0-9]+ [|]/, "| **" name "** | " (cnt[name] + 0) " |", row)
+      rows[++nr] = row; key[nr] = cnt[name] + 0; seen[name] = 1
+      next
+    }
+    nr && !done { flush() }
+    {
+      gsub(/finding%20ids-[0-9]+/, "finding%20ids-" nids)
+      gsub(/alt="[0-9]+ finding ids"/, "alt=\"" nids " finding ids\"")
+      gsub(/categories-[0-9]+-/, "categories-" ncats "-")
+      gsub(/alt="[0-9]+ categories"/, "alt=\"" ncats " categories\"")
+      gsub(/test%20suites-[0-9]+/, "test%20suites-" nsuites)
+      gsub(/alt="[0-9]+ test suites"/, "alt=\"" nsuites " test suites\"")
+      gsub(/any of the [0-9]+ finding ids/, "any of the " nids " finding ids")
+      if ($0 ~ /^of [a-z]+ categories,/) sub(/^of [a-z]+ categories,/, "of " word(ncats) " categories,")
+      print
+    }
+    # largest first, ties by name
+    function flush(   i, j, t) {
+      for (i = 1; i <= nr; i++) for (j = i + 1; j <= nr; j++)
+        if (key[j] > key[i] || (key[j] == key[i] && rows[j] < rows[i])) {
+          t = rows[i]; rows[i] = rows[j]; rows[j] = t; t = key[i]; key[i] = key[j]; key[j] = t
+        }
+      for (i = 1; i <= nr; i++) print rows[i]
+      done = 1
+    }
+    END {
+      if (nr && !done) flush()
+      for (c in cnt) if (!(c in seen)) { print "mkreadme: category " c " has no row in the README table" > "/dev/stderr"; bad = 1 }
+      if (bad) exit 2
+    }' README.md
+}
+
+# ROADMAP.md through the numbers
+roadmap()
+{
+  $AWK -v ver="$ver" -v month="$month" -v nids="$nids" -v ncats="$ncats" -v nsuites="$nsuites" -v nchecks="$nchecks" '
+    /^[|] +[|] Tigris [0-9.]+ [(][A-Za-z]+ [0-9]+[)]/ { sub(/Tigris [0-9.]+ [(][A-Za-z]+ [0-9]+[)]/, "Tigris " ver " (" month ")") }
+    /^[|] Checks / { sub(/[0-9]+ check scripts, [0-9]+ finding ids in [0-9]+ categories/, nchecks " check scripts, " nids " finding ids in " ncats " categories") }
+    /^[|] Tests / { sub(/[0-9]+ fixture suites/, nsuites " fixture suites") }
+    { print }' ROADMAP.md
+}
+
+W=`mktemp -d "${TMPDIR:-/tmp}/mkreadme.XXXXXX"` || exit 2
+trap 'rm -rf "$W"' 0
+readme > "$W/README.md" || exit 2
+roadmap > "$W/ROADMAP.md" || exit 2
+
+st=0
+for f in README.md ROADMAP.md
+do
+  if [ "`cat "$f"`" != "`cat "$W/$f"`" ]; then
+    if [ "$check" = Y ]; then
+      echo "$f: the numbers have drifted (sh util/mkreadme rewrites them):"
+      if command -v diff >/dev/null 2>&1; then diff "$f" "$W/$f" | grep '^[<>]' | head -20
+      else echo "  (no diff here to show the lines)"; fi
+      st=1
+    else
+      cat "$W/$f" > "$f"
+      echo "$f: numbers updated"
+    fi
+  fi
+done
+exit $st

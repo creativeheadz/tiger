@@ -42,6 +42,8 @@ jobs:
         run: sh tests/summary_check.sh
       - name: How a finding reads in the text report
         run: sh tests/report_text_check.sh
+      - name: README and ROADMAP give the tree's numbers
+        run: sh tests/readme_check.sh
       - name: Certificates
         run: sh tests/certs_check.sh
       - name: Databases

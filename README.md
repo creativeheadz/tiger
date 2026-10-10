@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>A security auditor for Linux, in plain POSIX shell.</b><br>
+  <b>A security auditor for Linux, macOS and the BSDs, in plain POSIX shell.</b><br>
   TIGER's thirty years of checks, rebuilt for how Linux is run today.
 </p>
 
@@ -13,9 +13,9 @@
   <a href="COPYING"><img src="https://img.shields.io/badge/licence-GPL--2.0--or--later-52c7e8?style=flat-square&labelColor=0f1822" alt="Licence: GPL-2.0-or-later"></a>
   <img src="https://img.shields.io/badge/written%20in-POSIX%20sh%20%2B%20awk-4fd67f?style=flat-square&labelColor=0f1822" alt="Written in POSIX sh and awk">
   <br>
-  <img src="https://img.shields.io/badge/finding%20ids-434-e8833a?style=flat-square&labelColor=0f1822" alt="434 finding ids">
+  <img src="https://img.shields.io/badge/finding%20ids-514-e8833a?style=flat-square&labelColor=0f1822" alt="514 finding ids">
   <img src="https://img.shields.io/badge/categories-15-e8833a?style=flat-square&labelColor=0f1822" alt="15 categories">
-  <img src="https://img.shields.io/badge/test%20suites-47-e8833a?style=flat-square&labelColor=0f1822" alt="47 test suites">
+  <img src="https://img.shields.io/badge/test%20suites-93-e8833a?style=flat-square&labelColor=0f1822" alt="93 test suites">
   <img src="https://img.shields.io/badge/CI-Debian%20%C2%B7%20Ubuntu%20%C2%B7%20Fedora%20%C2%B7%20Rocky%20%C2%B7%20openSUSE%20%C2%B7%20Alpine%20%C2%B7%20Arch-c6d6e2?style=flat-square&labelColor=0f1822" alt="Tested on Debian, Ubuntu, Fedora, Rocky, openSUSE, Alpine and Arch">
 </p>
 
@@ -80,7 +80,7 @@ as code: a test plants commands in an image to prove it.
 
 **A contract for machines.** Every run also writes JSON Lines with a
 versioned schema, a category and the compliance controls per finding,
-and `tigris explain ID` says what any of the 434 finding ids means and
+and `tigris explain ID` says what any of the 514 finding ids means and
 how to fix it.
 
 </td>
@@ -161,21 +161,21 @@ of fifteen categories, which the JSON carries. `make` builds them all into
 
 | Category | Ids | What is looked at |
 |---|---:|---|
-| **filesystem** | 76 | Setuid and setgid files against what the packages ship, world-writable files and directories, devices, files nobody owns, `/tmp` and `/dev/shm` mount options, disk encryption, swap, core dumps, umask |
-| **accounts** | 69 | Password and shadow files, root's account, groups, sudo's rules (NOPASSWD, wildcards, `!authenticate`), PAM's password quality and lockout, every account's PATH, login shells, accounts that never logged in |
-| **services** | 68 | What enabled systemd services and timers run, their unit files and sandboxing, time synchronisation, inetd, sendmail, Apache, nginx and its TLS, MySQL and MariaDB, PostgreSQL, Redis, certificates about to expire |
-| **network** | 42 | What listens on which port, IPv4 and IPv6, and as whom; network sysctls; NFS exports; NTP; DNS resolvers (`resolv.conf`, unbound, BIND); sendmail's configuration |
+| **services** | 93 | What enabled systemd services and timers run, their unit files and sandboxing, time synchronisation, inetd; Apache, nginx and its TLS; MySQL and MariaDB, PostgreSQL, Redis, MongoDB, Oracle; Postfix, Exim, Dovecot and sendmail; PHP, SNMP, Squid, CUPS; certificates about to expire, private keys, entropy |
+| **filesystem** | 85 | Setuid and setgid files against what the packages ship, world-writable files and directories, devices, files nobody owns, `/tmp` and `/dev/shm` mount options, disk encryption (LUKS, FileVault), swap, core dumps, umask |
+| **accounts** | 80 | Password and shadow files, root's account, groups, sudo's and doas's rules (NOPASSWD, wildcards, `!authenticate`), PAM's password quality and lockout, every account's PATH, login shells, accounts that never logged in, Kerberos encryption types and keytabs, LDAP's root password |
+| **network** | 47 | What listens on which port, IPv4 and IPv6, and as whom; network sysctls; NFS exports; NTP; DNS resolvers (`resolv.conf`, unbound, BIND); sendmail's configuration |
 | **tigris** | 33 | Tigris's own configuration and the run itself |
-| **intrusion** | 21 | Rootkit traces, processes running deleted binaries, `.exrc` files, places intruders are known to use |
-| **kernel** | 19 | Hardening sysctls, AppArmor or SELinux enforcing, kernel lockdown |
-| **packages** | 18 | Installed files against dpkg, rpm, apk and pacman; security updates waiting and whether they install themselves; dpkg's mode overrides |
+| **packages** | 28 | Installed files against dpkg, rpm, apk and pacman; security updates waiting and whether they install themselves; dpkg's mode overrides; compilers and who may run them; macOS software updates, FreeBSD's package audit |
+| **intrusion** | 24 | Rootkit traces, processes running deleted binaries, `.exrc` files, places intruders are known to use, whether an intrusion detection or prevention system is installed |
+| **kernel** | 24 | Hardening sysctls, AppArmor, SELinux, TOMOYO or PaX enforcing, kernel lockdown, System Integrity Protection on macOS |
+| **logging** | 18 | Log files, auditd running with rules, logs kept across reboots, remote logging (rsyslog, syslog-ng, journal upload), process accounting |
 | **ssh** | 18 | sshd's effective configuration: root login, passwords, empty passwords, X11, PAM, weak ciphers, MACs and key exchange |
-| **logging** | 15 | Log files, auditd running with rules, logs kept across reboots, remote logging (rsyslog, syslog-ng, journal upload) |
-| **boot** | 14 | Secure Boot (off, in setup mode, on), lockdown, single-user mode, the boot loader's password |
-| **cron** | 14 | `/etc/crontab`, `cron.d`, the `cron.daily` and other scripts, and users' crontabs: who can write them, whose they are, and what the jobs they hold run |
-| **integrity** | 11 | Signatures of system binaries, and AIDE, Tripwire or integrit when installed |
-| **containers** | 10 | Who can use the Docker or Podman socket, the Docker API on TCP without TLS, privileged containers, host namespaces, the host's `/` mounted in one |
-| **firewall** | 6 | Incoming traffic denied unless something accepts it, IPv4 and IPv6, read from the kernel's ruleset (nft, iptables, ufw, firewalld), and the ports Docker publishes past it |
+| **cron** | 16 | `/etc/crontab`, `cron.d`, the `cron.daily` and other scripts, and users' crontabs: who can write them, whose they are, and what the jobs they hold run |
+| **boot** | 15 | Secure Boot (off, in setup mode, on), lockdown, single-user mode, the boot loader's password, macOS launch daemons |
+| **integrity** | 14 | Signatures of system binaries, and AIDE, Tripwire or integrit when installed, and how they are configured |
+| **containers** | 12 | Who can use the Docker or Podman socket, the Docker API on TCP without TLS, privileged containers, host namespaces, the host's `/` mounted in one |
+| **firewall** | 7 | Incoming traffic denied unless something accepts it, IPv4 and IPv6, read from the kernel's ruleset (nft, iptables, ufw, firewalld), and the ports Docker publishes past it; pf and ipfw on the BSDs and macOS |
 
 ### Profiles
 

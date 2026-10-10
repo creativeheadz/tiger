@@ -62,11 +62,11 @@ Settled, so they do not have to be argued again:
 
 ## Where things stand
 
-|                      | Tigris 3.7.0 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
+|                      | Tigris 3.8.1 (October 2026)                                     | Lynis 3.1.7 (June 2026)                  |
 |----------------------|-----------------------------------------------------------------|------------------------------------------|
 | Language             | POSIX shell, no dependencies                                    | POSIX shell                              |
 | Licence              | GPL-2.0-or-later                                                | GPL-3.0                                  |
-| Checks               | 63 check scripts, 434 finding ids in 15 categories, each explained | ~470 test ids in 42 categories        |
+| Checks               | 97 check scripts, 514 finding ids in 15 categories, each explained | ~470 test ids in 42 categories        |
 | Platforms            | Linux: Debian/Ubuntu, Fedora/RHEL/SUSE, Alpine, Arch            | Linux, macOS, BSD, Solaris, AIX          |
 | Machine output       | JSON Lines with a versioned schema, next to the text report     | `report.dat` (key=value)                 |
 | Explanations         | `tigris explain ID`, one metadata file per id (severity, category, checks) | Suggestions linked to the CISOfy website |
@@ -74,7 +74,7 @@ Settled, so they do not have to be argued again:
 | Change over time     | `tigris-diff` and `tigris-accept`; `tigercron`                  | Mostly point-in-time                     |
 | Package integrity    | dpkg, rpm, apk, pacman, one finding id per kind of problem      | Limited                                  |
 | Offline audit        | `tigris --root`: every check reads an image except the ten that need the running system, nothing in it is run; a container image with every distribution's package tools | None |
-| Tests                | 61 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
+| Tests                | 93 fixture suites, 19 CI jobs on every push                     | No per-check suite found in the repository |
 | Lynis parity         | Linux groups covered in Phase A (see below); macOS, BSD, Solaris-AIX ride the platform phases | 43 test groups across Linux, macOS, BSD, Solaris |
 
 Lynis is broad, maintained and popular (16k GitHub stars). Tigris
